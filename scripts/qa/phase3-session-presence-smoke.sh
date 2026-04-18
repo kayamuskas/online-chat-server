@@ -36,7 +36,8 @@ PASS=0
 FAIL=0
 COOKIE_A=$(mktemp)
 COOKIE_B=$(mktemp)
-trap 'rm -f "$COOKIE_A" "$COOKIE_B"' EXIT
+COOKIE_C=$(mktemp)
+trap 'rm -f "$COOKIE_A" "$COOKIE_B" "$COOKIE_C"' EXIT
 
 pass() { echo "[PASS] $1"; ((PASS++)) || true; }
 fail() { echo "[FAIL] $1"; ((FAIL++)) || true; }
@@ -244,8 +245,6 @@ fi
 # 8. Sign in session C — then test sign-out-all-other-sessions (03-01-02, T-03-04)
 # =============================================================================
 section "8. Sign Out All Other Sessions (03-01-02)"
-COOKIE_C=$(mktemp)
-trap 'rm -f "$COOKIE_A" "$COOKIE_B" "$COOKIE_C"' EXIT
 
 SIGN_C=$(curl -s -X POST "${AUTH_BASE}/sign-in" \
   -H "Content-Type: application/json" \

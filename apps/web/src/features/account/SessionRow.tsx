@@ -70,6 +70,17 @@ function exactTimestamp(isoDate: string): string {
   });
 }
 
+function formatIpAddress(ipAddress: string | null): string {
+  if (!ipAddress) return "—";
+
+  // Docker/local proxy setups often surface IPv4 as ::ffff:x.x.x.x.
+  if (ipAddress.startsWith("::ffff:")) {
+    return ipAddress.slice("::ffff:".length);
+  }
+
+  return ipAddress;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface SessionRowProps {
@@ -80,6 +91,7 @@ interface SessionRowProps {
 
 export function SessionRow({ session, onRevoke, revoking }: SessionRowProps) {
   const deviceLabel = parseBrowser(session.userAgent);
+  const ipAddress = formatIpAddress(session.ipAddress);
   const humanTime = humanizeLastSeen(session.lastSeenAt);
   const exactTime = exactTimestamp(session.lastSeenAt);
   const signedInDate = new Date(session.createdAt).toLocaleDateString(undefined, {
@@ -98,7 +110,7 @@ export function SessionRow({ session, onRevoke, revoking }: SessionRowProps) {
         <div className="sessions-table__signed-in">Signed in {signedInDate}</div>
       </td>
       <td className="sessions-table__cell sessions-table__cell--mono">
-        {session.ipAddress ?? "—"}
+        {ipAddress}
       </td>
       <td
         className="sessions-table__cell sessions-table__cell--mono"
