@@ -1,17 +1,20 @@
 /**
- * Phase 2 API client — auth flows only.
+ * Phase 3 API client — auth flows + session management.
  *
  * All requests are made to the NestJS API running on SERVICE_PORTS.apiHttp.
  * Credentials (session cookies) are sent with every request via credentials: "include".
  *
  * Covers:
- *   POST /api/v1/auth/register
- *   POST /api/v1/auth/sign-in
- *   POST /api/v1/auth/sign-out
- *   GET  /api/v1/auth/me
- *   POST /api/v1/auth/change-password
- *   POST /api/v1/auth/password-reset/request
- *   POST /api/v1/auth/password-reset/confirm
+ *   POST   /api/v1/auth/register
+ *   POST   /api/v1/auth/sign-in
+ *   POST   /api/v1/auth/sign-out
+ *   GET    /api/v1/auth/me
+ *   POST   /api/v1/auth/change-password
+ *   POST   /api/v1/auth/password-reset/request
+ *   POST   /api/v1/auth/password-reset/confirm
+ *   GET    /api/v1/sessions
+ *   DELETE /api/v1/sessions/others
+ *   DELETE /api/v1/sessions/:id
  */
 
 import { SERVICE_PORTS } from "@chat/shared";
@@ -30,6 +33,20 @@ export interface PublicUser {
 export interface ApiError {
   message: string;
   statusCode?: number;
+}
+
+/**
+ * A session inventory item as returned by GET /api/v1/sessions.
+ * Mirrors SessionInventoryItem from the API auth.types.ts.
+ */
+export interface SessionInventoryItem {
+  sessionId: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  lastSeenAt: string;
+  createdAt: string;
+  isPersistent: boolean;
+  isCurrentSession: boolean;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -158,4 +175,59 @@ export async function confirmPasswordReset(params: {
   newPassword: string;
 }): Promise<void> {
   return post("/auth/password-reset/confirm", params);
+}
+
+// ── Session management API calls ──────────────────────────────────────────────
+
+/**
+ * GET /api/v1/sessions
+ * Returns the active session inventory for the current user.
+ * Current session is first; isCurrentSession marks "This browser".
+ */
+export async function listSessions(): Promise<{ sessions: SessionInventoryItem[] }> {
+  return get("/sessions");
+}
+
+/**
+ * DELETE /api/v1/sessions/others
+ * Signs out all other sessions. Current session is preserved. Returns undefined (204).
+ */
+export async function revokeOtherSessions(): Promise<void> {
+  const res = await fetch(`${BASE_URL}/sessions/others`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok && res.status !== 204) {
+    const data = await res.json().catch(() => ({}));
+    const msg =
+      typeof data?.message === "string"
+        ? data.message
+        : res.statusText || "Request failed";
+    const err = new Error(msg) as Error & { statusCode: number };
+    err.statusCode = res.status;
+    throw err;
+  }
+}
+
+/**
+ * DELETE /api/v1/sessions/:id
+ * Revokes a specific session by ID.
+ * If the revoked session is the current one, the server clears the cookie.
+ * Returns undefined (204).
+ */
+export async function revokeSession(sessionId: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/sessions/${encodeURIComponent(sessionId)}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok && res.status !== 204) {
+    const data = await res.json().catch(() => ({}));
+    const msg =
+      typeof data?.message === "string"
+        ? data.message
+        : res.statusText || "Request failed";
+    const err = new Error(msg) as Error & { statusCode: number };
+    err.statusCode = res.status;
+    throw err;
+  }
 }

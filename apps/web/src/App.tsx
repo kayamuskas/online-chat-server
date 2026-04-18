@@ -1,20 +1,21 @@
 /**
- * Phase 2 app entry — authentication core.
+ * Phase 3 app entry — authentication core + active-sessions account UI.
  *
- * Ships the locked Phase 2 auth shell at `/` and the minimal authenticated
- * account surface at `/account`. On a direct `/account` load, the app asks the
- * API for the current user so browser-close semantics can be verified via URL.
+ * Ships the locked Phase 3 auth shell at `/` and the authenticated account
+ * surface at `/account`. On a direct `/account` load, the app asks the API
+ * for the current user so browser-close semantics can be verified via URL.
  *
- * Product features beyond auth (rooms, messaging) are out of scope for Phase 2.
+ * Phase 3 change: the "Sessions" tab now renders ActiveSessionsView (the full
+ * active-session inventory) instead of the Phase 2 minimal sign-out card.
  */
 
 import { useEffect, useState } from "react";
 import { me, type PublicUser } from "./lib/api";
 import { AuthShell } from "./features/auth/AuthShell";
 import { PasswordSettingsView } from "./features/account/PasswordSettingsView";
-import { SessionActionsView } from "./features/account/SessionActionsView";
+import { ActiveSessionsView } from "./features/account/ActiveSessionsView";
 
-type AccountTab = "password" | "session";
+type AccountTab = "password" | "sessions";
 
 function isAccountRoute() {
   return window.location.pathname === "/account";
@@ -22,7 +23,7 @@ function isAccountRoute() {
 
 function App() {
   const [user, setUser] = useState<PublicUser | null>(null);
-  const [tab, setTab] = useState<AccountTab>("password");
+  const [tab, setTab] = useState<AccountTab>("sessions");
   const [checkingSession, setCheckingSession] = useState(isAccountRoute());
 
   function handleAuthenticated(nextUser: PublicUser) {
@@ -109,20 +110,17 @@ function App() {
           </button>
           <button
             type="button"
-            className={`app-account__nav-item${tab === "session" ? " app-account__nav-item--active" : ""}`}
-            onClick={() => setTab("session")}
+            className={`app-account__nav-item${tab === "sessions" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => setTab("sessions")}
           >
-            Sign out
+            Active sessions
           </button>
         </nav>
 
         <div className="app-account__content">
           {tab === "password" && <PasswordSettingsView />}
-          {tab === "session" && (
-            <SessionActionsView
-              username={user.username}
-              onSignedOut={handleSignedOut}
-            />
+          {tab === "sessions" && (
+            <ActiveSessionsView onSignedOut={handleSignedOut} />
           )}
         </div>
       </main>
