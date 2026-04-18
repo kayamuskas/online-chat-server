@@ -36,3 +36,6 @@ npm-debug.log*
 requirements/
 
 # vendor/pnpm-store/ is intentionally NOT ignored — it is the repo-local offline dependency cache
+
+# Local Docker volume data
+.volumes/
