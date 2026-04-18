@@ -32,6 +32,13 @@ Goal: Establish a runnable monorepo/application structure with Docker Compose, l
 
 Requirements: `OPS-01`, `OPS-02`, `ARCH-01`, `ARCH-02`
 
+Plans: 4 plans
+
+- [ ] `01-01-PLAN.md` — Create the monorepo workspace, shared contracts, and offline dependency strategy.
+- [ ] `01-02-PLAN.md` — Replace CDN/runtime frontend delivery with a local bundled web shell.
+- [ ] `01-03-PLAN.md` — Bootstrap the Nest REST/WebSocket API and BullMQ worker foundation.
+- [ ] `01-04-PLAN.md` — Package the stack with Docker Compose, offline Dockerfiles, and QA smoke scripts.
+
 Success criteria:
 1. Repository contains backend, frontend, infra, and docs structure that supports planned implementation.
 2. `docker compose up` starts the stack using only local sources and preloaded base images.
