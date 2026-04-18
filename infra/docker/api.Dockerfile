@@ -14,7 +14,8 @@ FROM node:22-slim AS deps
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+# Install pnpm directly — avoids Corepack downloading it at build time (T-01-11)
+RUN npm install -g pnpm@10.9.0 --no-fund --no-audit
 
 WORKDIR /app
 
@@ -47,7 +48,7 @@ FROM node:22-slim AS production
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+RUN npm install -g pnpm@10.9.0 --no-fund --no-audit
 
 WORKDIR /app
 
