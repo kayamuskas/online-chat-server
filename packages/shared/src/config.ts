@@ -17,6 +17,7 @@ export interface RuntimeEnv {
   NODE_ENV: "development" | "production" | "test";
   API_PORT: number;
   WEB_PORT: number;
+  ALLOWED_ORIGIN: string;
   REDIS_HOST: string;
   REDIS_PORT: number;
   POSTGRES_HOST: string;
@@ -54,6 +55,7 @@ export function parseRuntimeEnv(raw: NodeJS.ProcessEnv = process.env): RuntimeEn
     NODE_ENV: nodeEnv,
     API_PORT: parseInt(raw["API_PORT"] ?? String(SERVICE_PORTS.apiHttp), 10),
     WEB_PORT: parseInt(raw["WEB_PORT"] ?? String(SERVICE_PORTS.webHttp), 10),
+    ALLOWED_ORIGIN: raw["ALLOWED_ORIGIN"] ?? "http://localhost:4173",
     REDIS_HOST: raw["REDIS_HOST"] ?? "localhost",
     REDIS_PORT: parseInt(raw["REDIS_PORT"] ?? String(SERVICE_PORTS.redis), 10),
     POSTGRES_HOST: raw["POSTGRES_HOST"] ?? "localhost",

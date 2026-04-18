@@ -66,6 +66,8 @@ services:
       MAIL_OUTBOX_DIR: /app/mail-outbox
       # Base URL embedded in reset links (override for non-localhost deployments)
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:4173}
+      # Only this frontend origin may make credentialed browser requests.
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:4173}
     ports:
       - "${API_PORT:-3000}:3000"
     healthcheck:
@@ -133,4 +135,3 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-

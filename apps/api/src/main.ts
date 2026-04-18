@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
-import { SERVICE_PORTS } from '@chat/shared';
+import { parseRuntimeEnv, SERVICE_PORTS } from '@chat/shared';
 import cookieParser from 'cookie-parser';
 
 /**
@@ -15,13 +15,16 @@ import cookieParser from 'cookie-parser';
  */
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  const env = parseRuntimeEnv();
 
   // Enable cookie parsing so session cookies are available on req.cookies.
   app.use(cookieParser());
 
-  // Enable CORS for the web client. Phase 2 will constrain this to the
-  // configured origin once the frontend URL is stable.
-  app.enableCors();
+  // Restrict credentialed browser access to the configured web origin.
+  app.enableCors({
+    origin: env.ALLOWED_ORIGIN,
+    credentials: true,
+  });
 
   const port = parseInt(process.env['API_PORT'] ?? String(SERVICE_PORTS.apiHttp), 10);
   await app.listen(port);
