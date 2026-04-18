@@ -1,0 +1,158 @@
+# Roadmap: Online Chat Server
+
+**Created:** 2026-04-18
+**Mode:** YOLO
+**Granularity:** Fine
+**Coverage:** 49 / 49 v1 requirements mapped
+
+## Summary
+
+This roadmap assumes a greenfield implementation using the existing requirements and design prototype only as input material. The first milestone creates an offline-capable, production-like baseline; later phases layer domain rules, realtime behavior, UI flows, and final QA hardening.
+
+## Phases
+
+| # | Phase | Goal | Requirements | Success Criteria |
+|---|-------|------|--------------|------------------|
+| 1 | Foundation and Offline Delivery | Create a real repo structure, local-only runtime packaging, and Docker Compose bootstrap that QA can start | OPS-01, OPS-02 | 4 |
+| 2 | Authentication Core | Implement account lifecycle and durable login behavior | AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07 | 4 |
+| 3 | Sessions and Presence | Implement multi-session management and correct online/AFK/offline semantics | SESS-01, SESS-02, SESS-03, SESS-04, SESS-05 | 4 |
+| 4 | Rooms and Membership | Implement room catalog, invites, join/leave behavior, and room state model | ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, ROOM-06 | 4 |
+| 5 | Contacts and DM Policy | Implement friendships, friend requests, user bans, and DM eligibility rules | FRND-01, FRND-02, FRND-03, FRND-04, FRND-05, FRND-06 | 4 |
+| 6 | Messaging Core | Implement room and DM message send/edit/reply flows with durable ordering | MSG-01, MSG-02, MSG-03, MSG-04 | 4 |
+| 7 | Attachments and Durable Delivery | Add attachment flow, ACL enforcement, offline delivery, and filesystem-backed persistence | MSG-06, FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-06, OPS-03 | 5 |
+| 8 | Moderation and Destructive Actions | Complete admin controls, bans, message deletion, room deletion, and account deletion side effects | ROOM-07, ROOM-08, ROOM-09, MSG-05, AUTH-08 | 4 |
+| 9 | Frontend Productization | Replace the prototype shell with the real app UI, navigation, unread indicators, infinite scroll, session screens, and modal admin UX | MSG-07, NOTF-01, NOTF-02, UI-01, UI-02, UI-03 | 5 |
+| 10 | Performance, QA, and Release Hardening | Validate latency, history scale, startup determinism, and full QA acceptance | PERF-01 | 5 |
+
+## Phase Details
+
+### Phase 1: Foundation and Offline Delivery
+
+Goal: Establish a runnable monorepo/application structure with Docker Compose, local-only asset strategy, and deterministic startup from a fresh clone.
+
+Requirements: `OPS-01`, `OPS-02`
+
+Success criteria:
+1. Repository contains backend, frontend, infra, and docs structure that supports planned implementation.
+2. `docker compose up` starts the stack using only local sources and preloaded base images.
+3. Frontend build no longer depends on CDN scripts or hosted fonts.
+4. Offline startup and local dependency strategy are documented and testable.
+
+### Phase 2: Authentication Core
+
+Goal: Implement credentials, login, persistence, and password lifecycle.
+
+Requirements: `AUTH-01`, `AUTH-02`, `AUTH-03`, `AUTH-04`, `AUTH-05`, `AUTH-06`, `AUTH-07`
+
+Success criteria:
+1. User can register with unique email and immutable username.
+2. User can sign in, remain signed in across browser restart, and sign out only the current browser session.
+3. Password reset and password change work through tested flows.
+4. Backend stores credentials securely and exposes only the required auth surfaces.
+
+### Phase 3: Sessions and Presence
+
+Goal: Make session inventory and multi-tab presence semantics correct.
+
+Requirements: `SESS-01`, `SESS-02`, `SESS-03`, `SESS-04`, `SESS-05`
+
+Success criteria:
+1. User can inspect active sessions with browser/IP details.
+2. User can revoke selected sessions without invalidating unrelated sessions.
+3. Presence is aggregated across multiple tabs according to the specification.
+4. Presence transitions propagate within the required latency budget in local tests.
+
+### Phase 4: Rooms and Membership
+
+Goal: Model rooms, catalog behavior, invites, and basic membership changes.
+
+Requirements: `ROOM-01`, `ROOM-02`, `ROOM-03`, `ROOM-04`, `ROOM-05`, `ROOM-06`
+
+Success criteria:
+1. User can create rooms with required metadata and role model.
+2. Public room catalog supports search and displays member counts.
+3. Public join, private invite, and leave-owner restrictions all behave as specified.
+4. Backend room model is ready for later moderation and messaging phases.
+
+### Phase 5: Contacts and DM Policy
+
+Goal: Implement friendship workflow and direct-message access rules.
+
+Requirements: `FRND-01`, `FRND-02`, `FRND-03`, `FRND-04`, `FRND-05`, `FRND-06`
+
+Success criteria:
+1. Friend requests can be sent, accepted, and removed.
+2. User-to-user bans immediately block new contact attempts.
+3. DM eligibility depends on friendship and mutual non-ban state.
+4. Existing DM history becomes read-only after a user ban without data loss.
+
+### Phase 6: Messaging Core
+
+Goal: Implement the message engine shared by rooms and direct dialogs.
+
+Requirements: `MSG-01`, `MSG-02`, `MSG-03`, `MSG-04`
+
+Success criteria:
+1. Users can send multiline UTF-8 messages with reply references.
+2. Room and DM chats share the same core message capabilities.
+3. Users can edit their own messages and the UI shows edited state.
+4. Messages persist and render in chronological order.
+
+### Phase 7: Attachments and Durable Delivery
+
+Goal: Add attachment upload/download, ACL enforcement, offline delivery, and persistent storage.
+
+Requirements: `MSG-06`, `FILE-01`, `FILE-02`, `FILE-03`, `FILE-04`, `FILE-05`, `FILE-06`, `OPS-03`
+
+Success criteria:
+1. Users can upload files and images by button and paste, with comments and preserved filenames.
+2. Attachment downloads are authorized against current membership or DM participation.
+3. Files stay stored when required and become inaccessible immediately after access loss.
+4. Offline recipients receive persisted messages after reconnect.
+5. Filesystem storage persists correctly across container restarts.
+
+### Phase 8: Moderation and Destructive Actions
+
+Goal: Complete admin tooling and destructive flows with correct cascades.
+
+Requirements: `ROOM-07`, `ROOM-08`, `ROOM-09`, `MSG-05`, `AUTH-08`
+
+Success criteria:
+1. Owner/admin permissions match the written rules exactly.
+2. Member removal behaves as a ban until explicitly reversed.
+3. Room deletion permanently deletes room messages and attachments.
+4. Account deletion removes owned rooms and detaches remaining memberships safely.
+
+### Phase 9: Frontend Productization
+
+Goal: Build the real frontend shell and chat UX from the wireframe direction, aligned strictly to requirements.
+
+Requirements: `MSG-07`, `NOTF-01`, `NOTF-02`, `UI-01`, `UI-02`, `UI-03`
+
+Success criteria:
+1. Shipped UI follows the classic chat layout and not the prototype's implementation shortcuts.
+2. Infinite scroll and smart autoscroll behavior work in long histories.
+3. Unread indicators work for rooms and DMs and clear on open.
+4. Admin actions are accessible through menus and modal dialogs.
+5. Session-management and account-destruction flows are exposed cleanly in the shipped UI.
+
+### Phase 10: Performance, QA, and Release Hardening
+
+Goal: Make the system defensible against the stated QA and non-functional acceptance bar.
+
+Requirements: `PERF-01`
+
+Success criteria:
+1. Local load and integration checks cover the 300-user / 1000-member / 10k-history targets proportionally.
+2. Message delivery and presence update latencies are measured against the stated limits.
+3. Fresh-clone offline startup is tested as a release gate.
+4. Critical flows have automated coverage plus a QA checklist for manual verification.
+5. The repository is ready for public handoff with documentation aligned to actual behavior.
+
+## Notes
+
+- Session and account capabilities are implemented in their owning domain phases and surfaced in the real frontend during Phase 9.
+- Jabber/federation intentionally stays out of this roadmap and should be introduced in a later roadmap revision for v2.
+
+---
+*Roadmap created: 2026-04-18*
