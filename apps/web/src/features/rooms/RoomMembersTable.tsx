@@ -37,6 +37,10 @@ interface RoomMembersTableProps {
   onRemoveAdmin?: (userId: string) => void;
   onRemoveMember?: (userId: string) => void;
   actionBusy?: string | null;
+  /** Called when user clicks "Add friend" on a member row. Per D-05. */
+  onSendFriendRequest?: (userId: string, username: string) => void;
+  /** Set of user IDs already friends with current user (to hide the button). */
+  friendUserIds?: Set<string>;
 }
 
 export function RoomMembersTable({
@@ -49,6 +53,8 @@ export function RoomMembersTable({
   onRemoveAdmin,
   onRemoveMember,
   actionBusy,
+  onSendFriendRequest,
+  friendUserIds,
 }: RoomMembersTableProps) {
   if (members.length === 0) {
     return <p className="rooms-empty">No members found.</p>;
@@ -128,6 +134,16 @@ export function RoomMembersTable({
                           disabled={busy}
                         >
                           {busy ? "…" : "Ban"}
+                        </button>
+                      )}
+                      {!friendUserIds?.has(m.userId) && onSendFriendRequest && (
+                        <button
+                          type="button"
+                          className="btn btn--soft btn--xs"
+                          onClick={() => onSendFriendRequest(m.userId, m.username)}
+                          style={{ marginLeft: "0.25rem" }}
+                        >
+                          Add friend
                         </button>
                       )}
                     </>

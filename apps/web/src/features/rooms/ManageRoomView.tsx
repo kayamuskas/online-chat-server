@@ -29,6 +29,7 @@ import {
 } from "../../lib/api";
 import { RoomMembersTable, type MemberRow } from "./RoomMembersTable";
 import { RoomBanListView } from "./RoomBanListView";
+import { AddContactModal } from "../contacts/AddContactModal";
 
 interface ManageRoomViewProps {
   room: RoomCatalogRow;
@@ -59,6 +60,9 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
   // Leave state
   const [leaveError, setLeaveError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+
+  // Phase 5: Add friend from member row (D-05)
+  const [addFriendTarget, setAddFriendTarget] = useState<string | null>(null);
 
   const isOwner = room.owner_id === currentUserId;
   // For phase 4 we treat the current user as admin if they have access to this view
@@ -243,17 +247,26 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
             Use the invite and ban controls above and below to manage membership.
           </p>
         ) : (
-          <RoomMembersTable
-            members={memberRows}
-            currentUserId={currentUserId}
-            ownerUserId={room.owner_id}
-            currentUserIsAdmin={currentUserIsAdmin}
-            currentUserIsOwner={isOwner}
-            onMakeAdmin={(uid) => void handleMakeAdmin(uid)}
-            onRemoveAdmin={(uid) => void handleRemoveAdmin(uid)}
-            onRemoveMember={(uid) => void handleRemoveMember(uid)}
-            actionBusy={actionBusy}
-          />
+          <>
+            <RoomMembersTable
+              members={memberRows}
+              currentUserId={currentUserId}
+              ownerUserId={room.owner_id}
+              currentUserIsAdmin={currentUserIsAdmin}
+              currentUserIsOwner={isOwner}
+              onMakeAdmin={(uid) => void handleMakeAdmin(uid)}
+              onRemoveAdmin={(uid) => void handleRemoveAdmin(uid)}
+              onRemoveMember={(uid) => void handleRemoveMember(uid)}
+              actionBusy={actionBusy}
+              onSendFriendRequest={(_userId, username) => setAddFriendTarget(username)}
+            />
+            {addFriendTarget && (
+              <AddContactModal
+                onClose={() => setAddFriendTarget(null)}
+                onSuccess={() => setAddFriendTarget(null)}
+              />
+            )}
+          </>
         )}
       </section>
 
