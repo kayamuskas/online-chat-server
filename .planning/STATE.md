@@ -9,15 +9,15 @@ progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 21
-  completed_plans: 19
-  percent: 45
+  completed_plans: 20
+  percent: 48
 ---
 
 # State
 
 **Updated:** 2026-04-18
 **Current phase:** Phase 5 - Contacts and DM Policy
-**Status:** Phase 5 in progress — plan 04 (contacts frontend: 6 components + 13 API functions) complete
+**Status:** Phase 5 complete — plan 05 (App.tsx wiring: contacts sidebar, notification badge, DM stub, inline Add friend) complete
 
 ## Project Reference
 
@@ -61,6 +61,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - [x] 05-02: Contacts service and repository implementation (COMPLETE)
 - [x] 05-03: Contacts controller, module wiring, and API endpoints (COMPLETE)
 - [x] 05-04: Contacts and DM frontend UI (COMPLETE)
+- [x] 05-05: App.tsx wiring — contacts sidebar, notification badge, DM stub, inline Add friend (COMPLETE)
 
 ## Key Decisions (Phase 4)
 
@@ -82,9 +83,15 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - del<T> helper added to api.ts — contacts functions required a generic DELETE wrapper; follows same 204/error pattern as get<T>/post<T>
 - ContactsView displays ban.banned_user_id as display name in Blocked Users (UserBan DTO lacks username); needs backend enrichment in future plan
 
+## Key Decisions (Phase 5, Plan 05)
+
+- dmEligible hardcoded to true in ContactsSidebar — all confirmed friends are DM-eligible by definition; ban enforcement happens server-side at POST /contacts/dm/:userId
+- addFriendTarget stores username string in ManageRoomView to avoid prop-drilling contacts list through room management hierarchy
+- RoomMembersTable Add friend button is optional (onSendFriendRequest?) — fully backward-compatible with existing call sites
+
 ## Next Up
 
-- Phase 5 Plan 05: App.tsx wiring — connect contacts components to the main shell
+- Phase 6: Real-time messaging engine
 
 ---
 *State initialized: 2026-04-18 | Updated: 2026-04-18T21:39:10Z*
