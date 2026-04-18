@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { SERVICE_PORTS } from '@chat/shared';
+import cookieParser from 'cookie-parser';
 
 /**
  * Bootstrap the Nest hybrid REST + WebSocket API.
@@ -14,6 +15,9 @@ import { SERVICE_PORTS } from '@chat/shared';
  */
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+
+  // Enable cookie parsing so session cookies are available on req.cookies.
+  app.use(cookieParser());
 
   // Enable CORS for the web client. Phase 2 will constrain this to the
   // configured origin once the frontend URL is stable.
