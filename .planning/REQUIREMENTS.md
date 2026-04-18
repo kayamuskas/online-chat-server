@@ -7,13 +7,13 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can register with unique email, unique username, and password.
-- [ ] **AUTH-02**: Username remains immutable after registration.
-- [ ] **AUTH-03**: User can sign in with email and password.
-- [ ] **AUTH-04**: User can sign out only the current browser session.
-- [ ] **AUTH-05**: User login persists across browser close and reopen.
-- [ ] **AUTH-06**: User can reset password.
-- [ ] **AUTH-07**: Logged-in user can change password.
+- [x] **AUTH-01**: User can register with unique email, unique username, and password.
+- [x] **AUTH-02**: Username remains immutable after registration.
+- [x] **AUTH-03**: User can sign in with email and password.
+- [x] **AUTH-04**: User can sign out only the current browser session.
+- [x] **AUTH-05**: User login persists across browser close and reopen.
+- [x] **AUTH-06**: User can reset password.
+- [x] **AUTH-07**: Logged-in user can change password.
 - [ ] **AUTH-08**: User can delete their account, which deletes rooms they own and removes their membership elsewhere.
 
 ### Sessions and Presence
@@ -110,13 +110,13 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
-| AUTH-05 | Phase 2 | Pending |
-| AUTH-06 | Phase 2 | Pending |
-| AUTH-07 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Complete |
+| AUTH-02 | Phase 2 | Complete |
+| AUTH-03 | Phase 2 | Complete |
+| AUTH-04 | Phase 2 | Complete |
+| AUTH-05 | Phase 2 | Complete |
+| AUTH-06 | Phase 2 | Complete |
+| AUTH-07 | Phase 2 | Complete |
 | AUTH-08 | Phase 8 | Pending |
 | SESS-01 | Phase 3 | Pending |
 | SESS-02 | Phase 3 | Pending |
@@ -165,7 +165,7 @@
 | OPS-01 | Phase 1 | Pending |
 | OPS-02 | Phase 1 | Pending |
 | OPS-03 | Phase 7 | Pending |
-| OPS-04 | Phase 2 | Pending |
+| OPS-04 | Phase 2 | Complete |
 | ARCH-01 | Phase 1 | Pending |
 | ARCH-02 | Phase 1 | Pending |
 | PERF-01 | Phase 10 | Pending |
