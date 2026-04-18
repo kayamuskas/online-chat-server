@@ -565,17 +565,15 @@ async banUser(callerId: string, targetId: string): Promise<void> {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Does `PostgresService` have a transaction wrapper method?**
+1. **Does `PostgresService` have a transaction wrapper method?** *(RESOLVED)*
+   - **Resolution:** No `.transaction()` wrapper exists. Plans 05-02 Task 2 uses manual `BEGIN/COMMIT/ROLLBACK` via `db.getClient()` — the same `SqlExecutor` injection pattern from `UserRepository.updatePasswordHash`.
    - What we know: `UserRepository.updatePasswordHash` accepts a `SqlExecutor` parameter for transaction support — callers can pass a transaction client. The service itself does not appear to have a dedicated `.transaction()` helper in the reviewed code.
-   - What's unclear: Whether a `db.transaction(async tx => ...)` convenience wrapper exists, or whether the pattern is `BEGIN/COMMIT` via raw SQL.
-   - Recommendation: Implementer should read `apps/api/src/db/postgres.service.ts` before coding the ban method. If no wrapper exists, use the `SqlExecutor` injection pattern from `updatePasswordHash` or add a minimal transaction helper to `PostgresService`.
 
-2. **Presence data source for contacts list**
+2. **Presence data source for contacts list** *(RESOLVED)*
+   - **Resolution:** Phase 5 ContactsSidebar defaults all contacts to `'offline'` presence. A lightweight `GET /api/v1/presence?userIds=a,b,c` REST endpoint is added in Phase 5 (Plan 05-03) and called on contacts load. Real-time WebSocket presence push is deferred to Phase 9.
    - What we know: Phase 3 presence is in-memory (`PresenceService`) and exposed via WebSocket `getPresence` events; there is no REST endpoint for presence.
-   - What's unclear: Phase 5 contacts list shows presence dots — should it call `getPresence` over WebSocket, or should a REST endpoint be added?
-   - Recommendation: Expose a lightweight `GET /api/v1/presence?userIds=a,b,c` REST endpoint in the contacts response (or as a separate call), following the ARCH-02 mixed REST+WebSocket principle. WebSocket presence push can be added in Phase 9. For Phase 5, a one-time REST fetch of friend presence on contacts load is sufficient.
 
 ---
 
