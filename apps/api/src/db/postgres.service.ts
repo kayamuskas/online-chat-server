@@ -70,6 +70,81 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_password_reset_tokens_token
   ON password_reset_tokens (token);
+
+-- ── Phase 4: Room domain tables (migration 0003_rooms_core) ──────────────────
+
+CREATE TABLE IF NOT EXISTS rooms (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        TEXT        NOT NULL,
+  description TEXT,
+  visibility  TEXT        NOT NULL DEFAULT 'public'
+                          CHECK (visibility IN ('public', 'private')),
+  owner_id    UUID        NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT rooms_name_unique UNIQUE (name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rooms_owner_id   ON rooms (owner_id);
+CREATE INDEX IF NOT EXISTS idx_rooms_visibility ON rooms (visibility);
+
+CREATE TABLE IF NOT EXISTS room_memberships (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id     UUID        NOT NULL REFERENCES rooms (id) ON DELETE CASCADE,
+  user_id     UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  role        TEXT        NOT NULL DEFAULT 'member'
+                          CHECK (role IN ('owner', 'admin', 'member')),
+  joined_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT room_memberships_unique UNIQUE (room_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_room_memberships_room_id ON room_memberships (room_id);
+CREATE INDEX IF NOT EXISTS idx_room_memberships_user_id ON room_memberships (user_id);
+
+CREATE TABLE IF NOT EXISTS room_invites (
+  id                    UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id               UUID        NOT NULL REFERENCES rooms (id) ON DELETE CASCADE,
+  invited_by_user_id    UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  invited_user_id       UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  status                TEXT        NOT NULL DEFAULT 'pending'
+                                    CHECK (status IN ('pending', 'accepted', 'declined', 'expired')),
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at            TIMESTAMPTZ,
+
+  CONSTRAINT room_invites_pending_unique UNIQUE (room_id, invited_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_room_invites_room_id         ON room_invites (room_id);
+CREATE INDEX IF NOT EXISTS idx_room_invites_invited_user_id ON room_invites (invited_user_id);
+
+CREATE TABLE IF NOT EXISTS room_admins (
+  id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id             UUID        NOT NULL REFERENCES rooms (id) ON DELETE CASCADE,
+  user_id             UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  granted_by_user_id  UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  granted_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT room_admins_unique UNIQUE (room_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_room_admins_room_id ON room_admins (room_id);
+CREATE INDEX IF NOT EXISTS idx_room_admins_user_id ON room_admins (user_id);
+
+CREATE TABLE IF NOT EXISTS room_bans (
+  id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id             UUID        NOT NULL REFERENCES rooms (id) ON DELETE CASCADE,
+  banned_user_id      UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  banned_by_user_id   UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  reason              TEXT,
+  banned_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT room_bans_unique UNIQUE (room_id, banned_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_room_bans_room_id        ON room_bans (room_id);
+CREATE INDEX IF NOT EXISTS idx_room_bans_banned_user_id ON room_bans (banned_user_id);
 `;
 
 @Injectable()
