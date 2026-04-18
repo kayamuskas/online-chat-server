@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 3 - Sessions and Presence
 status: executing
-last_updated: "2026-04-18T17:05:00.000Z"
+last_updated: "2026-04-18T17:30:00.000Z"
 progress:
   total_phases: 10
   completed_phases: 2
@@ -17,7 +17,7 @@ progress:
 
 **Updated:** 2026-04-18
 **Current phase:** Phase 3 - Sessions and Presence
-**Status:** Executing Phase 3 — Plan 02 complete, 2 plans remaining
+**Status:** Executing Phase 3 — Plan 03 complete, 1 plan remaining
 
 ## Project Reference
 
@@ -44,7 +44,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 
 - [x] 03-01: Session metadata, inventory, and revoke backend (COMPLETE)
 - [x] 03-02: Realtime presence engine and durable last seen (COMPLETE)
-- [ ] 03-03: Active sessions web UI
+- [x] 03-03: Active sessions web UI (COMPLETE)
 - [ ] 03-04: Presence presentation and validation
 
 ## Key Decisions (Phase 3)
@@ -58,10 +58,13 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - Durable last seen written fire-and-forget only when the last tab disconnects (offline transition)
 - afkTimeoutMs and offlineSweepMs injected via PRESENCE_CONFIG_TOKEN so production one-minute rule cannot be bypassed
 - socketUserMap pattern: single auth check at connect time, socket.id lookup on all subsequent events
+- Inline confirm block chosen over modal for session revoke (D-04 agent discretion): faster, contextual, no overlay state
+- Current-session revoke calls onSignedOut directly (T-03-09): reuses same sign-in return path as POST /sign-out
+- Sign out all other sessions button hidden when only one session exists (otherSessionCount === 0)
 
 ## Next Up
 
-- Execute Plan 03-03: Active sessions web UI (session table, This browser badge, humanized Last active, per-row revoke)
+- Execute Plan 03-04: Presence presentation and validation (compact presence dots, detailed status text, last seen display)
 
 ---
 *State initialized: 2026-04-18 | Updated: 2026-04-18T17:05:00Z*
