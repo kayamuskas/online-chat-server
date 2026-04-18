@@ -106,6 +106,14 @@ Goal: Implement friendship workflow and direct-message access rules.
 
 Requirements: `FRND-01`, `FRND-02`, `FRND-03`, `FRND-04`, `FRND-05`, `FRND-06`
 
+Plans: 5 plans
+
+- [ ] `05-01-PLAN.md` — Contacts schema migration, domain type definitions, and test scaffold.
+- [ ] `05-02-PLAN.md` — ContactsRepository (SQL) and ContactsService (policy layer, DM eligibility).
+- [ ] `05-03-PLAN.md` — ContactsController (REST endpoints) and ContactsModule registration in AppModule.
+- [ ] `05-04-PLAN.md` — API client extensions and contacts feature components (sidebar, dropdown, modals, DM stub).
+- [ ] `05-05-PLAN.md` — App.tsx wiring and RoomMembersTable inline friend-request action.
+
 Success criteria:
 1. Friend requests can be sent, accepted, and removed.
 2. User-to-user bans immediately block new contact attempts.
