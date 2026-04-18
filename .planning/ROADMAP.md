@@ -109,7 +109,7 @@ Requirements: `FRND-01`, `FRND-02`, `FRND-03`, `FRND-04`, `FRND-05`, `FRND-06`
 Plans: 5 plans
 
 - [x] `05-01-PLAN.md` — Contacts schema migration, domain type definitions, and test scaffold. *(complete 2026-04-18)*
-- [ ] `05-02-PLAN.md` — ContactsRepository (SQL) and ContactsService (policy layer, DM eligibility).
+- [x] `05-02-PLAN.md` — ContactsRepository (SQL) and ContactsService (policy layer, DM eligibility). *(complete 2026-04-18)*
 - [ ] `05-03-PLAN.md` — ContactsController (REST endpoints) and ContactsModule registration in AppModule.
 - [ ] `05-04-PLAN.md` — API client extensions and contacts feature components (sidebar, dropdown, modals, DM stub).
 - [ ] `05-05-PLAN.md` — App.tsx wiring and RoomMembersTable inline friend-request action.

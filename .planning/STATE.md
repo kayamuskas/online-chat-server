@@ -17,7 +17,7 @@ progress:
 
 **Updated:** 2026-04-18
 **Current phase:** Phase 5 - Contacts and DM Policy
-**Status:** Phase 5 in progress — plan 01 (schema, types, TDD scaffold) complete
+**Status:** Phase 5 in progress — plan 02 (ContactsRepository + ContactsService, all 13 tests pass) complete
 
 ## Project Reference
 
@@ -58,7 +58,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 ## Phase 5 Plans
 
 - [x] 05-01: Contacts schema, domain types, and TDD scaffold (COMPLETE)
-- [ ] 05-02: Contacts service and repository implementation
+- [x] 05-02: Contacts service and repository implementation (COMPLETE)
 - [ ] 05-03: Contacts controller, module wiring, and API endpoints
 - [ ] 05-04: Contacts and DM frontend UI
 
@@ -74,10 +74,12 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - DmConversation table created in Phase 5 (not Phase 6) so banUser() can freeze DM history before the message engine ships.
 - Ban is directional — separate rows for each direction — DM eligibility checks both directions via findBanBetween().
 - Friendship and DmConversation use normalized ordering (user_a_id < user_b_id) enforced by UNIQUE constraint and application canonicalization.
+- ContactsService db parameter is optional to allow 2-argument test instantiation; banUser uses non-null assertion since NestJS DI always injects all 3 in production.
+- SqlExecutor type matches QueryResult<R> return type from pg to be assignable to PostgresService.
 
 ## Next Up
 
-- Phase 5 Plan 02: Contacts service and repository implementation (FRND-01 through FRND-06)
+- Phase 5 Plan 03: Contacts controller, module wiring, and API endpoints
 
 ---
 *State initialized: 2026-04-18 | Updated: 2026-04-18T21:39:10Z*
