@@ -75,7 +75,7 @@ export class AuthController {
     const result = await this.authService.signIn(input);
 
     setSessionCookie(res, result.sessionToken, {
-      maxAge: result.cookieMaxAge,
+      maxAge: result.sessionTtlSeconds,
       persistent: result.isPersistent,
     });
 

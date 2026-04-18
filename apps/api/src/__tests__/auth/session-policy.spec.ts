@@ -68,14 +68,14 @@ describe('buildSessionExpiry', () => {
     expect(expiresAt.getTime()).toBe(expected.getTime());
   });
 
-  it('TRANSIENT: cookieMaxAge is 86400 seconds', () => {
-    const { cookieMaxAge } = buildSessionExpiry(SessionPolicy.TRANSIENT);
-    expect(cookieMaxAge).toBe(SESSION_TRANSIENT_TTL_SECONDS);
+  it('TRANSIENT: sessionTtlSeconds is 86400 seconds', () => {
+    const { sessionTtlSeconds } = buildSessionExpiry(SessionPolicy.TRANSIENT);
+    expect(sessionTtlSeconds).toBe(SESSION_TRANSIENT_TTL_SECONDS);
   });
 
-  it('PERSISTENT: cookieMaxAge is 2592000 seconds (30 days)', () => {
-    const { cookieMaxAge } = buildSessionExpiry(SessionPolicy.PERSISTENT);
-    expect(cookieMaxAge).toBe(SESSION_PERSISTENT_TTL_SECONDS);
+  it('PERSISTENT: sessionTtlSeconds is 2592000 seconds (30 days)', () => {
+    const { sessionTtlSeconds } = buildSessionExpiry(SessionPolicy.PERSISTENT);
+    expect(sessionTtlSeconds).toBe(SESSION_PERSISTENT_TTL_SECONDS);
   });
 
   it('TRANSIENT: isPersistent flag is false', () => {

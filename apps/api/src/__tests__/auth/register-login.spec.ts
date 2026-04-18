@@ -159,7 +159,7 @@ describe('AuthService — signIn', () => {
     expect(result).toHaveProperty('sessionToken');
     expect(result).toHaveProperty('user');
     expect(result.user).not.toHaveProperty('password_hash');
-    expect(result).toHaveProperty('cookieMaxAge');
+    expect(result).toHaveProperty('sessionTtlSeconds');
     expect(result).toHaveProperty('isPersistent', false);
   });
 
@@ -178,7 +178,7 @@ describe('AuthService — signIn', () => {
     });
 
     expect(result).toHaveProperty('isPersistent', true);
-    expect(result.cookieMaxAge).toBeGreaterThan(86400); // 30 days > 24 hours
+    expect(result.sessionTtlSeconds).toBeGreaterThan(86400); // 30 days > 24 hours
   });
 
   it('throws UnauthorizedException when user is not found', async () => {

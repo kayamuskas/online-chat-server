@@ -39,11 +39,12 @@ export interface SessionExpiry {
   /** Absolute timestamp to store in sessions.expires_at. */
   expiresAt: Date;
   /**
-   * Cookie Max-Age in seconds.
-   * For TRANSIENT: 86400 (browser will also discard on close).
-   * For PERSISTENT: 2592000.
+   * Server-side session TTL in seconds.
+   * For TRANSIENT this mirrors the 24-hour hard cap, but the browser cookie
+   * remains session-only because session-cookie.ts omits Max-Age unless the
+   * session is persistent.
    */
-  cookieMaxAge: number;
+  sessionTtlSeconds: number;
   /** Whether the session row should be treated as persistent (is_persistent column). */
   isPersistent: boolean;
 }
@@ -57,16 +58,16 @@ export function buildSessionExpiry(policy: SessionPolicy): SessionExpiry {
 
   if (policy === SessionPolicy.PERSISTENT) {
     return {
-      expiresAt:    new Date(now + SESSION_PERSISTENT_TTL_MS),
-      cookieMaxAge: SESSION_PERSISTENT_TTL_SECONDS,
+      expiresAt: new Date(now + SESSION_PERSISTENT_TTL_MS),
+      sessionTtlSeconds: SESSION_PERSISTENT_TTL_SECONDS,
       isPersistent: true,
     };
   }
 
   // TRANSIENT: 24-hour hard cap
   return {
-    expiresAt:    new Date(now + SESSION_TRANSIENT_TTL_MS),
-    cookieMaxAge: SESSION_TRANSIENT_TTL_SECONDS,
+    expiresAt: new Date(now + SESSION_TRANSIENT_TTL_MS),
+    sessionTtlSeconds: SESSION_TRANSIENT_TTL_SECONDS,
     isPersistent: false,
   };
 }

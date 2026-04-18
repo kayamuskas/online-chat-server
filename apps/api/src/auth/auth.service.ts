@@ -18,7 +18,7 @@ import type { RegisterInput, SignInInput, PublicUser, Session } from './auth.typ
 export interface SignInResult {
   user: PublicUser;
   sessionToken: string;
-  cookieMaxAge: number;
+  sessionTtlSeconds: number;
   isPersistent: boolean;
 }
 
@@ -85,7 +85,7 @@ export class AuthService {
     }
 
     const policy = resolveSessionPolicy(input.keepSignedIn);
-    const { expiresAt, cookieMaxAge, isPersistent } = buildSessionExpiry(policy);
+    const { expiresAt, sessionTtlSeconds, isPersistent } = buildSessionExpiry(policy);
 
     const session = await this.sessions.create({
       userId: user.id,
@@ -97,7 +97,7 @@ export class AuthService {
     return {
       user: publicUser,
       sessionToken: session.session_token,
-      cookieMaxAge,
+      sessionTtlSeconds,
       isPersistent,
     };
   }

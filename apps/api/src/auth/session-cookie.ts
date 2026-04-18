@@ -27,7 +27,7 @@ export function extractSessionToken(req: Request): string | null {
 }
 
 export interface SetCookieOptions {
-  /** Max-Age in seconds — from buildSessionExpiry().cookieMaxAge. */
+  /** Max-Age in seconds — from buildSessionExpiry().sessionTtlSeconds. */
   maxAge: number;
   /**
    * When false, the cookie is a "session cookie" (browser-close semantics).
