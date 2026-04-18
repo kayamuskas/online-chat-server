@@ -25,8 +25,8 @@ import {
 } from '@nestjs/websockets';
 import type { Socket } from 'socket.io';
 import { extractSessionToken } from './ws-auth.js';
-import type { PresenceService } from '../presence/presence.service.js';
-import type { AuthService } from '../auth/auth.service.js';
+import { PresenceService } from '../presence/presence.service.js';
+import { AuthService } from '../auth/auth.service.js';
 
 /** Minimal payload for the 'getPresence' event from the client. */
 interface GetPresencePayload {
