@@ -7,6 +7,12 @@
     "node": ">=22",
     "pnpm": ">=10"
   },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": ["linux", "darwin", "current"],
+      "cpu": ["arm64", "x64", "current"]
+    }
+  },
   "scripts": {
     "build": "pnpm -r build",
     "build:api": "pnpm --filter @chat/api build",
