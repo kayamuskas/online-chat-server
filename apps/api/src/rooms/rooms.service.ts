@@ -7,11 +7,13 @@
  * - Owner cannot leave their own room; they must delete the room instead.
  * - Invite targets must be already registered users (validated via UserRepository).
  * - Admin/ban/member authority helpers for later plan consumption.
+ * - Removing a member through management flow is modeled as ban semantics (Phase 4-03).
+ * - Owner cannot lose admin authority; removeAdmin rejects targeting the owner.
  *
  * Controllers must stay thin; all actor-vs-target policy checks live here.
  */
 
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { RoomsRepository } from './rooms.repository.js';
 import { UserRepository } from '../auth/user.repository.js';
 import type {
@@ -184,8 +186,21 @@ export class RoomsService {
     return this.roomsRepo.addAdmin(roomId, targetUserId, grantedByUserId);
   }
 
-  /** Revoke admin role from a user in a room. */
+  /**
+   * Revoke admin role from a user in a room.
+   *
+   * Owner protection: the room owner cannot lose admin authority through this flow.
+   * Attempting to remove the owner's admin status throws ForbiddenException.
+   */
   async removeAdmin(roomId: string, targetUserId: string): Promise<void> {
+    const room = await this.getRoom(roomId);
+
+    if (room.owner_id === targetUserId) {
+      throw new ForbiddenException(
+        'Cannot remove admin authority from the room owner. The owner is always an admin.',
+      );
+    }
+
     await this.roomsRepo.removeAdmin(roomId, targetUserId);
   }
 
@@ -205,7 +220,7 @@ export class RoomsService {
   ): Promise<RoomBan> {
     await this.getRoom(roomId);
 
-    // Remove from membership if present
+    // Remove from membership if present (ignore false — user may not have been a member)
     await this.roomsRepo.removeMember(roomId, targetUserId);
 
     return this.roomsRepo.addBan({
@@ -216,9 +231,64 @@ export class RoomsService {
     });
   }
 
-  /** Remove a ban from a user in a room. */
+  /** Remove a ban from a user in a room. Allows the user to rejoin. */
   async unbanMember(roomId: string, targetUserId: string): Promise<void> {
     await this.roomsRepo.removeBan(roomId, targetUserId);
+  }
+
+  /**
+   * Remove a member from a room using ban semantics.
+   *
+   * This is the authoritative "admin removes member" operation for Phase 4.
+   * Modeling removal as a ban means the user cannot immediately rejoin until
+   * explicitly unbanned — preventing the remove-and-rejoin loop.
+   *
+   * Rules:
+   * - Target must currently be a member (throws NotFoundException otherwise).
+   * - Owner cannot be removed this way (throws ForbiddenException).
+   * - Creates a ban record with the actor's ID as banned_by_user_id.
+   */
+  async removeMemberAsBan(
+    roomId: string,
+    targetUserId: string,
+    removedByUserId: string,
+    reason?: string,
+  ): Promise<RoomBan> {
+    const room = await this.getRoom(roomId);
+
+    // Owner protection: owner cannot be removed through management flows
+    if (room.owner_id === targetUserId) {
+      throw new ForbiddenException(
+        'Cannot remove the room owner through member management. The owner must delete the room instead.',
+      );
+    }
+
+    // Target must be a current member
+    const membership = await this.roomsRepo.getMembership(roomId, targetUserId);
+    if (!membership) {
+      throw new NotFoundException(`User '${targetUserId}' is not a member of this room`);
+    }
+
+    // Remove membership
+    await this.roomsRepo.removeMember(roomId, targetUserId);
+
+    // Create ban record so user cannot rejoin until explicitly unbanned
+    return this.roomsRepo.addBan({
+      room_id: roomId,
+      banned_user_id: targetUserId,
+      banned_by_user_id: removedByUserId,
+      reason: reason ?? 'Removed by admin',
+    });
+  }
+
+  /**
+   * List all banned users in a room.
+   *
+   * Returns ban records with who-banned metadata (banned_by_user_id, reason, banned_at)
+   * for display in the admin UI.
+   */
+  async listBanned(roomId: string): Promise<RoomBan[]> {
+    return this.roomsRepo.listBanned(roomId);
   }
 
   // ── Authority check helpers ────────────────────────────────────────────────
