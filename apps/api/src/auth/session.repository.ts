@@ -14,7 +14,7 @@
  *   T-03-04 — keep revoke-one and revoke-all-other-sessions as explicit row-level ops
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PostgresService } from '../db/postgres.service.js';
 import type { SessionWithMetadata } from './auth.types.js';
 import { randomBytes } from 'node:crypto';
@@ -109,16 +109,18 @@ export class SessionRepository {
    * Delete a single session row by its ID, scoped to a specific user.
    *
    * The user_id predicate ensures a user can only revoke their own sessions.
-   * If the session does not exist or belongs to a different user, the operation
-   * is a no-op (caller should check affected rows if strict error is needed).
    *
    * Threat model: T-03-03/T-03-04 — user-scoped row-level delete.
    */
   async deleteById(sessionId: string, userId: string): Promise<void> {
-    await this.db.query(
+    const result = await this.db.query(
       'DELETE FROM sessions WHERE id = $1 AND user_id = $2',
       [sessionId, userId],
     );
+
+    if (result.rowCount === 0) {
+      throw new NotFoundException('session not found');
+    }
   }
 
   /**

@@ -12,7 +12,6 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
-  NotFoundException,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository.js';
 import { SessionRepository } from './session.repository.js';
@@ -196,14 +195,6 @@ export class AuthService {
    * Threat model: T-03-04 — row-level revoke with user_id predicate.
    */
   async revokeSession(userId: string, sessionId: string): Promise<void> {
-    // Verify the session belongs to this user before deleting
-    const rows = await this.sessions.findAllByUserId(userId);
-    const owned = rows.some((r) => r.id === sessionId);
-
-    if (!owned) {
-      throw new NotFoundException('session not found');
-    }
-
     await this.sessions.deleteById(sessionId, userId);
   }
 
