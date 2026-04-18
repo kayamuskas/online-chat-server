@@ -17,6 +17,7 @@ import { PasswordResetService } from './password-reset.service.js';
 import { UserRepository } from './user.repository.js';
 import { SessionRepository } from './session.repository.js';
 import { PasswordResetTokenRepository } from './password-reset-token.repository.js';
+import { AuthRateLimitGuard } from './auth-rate-limit.guard.js';
 import { CurrentUserGuard } from './current-user.guard.js';
 
 @Module({
@@ -29,6 +30,7 @@ import { CurrentUserGuard } from './current-user.guard.js';
     UserRepository,
     SessionRepository,
     PasswordResetTokenRepository,
+    AuthRateLimitGuard,
     CurrentUserGuard,
   ],
   exports: [AuthService, CurrentUserGuard],

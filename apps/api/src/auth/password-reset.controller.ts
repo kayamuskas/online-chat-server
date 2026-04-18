@@ -14,7 +14,9 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthRateLimitGuard } from './auth-rate-limit.guard.js';
 import { PasswordResetService } from './password-reset.service.js';
 import {
   parseResetConfirmBody,
@@ -35,6 +37,7 @@ export class PasswordResetController {
    */
   @Post('request')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthRateLimitGuard)
   async requestReset(@Body() body: unknown): Promise<void> {
     const input = parseResetRequestBody(body);
     await this.passwordResetService.requestReset(input.email);
@@ -48,6 +51,7 @@ export class PasswordResetController {
    */
   @Post('confirm')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthRateLimitGuard)
   async confirmReset(@Body() body: unknown): Promise<void> {
     const input = parseResetConfirmBody(body);
     await this.passwordResetService.confirmReset(input);

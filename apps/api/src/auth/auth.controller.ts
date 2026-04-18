@@ -25,6 +25,7 @@ import {
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { ChangePasswordService } from './change-password.service.js';
+import { AuthRateLimitGuard } from './auth-rate-limit.guard.js';
 import { CurrentUserGuard } from './current-user.guard.js';
 import { CurrentUser } from './current-user.decorator.js';
 import {
@@ -70,6 +71,7 @@ export class AuthController {
    */
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthRateLimitGuard)
   async signIn(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
     const input = parseSignInBody(body);
     const result = await this.authService.signIn(input);
