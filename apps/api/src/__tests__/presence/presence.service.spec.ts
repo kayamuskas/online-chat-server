@@ -206,11 +206,16 @@ describe('PresenceService', () => {
       service.tabConnected('u-1', 'tab-a');
       service.tabConnected('u-2', 'tab-b');
       service.tabDisconnected('u-2', 'tab-b');
+      // tabDisconnected triggers persistLastSeen (correct offline-transition behavior).
+      // Clear the mock here so we can verify that getUsersPresence itself never
+      // touches the DB — it should read only from runtime state.
+      vi.mocked(repo.persistLastSeen).mockClear();
 
       const map = service.getUsersPresence(['u-1', 'u-2', 'u-unknown']);
       expect(map['u-1']).toBe('online');
       expect(map['u-2']).toBe('offline');
       expect(map['u-unknown']).toBe('offline');
+      // getUsersPresence must not call persistLastSeen — it reads only runtime state
       expect(repo.persistLastSeen).not.toHaveBeenCalled();
     });
   });

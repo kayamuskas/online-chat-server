@@ -5,12 +5,16 @@ import { MetaController } from './meta/meta.controller.js';
 import { AppGateway } from './ws/app.gateway.js';
 import { QueueModule } from './queue/queue.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { PresenceModule } from './presence/presence.module.js';
+import { AuthService } from './auth/auth.service.js';
 
 /**
  * AppModule — root Nest module for the hybrid REST + WebSocket API.
  *
- * Phase 2 additions: AuthModule wires auth controllers, services, and
- * repositories. Cookie parsing is enabled in main.ts via cookie-parser.
+ * Phase 3 additions:
+ *  - PresenceModule: realtime presence engine (runtime state + durable last seen)
+ *  - AppGateway now injects PresenceService and AuthService for authenticated
+ *    presence transport (Threat T-03-05: unauthenticated sockets are rejected).
  */
 @Module({
   imports: [
@@ -24,6 +28,7 @@ import { AuthModule } from './auth/auth.module.js';
     }),
     QueueModule,
     AuthModule,
+    PresenceModule,
   ],
   controllers: [HealthController, MetaController],
   providers: [AppGateway],
