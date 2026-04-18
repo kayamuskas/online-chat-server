@@ -27,6 +27,14 @@ export interface ClientMetadata {
   user_agent: string | null;
 }
 
+function shouldTrustProxy(): boolean {
+  const value = process.env['TRUST_PROXY'];
+  if (!value) return true;
+
+  const normalized = value.trim().toLowerCase();
+  return normalized !== 'false' && normalized !== '0';
+}
+
 /**
  * Extract the normalized client IP address from the request.
  *
@@ -38,10 +46,12 @@ export interface ClientMetadata {
  * The extraction is consistent with how auth-rate-limit.guard.ts resolves IPs.
  */
 export function extractClientIp(req: MetadataRequest): string {
-  const forwardedFor = req.headers['x-forwarded-for'];
-  if (typeof forwardedFor === 'string' && forwardedFor.trim() !== '') {
-    const first = forwardedFor.split(',')[0].trim();
-    if (first !== '') return first;
+  if (shouldTrustProxy()) {
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (typeof forwardedFor === 'string' && forwardedFor.trim() !== '') {
+      const first = forwardedFor.split(',')[0].trim();
+      if (first !== '') return first;
+    }
   }
 
   if (req.ip && req.ip.trim() !== '') {
