@@ -21,7 +21,7 @@ import { Injectable, Inject, OnApplicationShutdown } from '@nestjs/common';
 import type { PresenceRepository } from './presence.repository.js';
 import { PRESENCE_CONFIG_TOKEN } from './presence-config.js';
 import type { PresenceConfig } from './presence-config.js';
-import type { TabRecord, UserTabMap, PresenceStatus, PresenceMap } from './presence.types.js';
+import type { UserTabMap, PresenceStatus, PresenceMap } from './presence.types.js';
 
 @Injectable()
 export class PresenceService implements OnApplicationShutdown {

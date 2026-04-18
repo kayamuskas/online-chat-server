@@ -92,11 +92,8 @@ export class SessionManagementController {
   async revokeSession(
     @CurrentUser() ctx: AuthContext,
     @Param('id') sessionId: string,
-    @Req() req: RequestLike,
     @Res({ passthrough: true }) res: ResponseLike,
   ): Promise<void> {
-    const currentToken = extractSessionToken(req) ?? '';
-
     await this.authService.revokeSession(ctx.user.id, sessionId);
 
     // If the user revoked their own current session, clear the cookie so the

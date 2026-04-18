@@ -16,7 +16,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { PostgresService } from '../db/postgres.service.js';
-import type { Session, SessionWithMetadata } from './auth.types.js';
+import type { SessionWithMetadata } from './auth.types.js';
 import { randomBytes } from 'node:crypto';
 
 export interface CreateSessionInput {

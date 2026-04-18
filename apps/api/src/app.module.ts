@@ -6,7 +6,6 @@ import { AppGateway } from './ws/app.gateway.js';
 import { QueueModule } from './queue/queue.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { PresenceModule } from './presence/presence.module.js';
-import { AuthService } from './auth/auth.service.js';
 
 /**
  * AppModule — root Nest module for the hybrid REST + WebSocket API.
