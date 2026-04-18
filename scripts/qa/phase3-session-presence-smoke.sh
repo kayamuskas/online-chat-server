@@ -102,8 +102,8 @@ else
   fail "Sign in session A returned HTTP ${SIGN_A_STATUS} (expected 200)"
 fi
 
-if grep -q "chat_session" "$COOKIE_A" 2>/dev/null; then
-  pass "Session cookie (chat_session) set for session A"
+if grep -qP '\tsession\t' "$COOKIE_A" 2>/dev/null; then
+  pass "Session cookie set for session A"
 else
   fail "Session cookie not found for session A"
 fi
