@@ -1,22 +1,25 @@
 /**
- * Phase 4 app entry — classic chat shell with room surfaces.
+ * Phase 5 app entry — classic chat shell with room and contacts surfaces.
  *
- * Extends the Phase 3 authenticated shell with:
- *   - "Rooms" top-level nav section containing Public, Private, and Create sub-views
- *   - Room management surface for admin/owner operations (ManageRoomView)
+ * Extends Phase 4 with:
+ *   - CONTACTS sidebar section with PresenceDot per friend (D-15, D-16, D-18)
+ *   - Notification badge in topbar for pending friend requests (D-01, D-02)
+ *   - FriendRequestDropdown with Accept / Decline (D-02, D-03)
+ *   - DM stub navigation on contact click (D-12)
+ *   - AddContactModal from sidebar (D-04, D-17)
  *
- * Phase 3 tabs preserved:
- *   - "Sessions" → ActiveSessionsView
- *   - "Presence"  → CompactPresenceList + DetailedPresencePanel
+ * Phase 4 tabs preserved:
+ *   - "Public rooms"  → PublicRoomsView
+ *   - "Private rooms" → PrivateRoomsView
+ *   - "Create room"   → CreateRoomView
+ *   - "Manage room"   → ManageRoomView
  *
- * Phase 4 tabs added:
- *   - "Public rooms"  → PublicRoomsView: public catalog + search + join
- *   - "Private rooms" → PrivateRoomsView: invite-only rooms the user belongs to
- *   - "Create room"   → CreateRoomView: lightweight room creation form
- *   - "Manage room"   → ManageRoomView: owner/admin/member and ban-list operations
+ * Phase 5 tabs added:
+ *   - "contacts" → ContactsView (full management page)
+ *   - "dm"       → DmScreenStub (DM empty-state; replaced in Phase 6)
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   me,
   getMyPrivateRooms,
@@ -29,7 +32,18 @@ import {
   type PrivateRoomEntry,
   type RoomCatalogRow,
   type Room,
+  getMyFriends,
+  getIncomingRequests,
+  acceptFriendRequest,
+  declineFriendRequest,
+  type FriendWithPresence,
+  type IncomingFriendRequestView,
 } from "./lib/api";
+import { ContactsSidebar, type ContactRow } from "./features/contacts/ContactsSidebar";
+import { FriendRequestDropdown } from "./features/contacts/FriendRequestDropdown";
+import { AddContactModal } from "./features/contacts/AddContactModal";
+import { DmScreenStub } from "./features/contacts/DmScreenStub";
+import { ContactsView } from "./features/contacts/ContactsView";
 import { AuthShell } from "./features/auth/AuthShell";
 import { PasswordSettingsView } from "./features/account/PasswordSettingsView";
 import { ActiveSessionsView } from "./features/account/ActiveSessionsView";
@@ -47,7 +61,9 @@ type AppTab =
   | "public-rooms"
   | "private-rooms"
   | "create-room"
-  | "manage-room";
+  | "manage-room"
+  | "contacts"    // Phase 5: full contacts page
+  | "dm";         // Phase 5: DM stub screen
 
 function isAccountRoute() {
   return window.location.pathname === "/account";
@@ -76,6 +92,14 @@ function App() {
   const [privateRoomsLoading, setPrivateRoomsLoading] = useState(false);
   const [privateRoomsError, setPrivateRoomsError] = useState<string | null>(null);
   const [inviteActionId, setInviteActionId] = useState<string | null>(null);
+
+  // Phase 5: contacts state
+  const [contacts, setContacts] = useState<FriendWithPresence[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<IncomingFriendRequestView[]>([]);
+  const [requestDropdownOpen, setRequestDropdownOpen] = useState(false);
+  const [addContactOpen, setAddContactOpen] = useState(false);
+  const [dmPartnerId, setDmPartnerId] = useState<string | null>(null);
+  const [requestActionBusy, setRequestActionBusy] = useState<string | null>(null);
 
   function handleAuthenticated(nextUser: PublicUser) {
     setUser(nextUser);
@@ -128,6 +152,24 @@ function App() {
     setManagedRoom(room);
     setTab("manage-room");
   }
+
+  const loadContacts = useCallback(async () => {
+    try {
+      const result = await getMyFriends();
+      setContacts(result.friends);
+    } catch {
+      // non-fatal: sidebar shows empty state
+    }
+  }, []);
+
+  const loadPendingRequests = useCallback(async () => {
+    try {
+      const result = await getIncomingRequests();
+      setPendingRequests(result.requests);
+    } catch {
+      // non-fatal: badge shows 0
+    }
+  }, []);
 
   async function loadPrivateRoomData() {
     setPrivateRoomsLoading(true);
@@ -192,6 +234,31 @@ function App() {
     }
   }
 
+  async function handleAcceptRequest(requestId: string) {
+    setRequestActionBusy(requestId);
+    try {
+      await acceptFriendRequest(requestId);
+      // Refetch both contacts and pending requests — Pitfall 5 fix
+      await Promise.all([loadContacts(), loadPendingRequests()]);
+    } catch {
+      // ignore — badge will refresh on next open
+    } finally {
+      setRequestActionBusy(null);
+    }
+  }
+
+  async function handleDeclineRequest(requestId: string) {
+    setRequestActionBusy(requestId);
+    try {
+      await declineFriendRequest(requestId);
+      await loadPendingRequests();
+    } catch {
+      // ignore
+    } finally {
+      setRequestActionBusy(null);
+    }
+  }
+
   async function handleLeavePrivateRoom(room: RoomCatalogRow) {
     setPrivateRoomsError(null);
     try {
@@ -212,11 +279,15 @@ function App() {
       setPrivateRooms([]);
       setPendingInvites([]);
       setManagedRoom(null);
+      setContacts([]);
+      setPendingRequests([]);
       return;
     }
 
     void loadPrivateRoomData();
-  }, [user]);
+    void loadContacts();
+    void loadPendingRequests();
+  }, [user, loadContacts, loadPendingRequests]);
 
   if (checkingSession) {
     return (
@@ -243,6 +314,37 @@ function App() {
     <div className="app-layout">
       <header className="app-topbar">
         <div className="app-topbar__logo">&#9675; chatsrv</div>
+        <button
+          type="button"
+          className="app-topbar__notif"
+          onClick={() => setRequestDropdownOpen((o) => !o)}
+          aria-label="Friend requests"
+          style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "0 0.5rem" }}
+        >
+          &#128276;
+          {pendingRequests.length > 0 && (
+            <span
+              className="notif-badge"
+              style={{
+                position: "absolute", top: 0, right: 0,
+                background: "#e53e3e", color: "#fff",
+                borderRadius: "50%", fontSize: "0.65rem",
+                padding: "0 4px", minWidth: "16px", textAlign: "center",
+              }}
+            >
+              {pendingRequests.length}
+            </span>
+          )}
+        </button>
+        {requestDropdownOpen && (
+          <FriendRequestDropdown
+            requests={pendingRequests}
+            onAccept={(id) => void handleAcceptRequest(id)}
+            onDecline={(id) => void handleDeclineRequest(id)}
+            actionBusy={requestActionBusy}
+            onClose={() => setRequestDropdownOpen(false)}
+          />
+        )}
         <span className="app-topbar__user">{user.username}</span>
       </header>
 
@@ -293,6 +395,23 @@ function App() {
           >
             Presence
           </button>
+
+          {/* Phase 5: CONTACTS section — D-15, D-18 */}
+          <div className="app-account__nav-label" style={{ marginTop: "1rem" }}>CONTACTS</div>
+          <ContactsSidebar
+            contacts={contacts.map((c): ContactRow => ({
+              userId: c.userId,
+              username: c.username,
+              presenceStatus: c.presenceStatus,
+              dmEligible: true,  // all confirmed friends are DM-eligible (ban enforced server-side)
+            }))}
+            currentUserId={user.id}
+            onAddContact={() => setAddContactOpen(true)}
+            onOpenDm={(userId) => {
+              setDmPartnerId(userId);
+              setTab("dm");
+            }}
+          />
         </nav>
 
         <div className="app-account__content">
@@ -329,6 +448,16 @@ function App() {
               onBack={() => setTab("private-rooms")}
             />
           )}
+          {tab === "contacts" && <ContactsView currentUserId={user.id} />}
+          {tab === "dm" && (() => {
+            const partner = contacts.find((c) => c.userId === dmPartnerId);
+            return (
+              <DmScreenStub
+                partnerUsername={partner?.username ?? dmPartnerId ?? "Unknown"}
+                frozen={false}
+              />
+            );
+          })()}
           {tab === "password" && <PasswordSettingsView />}
           {tab === "sessions" && (
             <ActiveSessionsView onSignedOut={handleSignedOut} />
@@ -359,6 +488,13 @@ function App() {
           )}
         </div>
       </main>
+
+      {addContactOpen && (
+        <AddContactModal
+          onClose={() => setAddContactOpen(false)}
+          onSuccess={() => { void loadContacts(); void loadPendingRequests(); }}
+        />
+      )}
     </div>
   );
 }
