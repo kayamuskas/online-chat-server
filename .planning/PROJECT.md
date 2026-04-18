@@ -37,6 +37,21 @@ The existing codebase map in `.planning/codebase/` confirms that `requirements/d
 
 The target system is closer to production than a hackathon demo. It must support persistent history, room moderation, attachment access control, multi-tab presence semantics, and enough operational discipline that an external QA engineer can clone the repository and start the stack deterministically through Docker Compose.
 
+Additional implementation hints already agreed for future planning:
+
+- PostgreSQL is the required primary database.
+- Queue-based processing is mandatory where asynchronous work exists.
+- Presence state should stay out of the primary relational database except for persistent `last seen` data; online/offline/AFK should be served from fast runtime state to avoid unnecessary database reads.
+- Track user IPs and simultaneous active sessions, with targeted logout / kill-session support.
+- SMTP is not a real dependency for this project; mail flows can use mocks.
+- Room names must be globally unique across both public and private rooms.
+- Private-room invitations can target only already registered users.
+- Message delivery/backlog mechanisms must not grow unbounded for users who disappear for a year or more.
+- Chat history integrity should use incremental chat watermarks so gaps can be detected and history can be requeried safely.
+- The system should use a pragmatic mix of REST and WebSockets: not polling-only, and not websocket-only for every data shape.
+- Browser tab hibernation must be treated as a real runtime condition when designing presence semantics.
+- Very old rooms may reach 100,000+ messages and still require progressive scroll with explicit test coverage.
+
 ## Constraints
 
 - **Scope**: Full primary specification in v1 — the whole non-advanced requirement set must be implemented, even if delivered incrementally through milestones.
@@ -46,6 +61,13 @@ The target system is closer to production than a hackathon demo. It must support
 - **Product Truth**: `requirements/requirements_raw.md` wins over prototype visuals — design can move, split, or change to satisfy the written behavior.
 - **Storage**: Attachments must live on the local filesystem — this is an explicit non-functional requirement, not an implementation preference.
 - **UX Direction**: Classic web chat, not a social network or collaboration suite — the interface should feel utilitarian and chat-centric.
+- **Database**: PostgreSQL is required — this is a project constraint, not an open choice.
+- **Async Work**: Queues are mandatory — background and deferred work must be modeled explicitly.
+- **Presence Model**: Online/offline/AFK should not be read from PostgreSQL on every check — runtime state plus durable `last seen` is the intended direction.
+- **Mail**: Real SMTP is unnecessary in v1 — mocked or local mail flows are acceptable.
+- **Identity of Rooms**: Room names must be unique across the entire system, including private rooms.
+- **Invite Policy**: Invitations can be sent only to already registered users.
+- **History Scale**: History may reach 100,000+ messages in old rooms and still must support progressive loading.
 
 ## Key Decisions
 
@@ -56,6 +78,12 @@ The target system is closer to production than a hackathon demo. It must support
 | Target a single-server Docker Compose deployment for v1 | QA acceptance is based on one local stack started from a fresh clone | — Pending |
 | Require offline-capable startup | The user defined offline operation as part of "done", so packaging and dependency strategy must account for it from the beginning | — Pending |
 | Use the existing wireframes and `desing_v1` only as design input | The prototype is valuable reference material but cannot override the spec or constrain architecture decisions prematurely | — Pending |
+| Use PostgreSQL as the system of record | The user explicitly fixed the database choice | — Pending |
+| Require queues for asynchronous processing | The user explicitly marked queues as mandatory, which affects architecture from phase 1 onward | — Pending |
+| Keep transient presence outside the main database and persist only `last seen` | This reduces unnecessary database queries and matches the intended runtime model | — Pending |
+| Use mocked/local mail flows instead of real SMTP | Password-reset and similar flows need determinism, not external mail infrastructure | — Pending |
+| Use a mixed REST + WebSocket architecture | High-frequency updates cannot rely on REST only, but websocket-only data access would overcomplicate the app | — Pending |
+| Add chat watermarks for history integrity checks | The user wants explicit detection of missing message ranges in long-lived chats | — Pending |
 
 ## Evolution
 

@@ -85,9 +85,12 @@ Deliberately avoid these in v1:
 ## Complexity Notes
 
 - Presence is deceptively hard because the spec defines online, AFK, and offline across multiple browser tabs.
+- Presence also has to survive browser tab hibernation semantics; inactivity cannot depend on the client reliably sending an "I am inactive" event.
 - Attachment ACLs are not just UI checks; they must be enforced when downloading from the backend.
 - "Delete account" and "delete room" both imply cascade rules that must be encoded carefully in storage and file cleanup.
 - Unread tracking and offline delivery are easier if message events and read markers are modeled explicitly from the start.
+- Long-absent users require bounded backlog strategy; queue or fanout state cannot grow forever while preserving eventual recovery via persisted history.
+- Message-history integrity in large rooms benefits from per-chat incremental watermarks and gap detection.
 
 ## Phase Pressure
 

@@ -19,6 +19,7 @@ This is a single-server product topology from the user's perspective even though
 - `auth`: registration, login, password reset, password change, account deletion
 - `sessions`: browser/session inventory, revocation, remember-me behavior
 - `presence`: heartbeat, AFK state calculation, multi-tab aggregation
+- `queues`: background processing for deferred fanout, cleanup, mail mocks, and bounded async jobs
 - `users`: profile summaries needed by contacts and room membership views
 - `contacts`: friend requests, friendships, user-to-user bans
 - `rooms`: create, update, join, leave, catalog, invites, bans, admin roles
@@ -39,8 +40,8 @@ This is a single-server product topology from the user's perspective even though
 
 ## Storage Boundaries
 
-- PostgreSQL: users, credentials metadata, sessions, rooms, memberships, bans, invites, dialogs, messages, attachment metadata, unread markers
-- Redis: presence heartbeats, transient room membership projections for push, websocket fanout coordination
+- PostgreSQL: users, credentials metadata, sessions, IP audit data, rooms, memberships, bans, invites, dialogs, messages, attachment metadata, unread markers, persistent `last_seen`, and chat watermarks
+- Redis: presence heartbeats, transient room membership projections for push, websocket fanout coordination, and short-lived queue coordination data where needed
 - Filesystem volume: uploaded file bytes and image bytes
 
 ## Build Order Implications
@@ -51,16 +52,20 @@ Recommended order:
 2. Database schema, migrations, and shared domain model
 3. Auth and sessions
 4. Presence and websocket identity
-5. Rooms and moderation primitives
-6. Direct dialogs and friendships
-7. Messaging and history
-8. Attachments and ACL enforcement
-9. Frontend shell and flows
-10. QA hardening, load/performance checks, offline startup validation
+5. Queue infrastructure and bounded background jobs
+6. Rooms and moderation primitives
+7. Direct dialogs and friendships
+8. Messaging, watermarks, and history integrity
+9. Attachments and ACL enforcement
+10. Frontend shell and flows
+11. QA hardening, load/performance checks, offline startup validation
 
 ## Major Architectural Risks
 
 - If websocket identity is separated from session identity incorrectly, presence and authorization will drift.
+- If inactive/hibernated tabs are modeled incorrectly, users will remain falsely online or AFK transitions will be noisy.
 - If attachment ACLs are modeled only in the frontend, users will still be able to fetch revoked files directly.
 - If unread state is inferred only from current socket state, reconnects and offline delivery will be inconsistent.
+- If queue retention is unbounded for absent users, memory or broker state will grow without limit.
+- If message ordering has no watermark/gap-detection model, missing ranges in long histories will be hard to detect and recover.
 - If offline packaging is postponed, the final acceptance criterion can fail even after the app works functionally.

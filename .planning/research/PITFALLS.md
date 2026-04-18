@@ -44,3 +44,24 @@
 - Why it fails: The spec requires permanent deletion of room files when the room is deleted.
 - Prevention: Model explicit cleanup jobs or transactional delete workflows with reconciliation checks.
 - Phase pressure: Rooms, account management, and attachments phases
+
+## Pitfall 7: Treating Presence as a Normal Database Field
+
+- Warning signs: `online` / `afk` / `offline` is persisted as the primary live source in PostgreSQL and queried frequently by the app.
+- Why it fails: Presence is hot, transient state and the user explicitly wants to avoid unnecessary database traffic; browser hibernation also makes client-side inactivity reporting unreliable.
+- Prevention: Keep durable `last seen` in PostgreSQL, but compute live presence from connection/runtime state with expiry-based aggregation.
+- Phase pressure: Sessions/presence phase
+
+## Pitfall 8: Unbounded Message or Fanout Queues
+
+- Warning signs: Per-user backlog queues grow forever while users remain absent for months.
+- Why it fails: The project explicitly calls out year-long absence as a realistic case; transient delivery queues must not become the long-term message store.
+- Prevention: Treat PostgreSQL history as the durable source, keep queues bounded and transient, and recover missed data by querying history.
+- Phase pressure: Messaging, delivery, and performance phases
+
+## Pitfall 9: Missing History Integrity Checks
+
+- Warning signs: Client assumes consecutive live events always arrive and never verifies gaps in chat history.
+- Why it fails: With long-lived rooms and reconnects, missing message ranges can silently corrupt user-visible history.
+- Prevention: Introduce per-chat incremental watermarks and require gap detection with fallback history fetch.
+- Phase pressure: Messaging/history phase

@@ -23,6 +23,8 @@
 - [ ] **SESS-03**: Contacts and room members show `online`, `AFK`, or `offline` presence.
 - [ ] **SESS-04**: User becomes `AFK` only after all open tabs are inactive for more than one minute.
 - [ ] **SESS-05**: User is `online` if at least one open tab is active and `offline` only when all tabs are closed/offloaded.
+- [ ] **SESS-06**: System persists `last seen` while serving live presence from runtime state rather than frequent database reads.
+- [ ] **SESS-07**: System tracks user IP addresses for active sessions.
 
 ### Contacts and Direct Messaging Eligibility
 
@@ -41,6 +43,8 @@
 - [ ] **ROOM-04**: Private rooms are hidden from the public catalog and require invitation to join.
 - [ ] **ROOM-05**: Members can leave rooms freely, but owners cannot leave their own room and must delete it instead.
 - [ ] **ROOM-06**: Private-room invitations can be sent by username.
+- [ ] **ROOM-10**: Room names are globally unique across both public and private rooms.
+- [ ] **ROOM-11**: Room invitations can be sent only to already registered users.
 - [ ] **ROOM-07**: Owner/admin permissions enforce room moderation, admin management, and ban-list management exactly as specified.
 - [ ] **ROOM-08**: Removing a member from a room acts as a ban until the user is removed from the room ban list.
 - [ ] **ROOM-09**: Deleting a room permanently deletes its messages and attachments.
@@ -54,6 +58,8 @@
 - [ ] **MSG-05**: Message author can delete their own messages, and room admins can delete room messages.
 - [ ] **MSG-06**: Messages are stored persistently, displayed chronologically, and delivered after reconnect when the recipient was offline.
 - [ ] **MSG-07**: Chat history supports infinite scroll and smart autoscroll behavior.
+- [ ] **MSG-08**: Each chat uses incremental watermarks so the client can detect missing history ranges and requery safely.
+- [ ] **MSG-09**: Transient delivery queues remain bounded and do not grow indefinitely for long-absent users.
 
 ### Attachments
 
@@ -77,7 +83,11 @@
 - [ ] **OPS-01**: Fresh clone can be started by QA with `docker compose up`.
 - [ ] **OPS-02**: Application runs without internet access during startup and usage, assuming required Docker base images already exist locally.
 - [ ] **OPS-03**: Files are stored on the local filesystem and persist across restarts.
+- [ ] **OPS-04**: SMTP-dependent flows can run against mocks or local test doubles without requiring a real external mail service.
+- [ ] **ARCH-01**: System uses queues for asynchronous processing where deferred work exists.
+- [ ] **ARCH-02**: System uses a mixed REST and WebSocket model so high-frequency updates do not rely on polling while non-streaming data does not require websocket-only transport.
 - [ ] **PERF-01**: System supports up to 300 simultaneous users, up to 1000 room members, and usable 10,000+ message history while meeting stated latency targets.
+- [ ] **PERF-02**: Very old rooms with 100,000+ messages still support progressive upward scrolling with explicit test coverage.
 
 ## v2 Requirements
 
@@ -113,6 +123,8 @@
 | SESS-03 | Phase 3 | Pending |
 | SESS-04 | Phase 3 | Pending |
 | SESS-05 | Phase 3 | Pending |
+| SESS-06 | Phase 3 | Pending |
+| SESS-07 | Phase 3 | Pending |
 | FRND-01 | Phase 5 | Pending |
 | FRND-02 | Phase 5 | Pending |
 | FRND-03 | Phase 5 | Pending |
@@ -125,6 +137,8 @@
 | ROOM-04 | Phase 4 | Pending |
 | ROOM-05 | Phase 4 | Pending |
 | ROOM-06 | Phase 4 | Pending |
+| ROOM-10 | Phase 4 | Pending |
+| ROOM-11 | Phase 4 | Pending |
 | ROOM-07 | Phase 8 | Pending |
 | ROOM-08 | Phase 8 | Pending |
 | ROOM-09 | Phase 8 | Pending |
@@ -135,6 +149,8 @@
 | MSG-05 | Phase 8 | Pending |
 | MSG-06 | Phase 7 | Pending |
 | MSG-07 | Phase 9 | Pending |
+| MSG-08 | Phase 6 | Pending |
+| MSG-09 | Phase 7 | Pending |
 | FILE-01 | Phase 7 | Pending |
 | FILE-02 | Phase 7 | Pending |
 | FILE-03 | Phase 7 | Pending |
@@ -149,11 +165,15 @@
 | OPS-01 | Phase 1 | Pending |
 | OPS-02 | Phase 1 | Pending |
 | OPS-03 | Phase 7 | Pending |
+| OPS-04 | Phase 2 | Pending |
+| ARCH-01 | Phase 1 | Pending |
+| ARCH-02 | Phase 1 | Pending |
 | PERF-01 | Phase 10 | Pending |
+| PERF-02 | Phase 10 | Pending |
 
 **Coverage:**
-- v1 requirements: 49 total
-- Mapped to phases: 49
+- v1 requirements: 57 total
+- Mapped to phases: 57
 - Unmapped: 0
 
 ---
