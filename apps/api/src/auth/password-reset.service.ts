@@ -17,6 +17,7 @@ import { UserRepository } from './user.repository.js';
 import { PasswordResetTokenRepository } from './password-reset-token.repository.js';
 import { MockMailService } from '../mail/mock-mail.service.js';
 import { hashPassword } from './passwords.js';
+import { PostgresService } from '../db/postgres.service.js';
 
 export interface ConfirmResetInput {
   token: string;
@@ -36,6 +37,7 @@ export class PasswordResetService {
     private readonly users: UserRepository,
     private readonly resetTokens: PasswordResetTokenRepository,
     private readonly mail: MockMailService,
+    private readonly db: PostgresService,
   ) {}
 
   /**
@@ -100,9 +102,27 @@ export class PasswordResetService {
     }
 
     const newHash = await hashPassword(input.newPassword);
+    const client = await this.db.getClient();
 
-    // Mark token as used BEFORE updating the hash to prevent double-spend
-    await this.resetTokens.markUsed(tokenRecord.id);
-    await this.users.updatePasswordHash(user.id, newHash);
+    try {
+      await client.query('BEGIN');
+
+      const claimed = await this.resetTokens.claimToken(tokenRecord.id, client);
+      if (!claimed) {
+        throw new BadRequestException('reset token has already been used');
+      }
+
+      const updated = await this.users.updatePasswordHash(user.id, newHash, client);
+      if (!updated) {
+        throw new BadRequestException('user account not found');
+      }
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }

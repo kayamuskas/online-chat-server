@@ -53,6 +53,9 @@ export class ChangePasswordService {
     }
 
     const newHash = await hashPassword(input.newPassword);
-    await this.users.updatePasswordHash(user.id, newHash);
+    const updated = await this.users.updatePasswordHash(user.id, newHash);
+    if (!updated) {
+      throw new NotFoundException('user account not found');
+    }
   }
 }

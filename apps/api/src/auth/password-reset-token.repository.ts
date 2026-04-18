@@ -9,6 +9,7 @@ import { Injectable } from '@nestjs/common';
 import { PostgresService } from '../db/postgres.service.js';
 import type { PasswordResetToken } from './auth.types.js';
 import { randomBytes } from 'node:crypto';
+import type { QueryResult, QueryResultRow } from 'pg';
 
 // Token TTL: 1 hour (generous enough for UX, short enough for security)
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -16,6 +17,13 @@ const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 export interface CreateResetTokenInput {
   userId: string;
 }
+
+type SqlExecutor = {
+  query<R extends QueryResultRow = QueryResultRow>(
+    text: string,
+    values?: unknown[],
+  ): Promise<QueryResult<R>>;
+};
 
 @Injectable()
 export class PasswordResetTokenRepository {
@@ -64,5 +72,21 @@ export class PasswordResetTokenRepository {
        WHERE id = $1`,
       [tokenId],
     );
+  }
+
+  /**
+   * Claim a token exactly once inside a transaction-safe update.
+   * Returns false when another request has already consumed the token.
+   */
+  async claimToken(tokenId: string, executor: SqlExecutor = this.db): Promise<boolean> {
+    const result = await executor.query(
+      `UPDATE password_reset_tokens
+       SET used_at = NOW()
+       WHERE id = $1
+         AND used_at IS NULL
+       RETURNING id`,
+      [tokenId],
+    );
+    return result.rowCount === 1;
   }
 }

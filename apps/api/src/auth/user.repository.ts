@@ -11,12 +11,20 @@ import { Injectable } from '@nestjs/common';
 import { PostgresService } from '../db/postgres.service.js';
 import type { User } from './auth.types.js';
 import { randomUUID } from 'node:crypto';
+import type { QueryResult, QueryResultRow } from 'pg';
 
 export interface CreateUserInput {
   email: string;
   username: string;
   password_hash: string;
 }
+
+type SqlExecutor = {
+  query<R extends QueryResultRow = QueryResultRow>(
+    text: string,
+    values?: unknown[],
+  ): Promise<QueryResult<R>>;
+};
 
 @Injectable()
 export class UserRepository {
@@ -70,10 +78,15 @@ export class UserRepository {
    * Update the stored password hash for a user (password-change flow).
    * Does NOT expose a username-update path.
    */
-  async updatePasswordHash(userId: string, newHash: string): Promise<void> {
-    await this.db.query(
+  async updatePasswordHash(
+    userId: string,
+    newHash: string,
+    executor: SqlExecutor = this.db,
+  ): Promise<boolean> {
+    const result = await executor.query(
       'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
       [newHash, userId],
     );
+    return result.rowCount === 1;
   }
 }
