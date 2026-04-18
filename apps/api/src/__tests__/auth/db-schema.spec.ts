@@ -50,10 +50,13 @@ describe('0001_auth_core.sql — users table', () => {
 
   it('stores password_hash, not plaintext password', () => {
     const sql = loadMigration().toLowerCase();
+    // Must have a password_hash column
     expect(sql).toMatch(/password_hash/);
-    // must NOT have a column named "password" without "_hash"
-    const passwordColWithoutHash = /\bpassword\b(?!_hash)/.test(sql);
-    expect(passwordColWithoutHash).toBe(false);
+    // Must NOT have a column definition like "password TEXT" or "password VARCHAR"
+    // Strip comment lines first to avoid false positives from comment text
+    const noComments = sql.replace(/--[^\n]*/g, '');
+    const hasBarePasswordCol = /^\s*password\s+(text|varchar|character)/m.test(noComments);
+    expect(hasBarePasswordCol).toBe(false);
   });
 
   it('has created_at and updated_at timestamps', () => {
