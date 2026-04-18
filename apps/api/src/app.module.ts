@@ -7,6 +7,7 @@ import { QueueModule } from './queue/queue.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { PresenceModule } from './presence/presence.module.js';
 import { RoomsModule } from './rooms/rooms.module.js';
+import { ContactsModule } from './contacts/contacts.module.js';
 
 /**
  * AppModule — root Nest module for the hybrid REST + WebSocket API.
@@ -18,6 +19,9 @@ import { RoomsModule } from './rooms/rooms.module.js';
  *
  * Phase 4-02 additions:
  *  - RoomsModule: room creation, public catalog, join/leave HTTP endpoints.
+ *
+ * Phase 5 additions:
+ *  - ContactsModule: friendship lifecycle, user-to-user bans, DM eligibility enforcement
  */
 @Module({
   imports: [
@@ -33,6 +37,7 @@ import { RoomsModule } from './rooms/rooms.module.js';
     AuthModule,
     PresenceModule,
     RoomsModule,
+    ContactsModule,   // Phase 5: friendship lifecycle, user bans, DM eligibility
   ],
   controllers: [HealthController, MetaController],
   providers: [AppGateway],
