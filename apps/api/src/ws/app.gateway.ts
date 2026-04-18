@@ -33,6 +33,8 @@ interface GetPresencePayload {
   userIds: string[];
 }
 
+const MAX_PRESENCE_USER_IDS = 500;
+
 @WebSocketGateway({ cors: { origin: '*' } })
 export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /**
@@ -111,13 +113,20 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   @SubscribeMessage('getPresence')
   handleGetPresence(
-    @MessageBody() data: GetPresencePayload,
+    @MessageBody() data: unknown,
     @ConnectedSocket() client: Socket,
   ): void {
     const userId = this.socketUserMap.get(client.id);
     if (!userId) return;
 
-    const presenceMap = this.presenceService.getUsersPresence(data.userIds ?? []);
+    const payload = data as Partial<GetPresencePayload> | null;
+    const userIds = Array.isArray(payload?.userIds)
+      ? payload.userIds
+          .filter((value): value is string => typeof value === 'string')
+          .slice(0, MAX_PRESENCE_USER_IDS)
+      : [];
+
+    const presenceMap = this.presenceService.getUsersPresence(userIds);
     client.emit('presence', presenceMap);
   }
 
