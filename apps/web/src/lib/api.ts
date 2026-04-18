@@ -115,6 +115,31 @@ async function get<T>(path: string): Promise<T> {
   return data as T;
 }
 
+async function del<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (res.status === 204 || res.headers.get("content-length") === "0") {
+    return undefined as unknown as T;
+  }
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const msg =
+      typeof data?.message === "string"
+        ? data.message
+        : res.statusText || "Request failed";
+    const err = new Error(msg) as Error & { statusCode: number };
+    err.statusCode = res.status;
+    throw err;
+  }
+
+  return data as T;
+}
+
 // ── Auth API calls ────────────────────────────────────────────────────────────
 
 /**
@@ -430,6 +455,109 @@ export async function unbanRoomUser(roomId: string, userId: string): Promise<voi
     err.statusCode = res.status;
     throw err;
   }
+}
+
+// ── Phase 5: Contacts domain types (inline — no shared package for these yet) ──
+
+export interface FriendRequest {
+  id: string;
+  requester_id: string;
+  target_id: string;
+  message: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Friendship {
+  id: string;
+  user_a_id: string;
+  user_b_id: string;
+  created_at: string;
+}
+
+export interface UserBan {
+  id: string;
+  banner_user_id: string;
+  banned_user_id: string;
+  created_at: string;
+}
+
+export interface DmConversation {
+  id: string;
+  user_a_id: string;
+  user_b_id: string;
+  frozen: boolean;
+  created_at: string;
+}
+
+export interface FriendWithPresence {
+  userId: string;
+  username: string;
+  presenceStatus?: 'online' | 'afk' | 'offline';
+}
+
+export interface IncomingFriendRequestView {
+  id: string;
+  requester_id: string;
+  requester_username: string;
+  message: string | null;
+  created_at: string;
+}
+
+// ── Phase 5: Contacts and DM Policy ─────────────────────────────────────────
+
+export async function sendFriendRequest(body: { targetUsername: string; message?: string }) {
+  return post<{ request: FriendRequest }>('/contacts/requests', body);
+}
+
+export async function getIncomingRequests() {
+  return get<{ requests: IncomingFriendRequestView[] }>('/contacts/requests');
+}
+
+export async function getOutgoingRequests() {
+  return get<{ requests: FriendRequest[] }>('/contacts/requests/outgoing');
+}
+
+export async function acceptFriendRequest(requestId: string) {
+  return post<{ friendship: Friendship }>(`/contacts/requests/${requestId}/accept`);
+}
+
+export async function declineFriendRequest(requestId: string) {
+  return post<void>(`/contacts/requests/${requestId}/decline`);
+}
+
+export async function cancelFriendRequest(requestId: string) {
+  return del<void>(`/contacts/requests/${requestId}`);
+}
+
+export async function getMyFriends() {
+  return get<{ friends: FriendWithPresence[] }>('/contacts/friends');
+}
+
+export async function removeFriend(userId: string) {
+  return del<void>(`/contacts/friends/${userId}`);
+}
+
+export async function banUser(targetUserId: string) {
+  return post<void>('/contacts/bans', { targetUserId });
+}
+
+export async function getMyBans() {
+  return get<{ bans: UserBan[] }>('/contacts/bans');
+}
+
+export async function unbanUser(userId: string) {
+  return del<void>(`/contacts/bans/${userId}`);
+}
+
+export async function initiateDm(userId: string) {
+  return post<{ conversation: DmConversation; eligible: boolean }>(`/contacts/dm/${userId}`);
+}
+
+export async function getPendingRequestCount() {
+  const result = await getIncomingRequests();
+  return result.requests.length;
 }
 
 // ── Session management API calls ──────────────────────────────────────────────
