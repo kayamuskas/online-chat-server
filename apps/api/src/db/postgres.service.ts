@@ -51,6 +51,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_session_token
   ON sessions (session_token);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions (user_id);
+
+-- Phase 3: add metadata columns if table already existed without them
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip_address TEXT;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_agent TEXT;
 CREATE INDEX IF NOT EXISTS idx_sessions_ip_address ON sessions (ip_address);
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
