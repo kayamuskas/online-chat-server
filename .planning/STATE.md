@@ -3,28 +3,28 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 3 - Sessions and Presence
-status: executing
-last_updated: "2026-04-18T17:30:00.000Z"
+status: complete
+last_updated: "2026-04-18T17:34:00.000Z"
 progress:
   total_phases: 10
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 11
-  percent: 92
+  completed_plans: 12
+  percent: 100
 ---
 
 # State
 
 **Updated:** 2026-04-18
 **Current phase:** Phase 3 - Sessions and Presence
-**Status:** Executing Phase 3 — Plan 03 complete, 1 plan remaining
+**Status:** Phase 3 COMPLETE — all 4 plans executed
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-04-18)
 
 **Core value:** A fresh clone must start a fully functional classic chat system locally, offline, and in a way that matches the written requirements more strictly than any existing prototype.
-**Current focus:** Executing Phase 3 — session management, realtime presence, account UI, and presence rendering.
+**Current focus:** Phase 3 complete. Phase 4 (rooms and contacts) is next.
 
 ## Phase 1 Plans Completed
 
@@ -40,12 +40,12 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - [x] 02-03: Password reset, password change, mock mail outbox
 - [x] 02-04: React auth/account UI, API client, phase smoke script
 
-## Phase 3 Plans
+## Phase 3 Plans Completed
 
 - [x] 03-01: Session metadata, inventory, and revoke backend (COMPLETE)
 - [x] 03-02: Realtime presence engine and durable last seen (COMPLETE)
 - [x] 03-03: Active sessions web UI (COMPLETE)
-- [ ] 03-04: Presence presentation and validation
+- [x] 03-04: Presence presentation and validation (COMPLETE)
 
 ## Key Decisions (Phase 3)
 
@@ -61,10 +61,12 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - Inline confirm block chosen over modal for session revoke (D-04 agent discretion): faster, contextual, no overlay state
 - Current-session revoke calls onSignedOut directly (T-03-09): reuses same sign-in return path as POST /sign-out
 - Sign out all other sessions button hidden when only one session exists (otherSessionCount === 0)
+- PresenceDot used without PresenceLabel in CompactPresenceList — compact contract (D-10) enforced at component boundary
+- DetailedPresencePanel shows PresenceTimestamp only when status === 'offline' — prevents last-seen leakage (D-13)
 
 ## Next Up
 
-- Execute Plan 03-04: Presence presentation and validation (compact presence dots, detailed status text, last seen display)
+- Phase 4: Rooms and Contacts — room creation, membership, contacts/DM workflows
 
 ---
-*State initialized: 2026-04-18 | Updated: 2026-04-18T17:05:00Z*
+*State initialized: 2026-04-18 | Updated: 2026-04-18T17:34:00Z*

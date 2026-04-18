@@ -70,7 +70,7 @@ Plans: 4 plans
 - [x] `03-01-PLAN.md` — Session metadata, inventory, and revoke backend (SESS-01, SESS-02, SESS-07). *(complete 2026-04-18)*
 - [x] `03-02-PLAN.md` — Realtime presence engine and durable last seen (SESS-03, SESS-04, SESS-05, SESS-06). *(complete 2026-04-18)*
 - [x] `03-03-PLAN.md` — Active sessions web UI. *(complete 2026-04-18)*
-- [ ] `03-04-PLAN.md` — Presence presentation and validation.
+- [x] `03-04-PLAN.md` — Presence presentation and validation. *(complete 2026-04-18)*
 
 Success criteria:
 1. User can inspect active sessions with browser/IP details.
