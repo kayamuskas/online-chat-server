@@ -18,7 +18,11 @@ import type { AuthContext } from './current-user.guard.js';
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthContext => {
     const request = ctx.switchToHttp().getRequest<Request & { authContext?: AuthContext }>();
-    // Guard attaches authContext before this decorator runs
-    return request.authContext!;
+    if (!request.authContext) {
+      throw new Error(
+        '@CurrentUser() requires CurrentUserGuard to populate request.authContext',
+      );
+    }
+    return request.authContext;
   },
 );
