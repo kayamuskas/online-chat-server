@@ -67,6 +67,10 @@ async function get<T>(path: string): Promise<T> {
     credentials: "include",
   });
 
+  if (res.status === 204 || res.headers.get("content-length") === "0") {
+    return undefined as unknown as T;
+  }
+
   const data = await res.json();
 
   if (!res.ok) {
