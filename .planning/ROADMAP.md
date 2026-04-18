@@ -68,7 +68,7 @@ Requirements: `SESS-01`, `SESS-02`, `SESS-03`, `SESS-04`, `SESS-05`, `SESS-06`, 
 Plans: 4 plans
 
 - [x] `03-01-PLAN.md` — Session metadata, inventory, and revoke backend (SESS-01, SESS-02, SESS-07). *(complete 2026-04-18)*
-- [ ] `03-02-PLAN.md` — Realtime presence engine and durable last seen (SESS-03, SESS-04, SESS-05, SESS-06).
+- [x] `03-02-PLAN.md` — Realtime presence engine and durable last seen (SESS-03, SESS-04, SESS-05, SESS-06). *(complete 2026-04-18)*
 - [ ] `03-03-PLAN.md` — Active sessions web UI.
 - [ ] `03-04-PLAN.md` — Presence presentation and validation.
 

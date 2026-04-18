@@ -4,20 +4,20 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 3 - Sessions and Presence
 status: executing
-last_updated: "2026-04-18T19:11:00.000Z"
+last_updated: "2026-04-18T17:05:00.000Z"
 progress:
   total_phases: 10
   completed_phases: 2
   total_plans: 12
-  completed_plans: 10
-  percent: 83
+  completed_plans: 11
+  percent: 92
 ---
 
 # State
 
 **Updated:** 2026-04-18
 **Current phase:** Phase 3 - Sessions and Presence
-**Status:** Executing Phase 3 — Plan 01 complete, 3 plans remaining
+**Status:** Executing Phase 3 — Plan 02 complete, 2 plans remaining
 
 ## Project Reference
 
@@ -43,7 +43,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 ## Phase 3 Plans
 
 - [x] 03-01: Session metadata, inventory, and revoke backend (COMPLETE)
-- [ ] 03-02: Realtime presence engine and durable last seen
+- [x] 03-02: Realtime presence engine and durable last seen (COMPLETE)
 - [ ] 03-03: Active sessions web UI
 - [ ] 03-04: Presence presentation and validation
 
@@ -53,10 +53,15 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - IP extraction centralized in session-metadata.ts using X-Forwarded-For → request.ip → socket.remoteAddress priority
 - revokeSession verifies ownership via findAllByUserId before deleteById (defense in depth beyond SQL predicate)
 - Bootstrap SQL in postgres.service.ts kept in sync with migration files for offline fresh-start compatibility
+- Per-tab aggregation (not per-user flag): satisfies the raw-spec 'most active tab' and 'all tabs inactive' rules
+- Live presence reads never touch PostgreSQL — getUserPresence/getUsersPresence read only the in-memory tabs Map
+- Durable last seen written fire-and-forget only when the last tab disconnects (offline transition)
+- afkTimeoutMs and offlineSweepMs injected via PRESENCE_CONFIG_TOKEN so production one-minute rule cannot be bypassed
+- socketUserMap pattern: single auth check at connect time, socket.id lookup on all subsequent events
 
 ## Next Up
 
-- Execute Plan 03-02: Realtime presence engine (WebSocket, Redis, per-tab aggregation, durable last-seen)
+- Execute Plan 03-03: Active sessions web UI (session table, This browser badge, humanized Last active, per-row revoke)
 
 ---
-*State initialized: 2026-04-18 | Updated: 2026-04-18T19:11:00Z*
+*State initialized: 2026-04-18 | Updated: 2026-04-18T17:05:00Z*
