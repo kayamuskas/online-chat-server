@@ -62,6 +62,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-chat}
       POSTGRES_USER: ${POSTGRES_USER:-chat}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chat}
+      # Path where MockMailService writes reset-link artifacts (QA-inspectable)
+      MAIL_OUTBOX_DIR: /app/mail-outbox
+      # Base URL embedded in reset links (override for non-localhost deployments)
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:4173}
     ports:
       - "${API_PORT:-3000}:3000"
     healthcheck:
@@ -73,6 +77,11 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    volumes:
+      # Narrow writable mount for mock mail artifacts only.
+      # The rest of the API container filesystem remains read-only.
+      # QA can inspect generated reset-link artifacts at .volumes/mail-outbox/ on the host.
+      - ../../.volumes/mail-outbox:/app/mail-outbox
 
   worker:
     build:

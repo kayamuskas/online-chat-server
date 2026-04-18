@@ -105,6 +105,33 @@ time without requiring a network round-trip.
 Maintainers should not manually edit `vendor/pnpm-store/` content. Always use
 `pnpm fetch` to populate the store so that checksums remain consistent.
 
+## Mock Mail Outbox Volume
+
+The API container runs with a read-only filesystem (`read_only: true` in compose) with one
+deliberate exception: a narrow writable bind mount at `/app/mail-outbox`.
+
+This mount supports `MockMailService`, which writes structured JSON artifacts for each
+password-reset email instead of sending real SMTP. The artifacts are readable on the host
+at `.volumes/mail-outbox/` and are logged at `LOG` level by the API service:
+
+```
+[MockMailService] [mock-mail] artifact written → /app/mail-outbox/password-reset-<uuid>.json
+```
+
+**QA inspection:**
+
+```bash
+# After triggering a password reset via POST /api/v1/auth/password-reset/request
+ls .volumes/mail-outbox/
+cat .volumes/mail-outbox/password-reset-<uuid>.json
+```
+
+The JSON artifact contains: `to`, `subject`, `username`, `resetLink`, and `generatedAt`.
+Extract the `resetLink` value and visit it in the browser to complete the reset.
+
+This mount is intentional and documented. It does not weaken the overall container posture
+because all other API filesystem paths remain read-only.
+
 ## What Is NOT Acceptable
 
 The following patterns violate the offline startup requirement and must not appear

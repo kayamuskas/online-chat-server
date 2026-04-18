@@ -24,6 +24,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
+import { ChangePasswordService } from './change-password.service.js';
 import { CurrentUserGuard } from './current-user.guard.js';
 import { CurrentUser } from './current-user.decorator.js';
 import {
@@ -47,11 +48,19 @@ class SignInDto {
   keepSignedIn!: boolean;
 }
 
+class ChangePasswordDto {
+  currentPassword!: string;
+  newPassword!: string;
+}
+
 // ── Controller ─────────────────────────────────────────────────────────────────
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly changePasswordService: ChangePasswordService,
+  ) {}
 
   /**
    * POST /api/v1/auth/register
@@ -120,5 +129,26 @@ export class AuthController {
   @UseGuards(CurrentUserGuard)
   me(@CurrentUser() ctx: AuthContext) {
     return { user: ctx.user };
+  }
+
+  /**
+   * POST /api/v1/auth/change-password
+   *
+   * Changes the password for the currently authenticated user.
+   * Requires the current password for verification before update.
+   * 401 if not authenticated or current password is wrong.
+   */
+  @Post('change-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(CurrentUserGuard)
+  async changePassword(
+    @CurrentUser() ctx: AuthContext,
+    @Body() body: ChangePasswordDto,
+  ): Promise<void> {
+    await this.changePasswordService.changePassword({
+      userId: ctx.user.id,
+      currentPassword: body.currentPassword,
+      newPassword: body.newPassword,
+    });
   }
 }
