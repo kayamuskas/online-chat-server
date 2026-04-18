@@ -1,5 +1,38 @@
+# OS
 .DS_Store
+
+# Editor
 .vscode
 .secret*
 .claude/settings.local.json
+
+# Dependencies (installed node_modules are excluded, but the offline vendor store is committed)
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# pnpm
+.pnpm-store/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Test output
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Product requirements and design prototype (reference material only)
 requirements/
+
+# vendor/pnpm-store/ is intentionally NOT ignored — it is the repo-local offline dependency cache
