@@ -129,45 +129,50 @@ function parseToken(value: unknown): string {
 }
 
 export function parseRegisterBody(body: unknown) {
-  const record = assertObject(body, ['email', 'username', 'password']) as RegisterBody;
+  const record = assertObject(body, ['email', 'username', 'password']);
+  const typed = record as unknown as RegisterBody;
   return {
-    email: parseEmail(record.email),
-    username: parseUsername(record.username),
-    password: parsePassword(record.password, 'password'),
+    email: parseEmail(typed.email),
+    username: parseUsername(typed.username),
+    password: parsePassword(typed.password, 'password'),
   };
 }
 
 export function parseSignInBody(body: unknown) {
-  const record = assertObject(body, ['email', 'password', 'keepSignedIn']) as SignInBody;
+  const record = assertObject(body, ['email', 'password', 'keepSignedIn']);
+  const typed = record as unknown as SignInBody;
   return {
-    email: parseEmail(record.email),
-    password: parsePassword(record.password, 'password'),
+    email: parseEmail(typed.email),
+    password: parsePassword(typed.password, 'password'),
     keepSignedIn:
-      record.keepSignedIn === undefined
+      typed.keepSignedIn === undefined
         ? false
-        : parseBoolean(record.keepSignedIn, 'keepSignedIn'),
+        : parseBoolean(typed.keepSignedIn, 'keepSignedIn'),
   };
 }
 
 export function parseChangePasswordBody(body: unknown) {
-  const record = assertObject(body, ['currentPassword', 'newPassword']) as ChangePasswordBody;
+  const record = assertObject(body, ['currentPassword', 'newPassword']);
+  const typed = record as unknown as ChangePasswordBody;
   return {
-    currentPassword: parsePassword(record.currentPassword, 'currentPassword'),
-    newPassword: parsePassword(record.newPassword, 'newPassword'),
+    currentPassword: parsePassword(typed.currentPassword, 'currentPassword'),
+    newPassword: parsePassword(typed.newPassword, 'newPassword'),
   };
 }
 
 export function parseResetRequestBody(body: unknown) {
-  const record = assertObject(body, ['email']) as ResetRequestBody;
+  const record = assertObject(body, ['email']);
+  const typed = record as unknown as ResetRequestBody;
   return {
-    email: parseEmail(record.email),
+    email: parseEmail(typed.email),
   };
 }
 
 export function parseResetConfirmBody(body: unknown) {
-  const record = assertObject(body, ['token', 'newPassword']) as ResetConfirmBody;
+  const record = assertObject(body, ['token', 'newPassword']);
+  const typed = record as unknown as ResetConfirmBody;
   return {
-    token: parseToken(record.token),
-    newPassword: parsePassword(record.newPassword, 'newPassword'),
+    token: parseToken(typed.token),
+    newPassword: parsePassword(typed.newPassword, 'newPassword'),
   };
 }

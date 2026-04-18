@@ -22,7 +22,6 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { ChangePasswordService } from './change-password.service.js';
 import { AuthRateLimitGuard } from './auth-rate-limit.guard.js';
@@ -40,9 +39,17 @@ import {
 } from './session-cookie.js';
 import type { AuthContext } from './current-user.guard.js';
 
+interface RequestLike {
+  cookies?: Record<string, string | undefined>;
+}
+
+interface ResponseLike {
+  cookie(name: string, value: string, options: Record<string, unknown>): void;
+}
+
 // ── Controller ─────────────────────────────────────────────────────────────────
 
-@Controller('auth')
+@Controller('api/v1/auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -72,7 +79,7 @@ export class AuthController {
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthRateLimitGuard)
-  async signIn(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
+  async signIn(@Body() body: unknown, @Res({ passthrough: true }) res: ResponseLike) {
     const input = parseSignInBody(body);
     const result = await this.authService.signIn(input);
 
@@ -93,7 +100,7 @@ export class AuthController {
    */
   @Post('sign-out')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async signOut(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async signOut(@Req() req: RequestLike, @Res({ passthrough: true }) res: ResponseLike) {
     const token = extractSessionToken(req);
     if (token) {
       await this.authService.signOut(token);

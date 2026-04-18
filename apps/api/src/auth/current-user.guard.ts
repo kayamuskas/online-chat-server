@@ -15,7 +15,6 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { extractSessionToken } from './session-cookie.js';
 import { AuthService } from './auth.service.js';
 import type { PublicUser, Session } from './auth.types.js';
@@ -26,12 +25,17 @@ export interface AuthContext {
   session: Session;
 }
 
+interface GuardRequestLike {
+  cookies?: Record<string, string | undefined>;
+  authContext?: AuthContext;
+}
+
 @Injectable()
 export class CurrentUserGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const request = ctx.switchToHttp().getRequest<Request & { authContext?: AuthContext }>();
+    const request = ctx.switchToHttp().getRequest<GuardRequestLike>();
 
     const token = extractSessionToken(request);
     if (!token) {

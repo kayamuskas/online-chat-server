@@ -12,12 +12,13 @@
  */
 
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import type { Request } from 'express';
 import type { AuthContext } from './current-user.guard.js';
 
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthContext => {
-    const request = ctx.switchToHttp().getRequest<Request & { authContext?: AuthContext }>();
+    const request = ctx
+      .switchToHttp()
+      .getRequest<{ authContext?: AuthContext }>();
     if (!request.authContext) {
       throw new Error(
         '@CurrentUser() requires CurrentUserGuard to populate request.authContext',

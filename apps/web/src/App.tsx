@@ -1,27 +1,93 @@
 /**
  * Phase 2 app entry — authentication core.
  *
- * Ships the locked Phase 2 auth shell as the default entry point.
- * Once the user authenticates, the app switches to the minimal Phase 2
- * logged-in surface (password change + current-session sign-out).
+ * Ships the locked Phase 2 auth shell at `/` and the minimal authenticated
+ * account surface at `/account`. On a direct `/account` load, the app asks the
+ * API for the current user so browser-close semantics can be verified via URL.
  *
  * Product features beyond auth (rooms, messaging) are out of scope for Phase 2.
  */
 
-import { useState } from "react";
-import type { PublicUser } from "./lib/api";
+import { useEffect, useState } from "react";
+import { me, type PublicUser } from "./lib/api";
 import { AuthShell } from "./features/auth/AuthShell";
 import { PasswordSettingsView } from "./features/account/PasswordSettingsView";
 import { SessionActionsView } from "./features/account/SessionActionsView";
 
 type AccountTab = "password" | "session";
 
+function isAccountRoute() {
+  return window.location.pathname === "/account";
+}
+
 function App() {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [tab, setTab] = useState<AccountTab>("password");
+  const [checkingSession, setCheckingSession] = useState(isAccountRoute());
+
+  function handleAuthenticated(nextUser: PublicUser) {
+    setUser(nextUser);
+    window.history.replaceState(null, "", "/account");
+  }
+
+  function handleSignedOut() {
+    setUser(null);
+    window.history.replaceState(null, "", "/");
+  }
+
+  useEffect(() => {
+    if (!isAccountRoute()) {
+      setCheckingSession(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function restoreSession() {
+      setCheckingSession(true);
+      try {
+        const result = await me();
+        if (!cancelled) {
+          setUser(result.user);
+        }
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+          window.history.replaceState(null, "", "/");
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingSession(false);
+        }
+      }
+    }
+
+    void restoreSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (checkingSession) {
+    return (
+      <div className="auth-layout">
+        <main className="auth-center">
+          <div className="auth-center__card">
+            <div className="auth-card">
+              <h2>Checking session</h2>
+              <p className="auth-card__sub">
+                Verifying the current browser session.
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (!user) {
-    return <AuthShell onAuthenticated={setUser} />;
+    return <AuthShell onAuthenticated={handleAuthenticated} />;
   }
 
   return (
@@ -55,7 +121,7 @@ function App() {
           {tab === "session" && (
             <SessionActionsView
               username={user.username}
-              onSignedOut={() => setUser(null)}
+              onSignedOut={handleSignedOut}
             />
           )}
         </div>

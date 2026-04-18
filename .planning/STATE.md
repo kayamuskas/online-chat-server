@@ -28,7 +28,6 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 ## Next Up
 
 - Run `/gsd-discuss-phase 3` or `/gsd-plan-phase 3` to start Phase 3: Sessions and Presence.
-- Human UAT pending: 2 items in `02-HUMAN-UAT.md` (live stack + browser-close session test).
 - Code review fixes applied; see `02-REVIEW-FIX.md` for the Phase 2 fix report.
 
 ---

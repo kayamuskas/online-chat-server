@@ -11,7 +11,13 @@
  * cookies inline, so session semantics cannot drift between handlers.
  */
 
-import type { Response, Request } from 'express';
+interface RequestLike {
+  cookies?: Record<string, string | undefined>;
+}
+
+interface ResponseLike {
+  cookie(name: string, value: string, options: Record<string, unknown>): void;
+}
 
 /** Name of the session cookie sent to the browser. */
 export const SESSION_COOKIE_NAME = 'chat_session';
@@ -20,7 +26,7 @@ export const SESSION_COOKIE_NAME = 'chat_session';
  * Read the raw session token from the incoming request cookie.
  * Returns null if the cookie is absent or empty.
  */
-export function extractSessionToken(req: Request): string | null {
+export function extractSessionToken(req: RequestLike): string | null {
   const value = (req.cookies as Record<string, string | undefined>)[SESSION_COOKIE_NAME];
   if (!value || value.trim() === '') return null;
   return value;
@@ -43,7 +49,7 @@ export interface SetCookieOptions {
  * Secure: set only outside test environments to allow plain HTTP in dev/QA.
  * SameSite: 'strict' — protects against CSRF.
  */
-export function setSessionCookie(res: Response, token: string, opts: SetCookieOptions): void {
+export function setSessionCookie(res: ResponseLike, token: string, opts: SetCookieOptions): void {
   const isProduction = process.env['NODE_ENV'] === 'production';
 
   res.cookie(SESSION_COOKIE_NAME, token, {
@@ -65,7 +71,7 @@ export function setSessionCookie(res: Response, token: string, opts: SetCookieOp
  * The cookie options (httpOnly, sameSite, etc.) must match what was set
  * originally, or some browsers ignore the clear request.
  */
-export function clearSessionCookie(res: Response): void {
+export function clearSessionCookie(res: ResponseLike): void {
   const isProduction = process.env['NODE_ENV'] === 'production';
 
   res.cookie(SESSION_COOKIE_NAME, '', {

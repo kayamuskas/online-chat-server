@@ -25,7 +25,7 @@ import {
 
 // ── Controller ─────────────────────────────────────────────────────────────────
 
-@Controller('auth/password-reset')
+@Controller('api/v1/auth/password-reset')
 export class PasswordResetController {
   constructor(private readonly passwordResetService: PasswordResetService) {}
 

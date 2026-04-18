@@ -1,14 +1,28 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Injectable,
-  TooManyRequestsException,
 } from '@nestjs/common';
-import type { Request } from 'express';
 
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 10;
 const MAX_BUCKETS_BEFORE_PRUNE = 1_000;
+
+interface RequestLike {
+  method?: string;
+  baseUrl?: string;
+  path?: string;
+  route?: {
+    path?: string;
+  };
+  headers: Record<string, string | string[] | undefined>;
+  ip?: string;
+  socket: {
+    remoteAddress?: string;
+  };
+}
 
 interface RateLimitBucket {
   count: number;
@@ -20,7 +34,7 @@ export class AuthRateLimitGuard implements CanActivate {
   private readonly buckets = new Map<string, RateLimitBucket>();
 
   canActivate(ctx: ExecutionContext): boolean {
-    const request = ctx.switchToHttp().getRequest<Request>();
+    const request = ctx.switchToHttp().getRequest<RequestLike>();
     const routeKey = `${request.method}:${request.baseUrl}${request.route?.path ?? request.path}`;
     const bucketKey = `${routeKey}:${this.getClientKey(request)}`;
     const now = Date.now();
@@ -37,14 +51,17 @@ export class AuthRateLimitGuard implements CanActivate {
     }
 
     if (current.count >= MAX_REQUESTS_PER_WINDOW) {
-      throw new TooManyRequestsException('too many authentication attempts');
+      throw new HttpException(
+        'too many authentication attempts',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     current.count += 1;
     return true;
   }
 
-  private getClientKey(request: Request): string {
+  private getClientKey(request: RequestLike): string {
     const forwardedFor = request.headers['x-forwarded-for'];
     if (typeof forwardedFor === 'string' && forwardedFor.trim() !== '') {
       return forwardedFor.split(',')[0].trim();
