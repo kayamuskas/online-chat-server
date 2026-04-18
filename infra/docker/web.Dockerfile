@@ -68,11 +68,12 @@ RUN pnpm install -r --offline --frozen-lockfile --prod --store-dir /pnpm/store
 # Copy built static assets
 COPY --from=builder /app/apps/web/dist apps/web/dist
 
-# Install curl for healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+# Install serve globally and curl for healthcheck
+RUN npm install -g serve@14 --no-fund --no-audit && \
+    apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 4173
 
 # Serve the Vite-built dist/ directory on port 4173
 # The /healthz file is included in the Vite build output (from public/)
-CMD ["node_modules/.bin/serve", "-s", "apps/web/dist", "-l", "4173"]
+CMD ["serve", "-s", "apps/web/dist", "-l", "4173"]

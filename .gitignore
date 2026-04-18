@@ -39,3 +39,6 @@ requirements/
 
 # Local Docker volume data
 .volumes/
+
+# Temporarily disabled
+vendor/
