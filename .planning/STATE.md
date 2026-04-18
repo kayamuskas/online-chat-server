@@ -17,7 +17,7 @@ progress:
 
 **Updated:** 2026-04-18
 **Current phase:** Phase 5 - Contacts and DM Policy
-**Status:** Phase 5 in progress — plan 03 (ContactsController 12 routes, ContactsModule, AppModule wired) complete
+**Status:** Phase 5 in progress — plan 04 (contacts frontend: 6 components + 13 API functions) complete
 
 ## Project Reference
 
@@ -60,7 +60,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - [x] 05-01: Contacts schema, domain types, and TDD scaffold (COMPLETE)
 - [x] 05-02: Contacts service and repository implementation (COMPLETE)
 - [x] 05-03: Contacts controller, module wiring, and API endpoints (COMPLETE)
-- [ ] 05-04: Contacts and DM frontend UI
+- [x] 05-04: Contacts and DM frontend UI (COMPLETE)
 
 ## Key Decisions (Phase 4)
 
@@ -77,9 +77,14 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - ContactsService db parameter is optional to allow 2-argument test instantiation; banUser uses non-null assertion since NestJS DI always injects all 3 in production.
 - SqlExecutor type matches QueryResult<R> return type from pg to be assignable to PostgresService.
 
+## Key Decisions (Phase 5, Plan 04)
+
+- del<T> helper added to api.ts — contacts functions required a generic DELETE wrapper; follows same 204/error pattern as get<T>/post<T>
+- ContactsView displays ban.banned_user_id as display name in Blocked Users (UserBan DTO lacks username); needs backend enrichment in future plan
+
 ## Next Up
 
-- Phase 5 Plan 04: Contacts and DM frontend UI
+- Phase 5 Plan 05: App.tsx wiring — connect contacts components to the main shell
 
 ---
 *State initialized: 2026-04-18 | Updated: 2026-04-18T21:39:10Z*
