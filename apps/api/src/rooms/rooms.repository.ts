@@ -265,4 +265,17 @@ export class RoomsRepository {
     );
     return result.rows[0]?.exists ?? false;
   }
+
+  /**
+   * List all ban records for a room, ordered by most-recently banned.
+   * Includes banned_by_user_id and reason for display in admin UI.
+   */
+  async listBanned(room_id: string): Promise<RoomBan[]> {
+    const result = await this.db.query<RoomBan>(
+      `SELECT id, room_id, banned_user_id, banned_by_user_id, reason, banned_at
+       FROM room_bans WHERE room_id = $1 ORDER BY banned_at DESC`,
+      [room_id],
+    );
+    return result.rows;
+  }
 }

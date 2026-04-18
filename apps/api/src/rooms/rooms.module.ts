@@ -15,11 +15,20 @@ import { AuthModule } from '../auth/auth.module.js';
 import { RoomsRepository } from './rooms.repository.js';
 import { RoomsService } from './rooms.service.js';
 import { RoomsController } from './rooms.controller.js';
+import { RoomsManagementController } from './rooms-management.controller.js';
 import { UserRepository } from '../auth/user.repository.js';
+
+/**
+ * RoomsModule — NestJS module wiring the Phase 4 room domain.
+ *
+ * Phase 4-03 additions:
+ *  - RoomsManagementController: authenticated management surface for invites,
+ *    admin promotion/demotion, member removal (as ban), and ban-list operations.
+ */
 
 @Module({
   imports: [DbModule, AuthModule],
-  controllers: [RoomsController],
+  controllers: [RoomsController, RoomsManagementController],
   providers: [RoomsRepository, RoomsService, UserRepository],
   exports: [RoomsService, RoomsRepository],
 })
