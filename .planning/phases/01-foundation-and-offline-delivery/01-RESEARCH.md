@@ -310,7 +310,7 @@ A basic `@WebSocketGateway()` in the same app is enough for this phase; do not d
 
 **What goes wrong:** The prototype shell survives into the real app and drags in internet dependencies. [VERIFIED: repo grep]  
 **Why it happens:** The prototype is visually useful, so teams over-trust its runtime structure. [VERIFIED: .planning/codebase/ARCHITECTURE.md]  
-**How to avoid:** Keep `requirements/desing_v1/` as design reference only and build `apps/web` from scratch. [VERIFIED: .planning/PROJECT.md]  
+**How to avoid:** Keep `requirements/desing_v1/` as the current design baseline, but rebuild its runtime as local product code instead of carrying over the prototype's CDN/Babel implementation. Future design baselines such as `desing_v2` or `desing_v3` may supersede it later. [VERIFIED: .planning/PROJECT.md]  
 **Warning signs:** New code still references browser Babel, UMD globals, or Google Fonts links. [VERIFIED: repo grep]
 
 ## Code Examples
@@ -360,7 +360,7 @@ Source: `https://docs.nestjs.com/websockets/gateways` [CITED: https://docs.nestj
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Browser-loaded React/Babel from CDN in a static HTML file | Local build pipeline with bundled assets | Current repo already proves the old approach is only a prototype path, not a shippable runtime. [VERIFIED: repo grep] | Phase 1 must replace, not extend, the prototype runtime. [VERIFIED: .planning/PROJECT.md] |
+| Browser-loaded React/Babel from CDN in a static HTML file | Local build pipeline with bundled assets | Current repo already proves the old approach is only a prototype path, not a shippable runtime. [VERIFIED: repo grep] | Phase 1 must preserve `desing_v1` as the current UI baseline while replacing its runtime implementation with local bundled app code. [VERIFIED: .planning/PROJECT.md] |
 | Compose startup order only | Health-gated startup with `service_healthy` and first-class `healthcheck` | Supported in current Compose spec/docs. [CITED: https://docs.docker.com/reference/compose-file/services/] | This removes most “works on second boot” failures from the baseline. [ASSUMED] |
 | Ad-hoc queue loops on Redis primitives | BullMQ with Queue, Worker, and QueueEvents | Current BullMQ docs/npm package. [CITED: https://context7.com/taskforcesh/bullmq/llms.txt] [VERIFIED: npm package page https://www.npmjs.com/package/bullmq] | Phase 1 can get a real queue substrate without inventing queue semantics. [CITED: https://context7.com/taskforcesh/bullmq/llms.txt] |
 
