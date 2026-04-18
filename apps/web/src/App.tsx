@@ -1,12 +1,14 @@
 /**
- * Phase 3 app entry — authentication core + active-sessions account UI.
+ * Phase 3 app entry — authentication core + active-sessions account UI + presence rendering.
  *
  * Ships the locked Phase 3 auth shell at `/` and the authenticated account
  * surface at `/account`. On a direct `/account` load, the app asks the API
  * for the current user so browser-close semantics can be verified via URL.
  *
- * Phase 3 change: the "Sessions" tab now renders ActiveSessionsView (the full
- * active-session inventory) instead of the Phase 2 minimal sign-out card.
+ * Phase 3 tabs:
+ *   - "Sessions" → ActiveSessionsView: full active-session inventory
+ *   - "Presence"  → CompactPresenceList + DetailedPresencePanel: proves the compact-vs-detailed
+ *                   rendering contract (D-10, D-11, D-13) using representative fixture members
  */
 
 import { useEffect, useState } from "react";
@@ -14,12 +16,27 @@ import { me, type PublicUser } from "./lib/api";
 import { AuthShell } from "./features/auth/AuthShell";
 import { PasswordSettingsView } from "./features/account/PasswordSettingsView";
 import { ActiveSessionsView } from "./features/account/ActiveSessionsView";
+import { CompactPresenceList } from "./features/presence/CompactPresenceList";
+import { DetailedPresencePanel } from "./features/presence/DetailedPresencePanel";
 
-type AccountTab = "password" | "sessions";
+type AccountTab = "password" | "sessions" | "presence";
 
 function isAccountRoute() {
   return window.location.pathname === "/account";
 }
+
+/**
+ * Representative members used to prove the compact and detailed presence
+ * rendering contracts (D-10, D-11, D-13). These match the wireframe and
+ * contacts.jsx design reference names/statuses.
+ */
+const DEMO_MEMBERS = [
+  { id: "alice", username: "alice", status: "online" as const, lastSeenAt: null },
+  { id: "bob", username: "bob", status: "afk" as const, lastSeenAt: null },
+  { id: "carol", username: "carol", status: "afk" as const, lastSeenAt: null },
+  { id: "mike", username: "mike", status: "offline" as const, lastSeenAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
+  { id: "dave", username: "dave", status: "online" as const, lastSeenAt: null },
+];
 
 function App() {
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -115,12 +132,43 @@ function App() {
           >
             Active sessions
           </button>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "presence" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => setTab("presence")}
+          >
+            Presence
+          </button>
         </nav>
 
         <div className="app-account__content">
           {tab === "password" && <PasswordSettingsView />}
           {tab === "sessions" && (
             <ActiveSessionsView onSignedOut={handleSignedOut} />
+          )}
+          {tab === "presence" && (
+            <div className="presence-demo">
+              <h2>Presence rendering</h2>
+              <p className="sub">
+                Phase 3 presence contract: compact list surfaces show colored
+                dots only; detailed surfaces show explicit status text and
+                offline last&nbsp;seen.
+              </p>
+              <div className="presence-demo__panels">
+                <div className="presence-demo__panel">
+                  <CompactPresenceList
+                    members={DEMO_MEMBERS}
+                    title="Compact — dot only (contacts/chat list)"
+                  />
+                </div>
+                <div className="presence-demo__panel">
+                  <DetailedPresencePanel
+                    members={DEMO_MEMBERS}
+                    title="Detailed — status text + last seen (room member panel)"
+                  />
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </main>

@@ -514,6 +514,167 @@ body {
   margin-top: 1rem;
 }
 
+/* ── Presence primitives (Phase 3) ───────────────────────────────────────── */
+
+/*
+ * Presence color tokens (D-12):
+ *   online  → green   #4ade80
+ *   afk     → amber   #f59e0b
+ *   offline → gray    #6b7280
+ */
+:root {
+  --presence-online: #4ade80;
+  --presence-afk: #f59e0b;
+  --presence-offline: #6b7280;
+}
+
+/* PresenceDot — compact colored indicator, no text (D-10) */
+
+.presence-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.presence-dot--online {
+  background-color: var(--presence-online);
+}
+
+.presence-dot--afk {
+  background-color: var(--presence-afk);
+}
+
+.presence-dot--offline {
+  background-color: var(--presence-offline);
+}
+
+/* PresenceLabel — explicit status text for detailed surfaces (D-11) */
+
+.presence-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.presence-label--online {
+  color: var(--presence-online);
+}
+
+.presence-label--afk {
+  color: var(--presence-afk);
+}
+
+.presence-label--offline {
+  color: var(--presence-offline);
+}
+
+/* PresenceTimestamp — "last seen" detail for offline users (D-13) */
+
+.presence-timestamp {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+/* ── CompactPresenceList ─────────────────────────────────────────────────── */
+
+.compact-presence-list {
+  padding: 0;
+}
+
+.compact-presence-list__title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  margin-bottom: 0.625rem;
+  text-transform: uppercase;
+}
+
+.compact-presence-list__items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.compact-presence-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Dot only in compact context — no status text (D-10) */
+.compact-presence-list__name {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compact-presence-list__empty {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+/* ── DetailedPresencePanel ───────────────────────────────────────────────── */
+
+.detailed-presence-panel {
+  padding: 0;
+}
+
+.detailed-presence-panel__title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  margin-bottom: 0.625rem;
+  text-transform: uppercase;
+}
+
+.detailed-presence-panel__items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.detailed-presence-panel__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.detailed-presence-panel__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.detailed-presence-panel__name {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+/* Parenthetical status text e.g. "Carol (AFK)" — muted wrapper, colored label inside */
+.detailed-presence-panel__status-paren {
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+.detailed-presence-panel__last-seen {
+  display: block;
+  margin-top: 0.1rem;
+}
+
+.detailed-presence-panel__empty {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
 /* ── Revoke confirmation inline block ────────────────────────────────────── */
 
 .revoke-confirm {
@@ -547,4 +708,30 @@ body {
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
+}
+
+/* ── Presence demo panel layout (Phase 3 contract proof surface) ─────────── */
+
+.presence-demo {
+  /* Uses the same content container as other account tabs */
+}
+
+.presence-demo__panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 600px) {
+  .presence-demo__panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+.presence-demo__panel {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
 }
