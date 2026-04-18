@@ -20,7 +20,6 @@ import {
   Get,
   Delete,
   Param,
-  Req,
   Res,
   HttpCode,
   HttpStatus,
@@ -29,12 +28,8 @@ import {
 import { AuthService } from './auth.service.js';
 import { CurrentUserGuard } from './current-user.guard.js';
 import { CurrentUser } from './current-user.decorator.js';
-import { extractSessionToken, clearSessionCookie } from './session-cookie.js';
+import { clearSessionCookie } from './session-cookie.js';
 import type { AuthContext } from './current-user.guard.js';
-
-interface RequestLike {
-  cookies?: Record<string, string | undefined>;
-}
 
 interface ResponseLike {
   cookie(name: string, value: string, options: Record<string, unknown>): void;
@@ -53,9 +48,11 @@ export class SessionManagementController {
    * Sessions are ordered: current session first, then by most recently seen.
    */
   @Get()
-  async listSessions(@CurrentUser() ctx: AuthContext, @Req() req: RequestLike) {
-    const currentToken = extractSessionToken(req) ?? '';
-    const sessions = await this.authService.listSessions(ctx.user.id, currentToken);
+  async listSessions(@CurrentUser() ctx: AuthContext) {
+    const sessions = await this.authService.listSessions(
+      ctx.user.id,
+      ctx.session.session_token,
+    );
     return { sessions };
   }
 
@@ -71,9 +68,11 @@ export class SessionManagementController {
    */
   @Delete('others')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async revokeOtherSessions(@CurrentUser() ctx: AuthContext, @Req() req: RequestLike): Promise<void> {
-    const currentToken = extractSessionToken(req) ?? '';
-    await this.authService.revokeAllOtherSessions(ctx.user.id, currentToken);
+  async revokeOtherSessions(@CurrentUser() ctx: AuthContext): Promise<void> {
+    await this.authService.revokeAllOtherSessions(
+      ctx.user.id,
+      ctx.session.session_token,
+    );
   }
 
   /**
