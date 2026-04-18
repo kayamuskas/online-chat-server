@@ -41,6 +41,9 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at    TIMESTAMPTZ NOT NULL,
   last_seen_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  -- Phase 3 session metadata columns (added by migration 0002_session_presence)
+  ip_address    TEXT,
+  user_agent    TEXT,
 
   CONSTRAINT sessions_session_token_unique UNIQUE (session_token)
 );
@@ -48,6 +51,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_session_token
   ON sessions (session_token);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions (user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_ip_address ON sessions (ip_address);
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

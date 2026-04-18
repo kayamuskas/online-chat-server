@@ -5,15 +5,27 @@
  * Controllers must not call repositories directly; they call AuthService.
  *
  * Phase 2 scope: register, sign-in, current-user, sign-out.
- * Password reset and password change are in Plan 03.
+ * Phase 3 adds: session inventory, per-session revoke, sign-out-all-other-sessions.
  */
 
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserRepository } from './user.repository.js';
 import { SessionRepository } from './session.repository.js';
 import { hashPassword, verifyPassword } from './passwords.js';
 import { buildSessionExpiry, resolveSessionPolicy } from './session-policy.js';
-import type { RegisterInput, SignInInput, PublicUser, Session } from './auth.types.js';
+import type {
+  RegisterInput,
+  SignInInput,
+  PublicUser,
+  Session,
+  SessionInventoryItem,
+} from './auth.types.js';
+import type { ClientMetadata } from './session-metadata.js';
 
 export interface SignInResult {
   user: PublicUser;
@@ -71,8 +83,11 @@ export class AuthService {
    * Uses verifyPassword to compare the submitted password against the stored
    * hash. On success, creates one session row and returns the session token
    * plus cookie-policy metadata.
+   *
+   * Phase 3: accepts optional client metadata (IP, user-agent) to persist
+   * with the session row for inventory display.
    */
-  async signIn(input: SignInInput): Promise<SignInResult> {
+  async signIn(input: SignInInput, metadata?: ClientMetadata): Promise<SignInResult> {
     const user = await this.users.findByEmail(input.email);
 
     if (!user) {
@@ -91,6 +106,8 @@ export class AuthService {
       userId: user.id,
       isPersistent,
       expiresAt,
+      ipAddress: metadata?.ip_address ?? null,
+      userAgent: metadata?.user_agent ?? null,
     });
 
     const { password_hash: _ph, ...publicUser } = user;
@@ -129,9 +146,76 @@ export class AuthService {
    * Sign out the current browser session by deleting its session row.
    *
    * Only the presented session token is invalidated. Other sessions for the
-   * same user remain valid (Phase 3 will add broader session management).
+   * same user remain valid.
    */
   async signOut(sessionToken: string): Promise<void> {
     await this.sessions.delete(sessionToken);
+  }
+
+  // ── Phase 3: Session inventory and targeted revoke ───────────────────────────
+
+  /**
+   * List all active sessions for the authenticated user.
+   *
+   * Returns sessions ordered with the current session first, then by
+   * last_seen_at descending. Each item includes an isCurrentSession marker
+   * for the "This browser" badge in the session inventory UI.
+   *
+   * Threat model: T-03-03 — scoped strictly to the caller's user_id.
+   */
+  async listSessions(userId: string, currentToken: string): Promise<SessionInventoryItem[]> {
+    const rows = await this.sessions.findAllByUserId(userId);
+
+    const items: SessionInventoryItem[] = rows.map((row) => ({
+      sessionId: row.id,
+      ipAddress: row.ip_address ?? null,
+      userAgent: row.user_agent ?? null,
+      lastSeenAt: row.last_seen_at,
+      createdAt: row.created_at,
+      isPersistent: row.is_persistent,
+      isCurrentSession: row.session_token === currentToken,
+    }));
+
+    // Sort: current session first, then by lastSeenAt descending
+    items.sort((a, b) => {
+      if (a.isCurrentSession && !b.isCurrentSession) return -1;
+      if (!a.isCurrentSession && b.isCurrentSession) return 1;
+      return b.lastSeenAt.getTime() - a.lastSeenAt.getTime();
+    });
+
+    return items;
+  }
+
+  /**
+   * Revoke a single session by its ID, scoped to the authenticated user.
+   *
+   * Throws NotFoundException if the session does not belong to the user.
+   * Revoking the current session is explicitly supported — the caller
+   * (controller) is responsible for clearing the session cookie when needed.
+   *
+   * Threat model: T-03-04 — row-level revoke with user_id predicate.
+   */
+  async revokeSession(userId: string, sessionId: string): Promise<void> {
+    // Verify the session belongs to this user before deleting
+    const rows = await this.sessions.findAllByUserId(userId);
+    const owned = rows.some((r) => r.id === sessionId);
+
+    if (!owned) {
+      throw new NotFoundException('session not found');
+    }
+
+    await this.sessions.deleteById(sessionId, userId);
+  }
+
+  /**
+   * Revoke all sessions for the authenticated user except the current one.
+   *
+   * The current session is preserved so the user remains signed in on this
+   * browser. This is the `sign out all other sessions` operation.
+   *
+   * Threat model: T-03-04 — targeted bulk revoke excluding current token.
+   */
+  async revokeAllOtherSessions(userId: string, currentToken: string): Promise<void> {
+    await this.sessions.deleteAllOtherByUserId(userId, currentToken);
   }
 }

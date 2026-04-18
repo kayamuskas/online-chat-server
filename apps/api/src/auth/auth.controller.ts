@@ -37,10 +37,14 @@ import {
   setSessionCookie,
   clearSessionCookie,
 } from './session-cookie.js';
+import { buildSessionMetadata } from './session-metadata.js';
 import type { AuthContext } from './current-user.guard.js';
 
 interface RequestLike {
   cookies?: Record<string, string | undefined>;
+  headers: Record<string, string | string[] | undefined>;
+  ip?: string;
+  socket: { remoteAddress?: string };
 }
 
 interface ResponseLike {
@@ -79,9 +83,14 @@ export class AuthController {
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthRateLimitGuard)
-  async signIn(@Body() body: unknown, @Res({ passthrough: true }) res: ResponseLike) {
+  async signIn(
+    @Body() body: unknown,
+    @Req() req: RequestLike,
+    @Res({ passthrough: true }) res: ResponseLike,
+  ) {
     const input = parseSignInBody(body);
-    const result = await this.authService.signIn(input);
+    const metadata = buildSessionMetadata(req);
+    const result = await this.authService.signIn(input, metadata);
 
     setSessionCookie(res, result.sessionToken, {
       maxAge: result.sessionTtlSeconds,

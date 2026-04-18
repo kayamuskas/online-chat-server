@@ -11,6 +11,7 @@ import { DbModule } from '../db/db.module.js';
 import { MailModule } from '../mail/mail.module.js';
 import { AuthController } from './auth.controller.js';
 import { PasswordResetController } from './password-reset.controller.js';
+import { SessionManagementController } from './session-management.controller.js';
 import { AuthService } from './auth.service.js';
 import { ChangePasswordService } from './change-password.service.js';
 import { PasswordResetService } from './password-reset.service.js';
@@ -22,7 +23,7 @@ import { CurrentUserGuard } from './current-user.guard.js';
 
 @Module({
   imports: [DbModule, MailModule],
-  controllers: [AuthController, PasswordResetController],
+  controllers: [AuthController, PasswordResetController, SessionManagementController],
   providers: [
     AuthService,
     ChangePasswordService,

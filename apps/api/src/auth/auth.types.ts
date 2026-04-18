@@ -30,6 +30,36 @@ export interface Session {
   created_at: Date;
 }
 
+/**
+ * A session record enriched with Phase 3 client metadata.
+ *
+ * Extends the base Session with ip_address and user_agent columns
+ * added by migration 0002_session_presence.sql.
+ */
+export interface SessionWithMetadata extends Session {
+  /** Full client IP address captured at session creation time. */
+  ip_address: string | null;
+  /** Raw User-Agent header value captured at session creation time. */
+  user_agent: string | null;
+}
+
+/**
+ * Session inventory item returned by the list-sessions endpoint.
+ *
+ * Includes all display fields needed by the active-sessions UI
+ * plus an isCurrentSession marker for the "This browser" badge.
+ */
+export interface SessionInventoryItem {
+  sessionId: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  lastSeenAt: Date;
+  createdAt: Date;
+  isPersistent: boolean;
+  /** True when this row matches the caller's current session token. */
+  isCurrentSession: boolean;
+}
+
 /** A password-reset token record as returned from the database. */
 export interface PasswordResetToken {
   id: string;

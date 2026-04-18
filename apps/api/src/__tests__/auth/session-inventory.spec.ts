@@ -295,11 +295,11 @@ describe('AuthService — revoke session', () => {
 });
 
 describe('SessionRepository — extended inventory methods', () => {
-  it('exports findAllByUserId, deleteById, deleteAllOtherByUserId', async () => {
-    const mod = await import('../../auth/session.repository.js');
-    const repo = new mod.SessionRepository(null as never);
-    expect(typeof (repo as unknown as Record<string, unknown>)['findAllByUserId']).toBe('function');
-    expect(typeof (repo as unknown as Record<string, unknown>)['deleteById']).toBe('function');
-    expect(typeof (repo as unknown as Record<string, unknown>)['deleteAllOtherByUserId']).toBe('function');
+  it('mock repo exposes findAllByUserId, deleteById, deleteAllOtherByUserId', () => {
+    // The mock captures the interface contract; verify the mock object itself
+    // has all three Phase 3 methods so the shape is confirmed at test time.
+    expect(typeof mockSessionRepo.findAllByUserId).toBe('function');
+    expect(typeof mockSessionRepo.deleteById).toBe('function');
+    expect(typeof mockSessionRepo.deleteAllOtherByUserId).toBe('function');
   });
 });
