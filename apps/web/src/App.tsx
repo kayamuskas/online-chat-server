@@ -1,14 +1,19 @@
 /**
- * Phase 3 app entry — authentication core + active-sessions account UI + presence rendering.
+ * Phase 4 app entry — classic chat shell with room surfaces.
  *
- * Ships the locked Phase 3 auth shell at `/` and the authenticated account
- * surface at `/account`. On a direct `/account` load, the app asks the API
- * for the current user so browser-close semantics can be verified via URL.
+ * Extends the Phase 3 authenticated shell with:
+ *   - "Rooms" top-level nav section containing Public, Private, and Create sub-views
+ *   - Room management surface for admin/owner operations (ManageRoomView)
  *
- * Phase 3 tabs:
- *   - "Sessions" → ActiveSessionsView: full active-session inventory
- *   - "Presence"  → CompactPresenceList + DetailedPresencePanel: proves the compact-vs-detailed
- *                   rendering contract (D-10, D-11, D-13) using representative fixture members
+ * Phase 3 tabs preserved:
+ *   - "Sessions" → ActiveSessionsView
+ *   - "Presence"  → CompactPresenceList + DetailedPresencePanel
+ *
+ * Phase 4 tabs added:
+ *   - "Public rooms"  → PublicRoomsView: public catalog + search + join
+ *   - "Private rooms" → PrivateRoomsView: invite-only rooms the user belongs to
+ *   - "Create room"   → CreateRoomView: lightweight room creation form
+ *   - "Manage room"   → ManageRoomView: owner/admin/member and ban-list operations
  */
 
 import { useEffect, useState } from "react";
@@ -18,8 +23,20 @@ import { PasswordSettingsView } from "./features/account/PasswordSettingsView";
 import { ActiveSessionsView } from "./features/account/ActiveSessionsView";
 import { CompactPresenceList } from "./features/presence/CompactPresenceList";
 import { DetailedPresencePanel } from "./features/presence/DetailedPresencePanel";
+import { PublicRoomsView } from "./features/rooms/PublicRoomsView";
+import { CreateRoomView } from "./features/rooms/CreateRoomView";
+import { PrivateRoomsView } from "./features/rooms/PrivateRoomsView";
+import { ManageRoomView } from "./features/rooms/ManageRoomView";
+import type { RoomCatalogRow, Room } from "./lib/api";
 
-type AccountTab = "password" | "sessions" | "presence";
+type AppTab =
+  | "password"
+  | "sessions"
+  | "presence"
+  | "public-rooms"
+  | "private-rooms"
+  | "create-room"
+  | "manage-room";
 
 function isAccountRoute() {
   return window.location.pathname === "/account";
@@ -40,8 +57,9 @@ const DEMO_MEMBERS = [
 
 function App() {
   const [user, setUser] = useState<PublicUser | null>(null);
-  const [tab, setTab] = useState<AccountTab>("sessions");
+  const [tab, setTab] = useState<AppTab>("public-rooms");
   const [checkingSession, setCheckingSession] = useState(isAccountRoute());
+  const [managedRoom, setManagedRoom] = useState<RoomCatalogRow | null>(null);
 
   function handleAuthenticated(nextUser: PublicUser) {
     setUser(nextUser);
@@ -108,6 +126,24 @@ function App() {
     return <AuthShell onAuthenticated={handleAuthenticated} />;
   }
 
+  function handleManageRoom(room: RoomCatalogRow) {
+    setManagedRoom(room);
+    setTab("manage-room");
+  }
+
+  function handleRoomCreated(room: Room) {
+    // After creating, if private navigate to private rooms; else public rooms
+    if (room.visibility === "private") {
+      setTab("private-rooms");
+    } else {
+      setTab("public-rooms");
+    }
+  }
+
+  function handleRoomJoined(_room: RoomCatalogRow) {
+    setTab("public-rooms");
+  }
+
   return (
     <div className="app-layout">
       <header className="app-topbar">
@@ -117,7 +153,30 @@ function App() {
 
       <main className="app-account">
         <nav className="app-account__nav">
-          <div className="app-account__nav-label">ACCOUNT</div>
+          <div className="app-account__nav-label">ROOMS</div>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "public-rooms" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => setTab("public-rooms")}
+          >
+            Public rooms
+          </button>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "private-rooms" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => setTab("private-rooms")}
+          >
+            Private rooms
+          </button>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "create-room" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => setTab("create-room")}
+          >
+            Create room
+          </button>
+
+          <div className="app-account__nav-label" style={{ marginTop: "1rem" }}>ACCOUNT</div>
           <button
             type="button"
             className={`app-account__nav-item${tab === "password" ? " app-account__nav-item--active" : ""}`}
@@ -142,6 +201,32 @@ function App() {
         </nav>
 
         <div className="app-account__content">
+          {tab === "public-rooms" && (
+            <PublicRoomsView
+              onJoined={handleRoomJoined}
+              onCreateRoom={() => setTab("create-room")}
+            />
+          )}
+          {tab === "private-rooms" && (
+            <PrivateRoomsView
+              rooms={[]}
+              onManage={handleManageRoom}
+              onCreateRoom={() => setTab("create-room")}
+            />
+          )}
+          {tab === "create-room" && (
+            <CreateRoomView
+              onCreated={handleRoomCreated}
+              onCancel={() => setTab("public-rooms")}
+            />
+          )}
+          {tab === "manage-room" && managedRoom && (
+            <ManageRoomView
+              room={managedRoom}
+              currentUserId={user.id}
+              onBack={() => setTab("private-rooms")}
+            />
+          )}
           {tab === "password" && <PasswordSettingsView />}
           {tab === "sessions" && (
             <ActiveSessionsView onSignedOut={handleSignedOut} />

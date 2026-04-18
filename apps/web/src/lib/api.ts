@@ -1,10 +1,10 @@
 /**
- * Phase 3 API client — auth flows + session management.
+ * Phase 3 + 4 API client — auth flows, session management, and room surfaces.
  *
  * All requests are made to the NestJS API running on SERVICE_PORTS.apiHttp.
  * Credentials (session cookies) are sent with every request via credentials: "include".
  *
- * Covers:
+ * Phase 3 covers:
  *   POST   /api/v1/auth/register
  *   POST   /api/v1/auth/sign-in
  *   POST   /api/v1/auth/sign-out
@@ -15,6 +15,18 @@
  *   GET    /api/v1/sessions
  *   DELETE /api/v1/sessions/others
  *   DELETE /api/v1/sessions/:id
+ *
+ * Phase 4 room surfaces:
+ *   POST   /api/v1/rooms
+ *   GET    /api/v1/rooms
+ *   POST   /api/v1/rooms/:id/join
+ *   POST   /api/v1/rooms/:id/leave
+ *   POST   /api/v1/rooms/:id/manage/invite
+ *   POST   /api/v1/rooms/:id/manage/admins/:userId
+ *   DELETE /api/v1/rooms/:id/manage/admins/:userId
+ *   DELETE /api/v1/rooms/:id/manage/members/:userId
+ *   GET    /api/v1/rooms/:id/manage/bans
+ *   DELETE /api/v1/rooms/:id/manage/bans/:userId
  */
 
 import { SERVICE_PORTS } from "@chat/shared";
@@ -175,6 +187,203 @@ export async function confirmPasswordReset(params: {
   newPassword: string;
 }): Promise<void> {
   return post("/auth/password-reset/confirm", params);
+}
+
+// ── Room types ────────────────────────────────────────────────────────────────
+
+export type RoomVisibility = "public" | "private";
+export type RoomRole = "owner" | "admin" | "member";
+export type InviteStatus = "pending" | "accepted" | "declined" | "expired";
+
+/** A public room catalog row as returned by GET /api/v1/rooms. */
+export interface RoomCatalogRow {
+  id: string;
+  name: string;
+  description: string | null;
+  visibility: RoomVisibility;
+  owner_id: string;
+  member_count: number;
+  created_at: string;
+}
+
+/** A full room record (e.g. after creation). */
+export interface Room {
+  id: string;
+  name: string;
+  description: string | null;
+  visibility: RoomVisibility;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A membership record. */
+export interface RoomMembership {
+  id: string;
+  room_id: string;
+  user_id: string;
+  role: RoomRole;
+  joined_at: string;
+}
+
+/** A room invite record. */
+export interface RoomInvite {
+  id: string;
+  room_id: string;
+  invited_by_user_id: string;
+  invited_user_id: string;
+  status: InviteStatus;
+  created_at: string;
+  expires_at: string | null;
+}
+
+/** A room ban record. */
+export interface RoomBan {
+  id: string;
+  room_id: string;
+  banned_user_id: string;
+  banned_by_user_id: string;
+  reason: string | null;
+  banned_at: string;
+}
+
+// ── Room API calls ─────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/v1/rooms
+ * Create a new room. `name` is required; `visibility` defaults to 'public'; `description` is optional.
+ * Returns the created room. Throws 409 if name is already taken.
+ */
+export async function createRoom(params: {
+  name: string;
+  description?: string | null;
+  visibility?: RoomVisibility;
+}): Promise<{ room: Room }> {
+  return post("/rooms", params);
+}
+
+/**
+ * GET /api/v1/rooms
+ * List public rooms. Optional `search` matches room name and description.
+ */
+export async function listPublicRooms(search?: string): Promise<{ rooms: RoomCatalogRow[] }> {
+  const qs = search ? `?search=${encodeURIComponent(search)}` : "";
+  return get(`/rooms${qs}`);
+}
+
+/**
+ * POST /api/v1/rooms/:id/join
+ * Join a public room as an ordinary member. Returns the membership.
+ * Throws 400 if the room is private, the user is banned, or already a member.
+ */
+export async function joinRoom(roomId: string): Promise<{ membership: RoomMembership }> {
+  return post(`/rooms/${encodeURIComponent(roomId)}/join`);
+}
+
+/**
+ * POST /api/v1/rooms/:id/leave
+ * Leave a room. Throws 400 when the owner attempts to leave.
+ * Returns undefined (204).
+ */
+export async function leaveRoom(roomId: string): Promise<void> {
+  return post(`/rooms/${encodeURIComponent(roomId)}/leave`);
+}
+
+/**
+ * POST /api/v1/rooms/:id/manage/invite
+ * Invite a registered user by username. Caller must be owner or admin.
+ * Returns the created invite. Throws 404 if username not found.
+ */
+export async function inviteToRoom(
+  roomId: string,
+  username: string,
+): Promise<{ invite: RoomInvite }> {
+  return post(`/rooms/${encodeURIComponent(roomId)}/manage/invite`, { username });
+}
+
+/**
+ * POST /api/v1/rooms/:id/manage/admins/:userId
+ * Promote a member to admin. Caller must be the room owner.
+ */
+export async function makeRoomAdmin(
+  roomId: string,
+  userId: string,
+): Promise<{ admin: unknown }> {
+  return post(`/rooms/${encodeURIComponent(roomId)}/manage/admins/${encodeURIComponent(userId)}`);
+}
+
+/**
+ * DELETE /api/v1/rooms/:id/manage/admins/:userId
+ * Demote an admin. Caller must be the room owner.
+ * Returns undefined (204).
+ */
+export async function removeRoomAdmin(roomId: string, userId: string): Promise<void> {
+  const res = await fetch(
+    `${BASE_URL}/rooms/${encodeURIComponent(roomId)}/manage/admins/${encodeURIComponent(userId)}`,
+    { method: "DELETE", credentials: "include" },
+  );
+  if (!res.ok && res.status !== 204) {
+    const data = await res.json().catch(() => ({}));
+    const msg = typeof data?.message === "string" ? data.message : res.statusText || "Request failed";
+    const err = new Error(msg) as Error & { statusCode: number };
+    err.statusCode = res.status;
+    throw err;
+  }
+}
+
+/**
+ * DELETE /api/v1/rooms/:id/manage/members/:userId
+ * Remove a member (modeled as ban). Caller must be owner or admin.
+ * Returns undefined (204).
+ */
+export async function removeRoomMember(
+  roomId: string,
+  userId: string,
+  reason?: string,
+): Promise<void> {
+  const res = await fetch(
+    `${BASE_URL}/rooms/${encodeURIComponent(roomId)}/manage/members/${encodeURIComponent(userId)}`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: reason ? JSON.stringify({ reason }) : undefined,
+    },
+  );
+  if (!res.ok && res.status !== 204) {
+    const data = await res.json().catch(() => ({}));
+    const msg = typeof data?.message === "string" ? data.message : res.statusText || "Request failed";
+    const err = new Error(msg) as Error & { statusCode: number };
+    err.statusCode = res.status;
+    throw err;
+  }
+}
+
+/**
+ * GET /api/v1/rooms/:id/manage/bans
+ * List banned users with metadata. Caller must be owner or admin.
+ */
+export async function listRoomBans(roomId: string): Promise<{ bans: RoomBan[] }> {
+  return get(`/rooms/${encodeURIComponent(roomId)}/manage/bans`);
+}
+
+/**
+ * DELETE /api/v1/rooms/:id/manage/bans/:userId
+ * Unban a user. Caller must be owner or admin.
+ * Returns undefined (204).
+ */
+export async function unbanRoomUser(roomId: string, userId: string): Promise<void> {
+  const res = await fetch(
+    `${BASE_URL}/rooms/${encodeURIComponent(roomId)}/manage/bans/${encodeURIComponent(userId)}`,
+    { method: "DELETE", credentials: "include" },
+  );
+  if (!res.ok && res.status !== 204) {
+    const data = await res.json().catch(() => ({}));
+    const msg = typeof data?.message === "string" ? data.message : res.statusText || "Request failed";
+    const err = new Error(msg) as Error & { statusCode: number };
+    err.statusCode = res.status;
+    throw err;
+  }
 }
 
 // ── Session management API calls ──────────────────────────────────────────────
