@@ -110,7 +110,7 @@ Plans: 5 plans
 
 - [x] `05-01-PLAN.md` — Contacts schema migration, domain type definitions, and test scaffold. *(complete 2026-04-18)*
 - [x] `05-02-PLAN.md` — ContactsRepository (SQL) and ContactsService (policy layer, DM eligibility). *(complete 2026-04-18)*
-- [ ] `05-03-PLAN.md` — ContactsController (REST endpoints) and ContactsModule registration in AppModule.
+- [x] `05-03-PLAN.md` — ContactsController (REST endpoints) and ContactsModule registration in AppModule. *(complete 2026-04-19)*
 - [ ] `05-04-PLAN.md` — API client extensions and contacts feature components (sidebar, dropdown, modals, DM stub).
 - [ ] `05-05-PLAN.md` — App.tsx wiring and RoomMembersTable inline friend-request action.
 
