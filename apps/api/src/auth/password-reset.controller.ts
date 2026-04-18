@@ -16,17 +16,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { PasswordResetService } from './password-reset.service.js';
-
-// ── Request body shapes ────────────────────────────────────────────────────────
-
-class ResetRequestDto {
-  email!: string;
-}
-
-class ResetConfirmDto {
-  token!: string;
-  newPassword!: string;
-}
+import {
+  parseResetConfirmBody,
+  parseResetRequestBody,
+} from './auth.validation.js';
 
 // ── Controller ─────────────────────────────────────────────────────────────────
 
@@ -42,8 +35,9 @@ export class PasswordResetController {
    */
   @Post('request')
   @HttpCode(HttpStatus.OK)
-  async requestReset(@Body() body: ResetRequestDto): Promise<void> {
-    await this.passwordResetService.requestReset(body.email);
+  async requestReset(@Body() body: unknown): Promise<void> {
+    const input = parseResetRequestBody(body);
+    await this.passwordResetService.requestReset(input.email);
   }
 
   /**
@@ -54,10 +48,8 @@ export class PasswordResetController {
    */
   @Post('confirm')
   @HttpCode(HttpStatus.OK)
-  async confirmReset(@Body() body: ResetConfirmDto): Promise<void> {
-    await this.passwordResetService.confirmReset({
-      token: body.token,
-      newPassword: body.newPassword,
-    });
+  async confirmReset(@Body() body: unknown): Promise<void> {
+    const input = parseResetConfirmBody(body);
+    await this.passwordResetService.confirmReset(input);
   }
 }

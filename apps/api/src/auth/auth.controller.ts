@@ -28,30 +28,16 @@ import { ChangePasswordService } from './change-password.service.js';
 import { CurrentUserGuard } from './current-user.guard.js';
 import { CurrentUser } from './current-user.decorator.js';
 import {
+  parseChangePasswordBody,
+  parseRegisterBody,
+  parseSignInBody,
+} from './auth.validation.js';
+import {
   extractSessionToken,
   setSessionCookie,
   clearSessionCookie,
 } from './session-cookie.js';
 import type { AuthContext } from './current-user.guard.js';
-
-// ── Request body shapes ────────────────────────────────────────────────────────
-
-class RegisterDto {
-  email!: string;
-  username!: string;
-  password!: string;
-}
-
-class SignInDto {
-  email!: string;
-  password!: string;
-  keepSignedIn!: boolean;
-}
-
-class ChangePasswordDto {
-  currentPassword!: string;
-  newPassword!: string;
-}
 
 // ── Controller ─────────────────────────────────────────────────────────────────
 
@@ -70,12 +56,9 @@ export class AuthController {
    */
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() body: RegisterDto) {
-    const user = await this.authService.register({
-      email: body.email,
-      username: body.username,
-      password: body.password,
-    });
+  async register(@Body() body: unknown) {
+    const input = parseRegisterBody(body);
+    const user = await this.authService.register(input);
     return { user };
   }
 
@@ -87,12 +70,9 @@ export class AuthController {
    */
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
-  async signIn(@Body() body: SignInDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.signIn({
-      email: body.email,
-      password: body.password,
-      keepSignedIn: body.keepSignedIn ?? false,
-    });
+  async signIn(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
+    const input = parseSignInBody(body);
+    const result = await this.authService.signIn(input);
 
     setSessionCookie(res, result.sessionToken, {
       maxAge: result.cookieMaxAge,
@@ -143,12 +123,13 @@ export class AuthController {
   @UseGuards(CurrentUserGuard)
   async changePassword(
     @CurrentUser() ctx: AuthContext,
-    @Body() body: ChangePasswordDto,
+    @Body() body: unknown,
   ): Promise<void> {
+    const input = parseChangePasswordBody(body);
     await this.changePasswordService.changePassword({
       userId: ctx.user.id,
-      currentPassword: body.currentPassword,
-      newPassword: body.newPassword,
+      currentPassword: input.currentPassword,
+      newPassword: input.newPassword,
     });
   }
 }
