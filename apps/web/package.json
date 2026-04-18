@@ -1,0 +1,24 @@
+{
+  "name": "@chat/web",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "test": "echo \"No tests yet\" && exit 0",
+    "lint": "echo \"No lint configured yet\" && exit 0"
+  },
+  "dependencies": {
+    "@chat/shared": "workspace:*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.2",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.4"
+  }
+}

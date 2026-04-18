@@ -1,0 +1,21 @@
+{
+  "name": "@chat/root",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@10.9.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "build:api": "pnpm --filter @chat/api build",
+    "build:web": "pnpm --filter @chat/web build",
+    "build:worker": "pnpm --filter @chat/worker build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "compose:smoke": "docker compose -f infra/compose/compose.yaml up --build --wait",
+    "compose:down": "docker compose -f infra/compose/compose.yaml down -v"
+  }
+}
