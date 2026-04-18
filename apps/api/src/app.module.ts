@@ -6,6 +6,7 @@ import { AppGateway } from './ws/app.gateway.js';
 import { QueueModule } from './queue/queue.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { PresenceModule } from './presence/presence.module.js';
+import { RoomsModule } from './rooms/rooms.module.js';
 
 /**
  * AppModule — root Nest module for the hybrid REST + WebSocket API.
@@ -14,6 +15,9 @@ import { PresenceModule } from './presence/presence.module.js';
  *  - PresenceModule: realtime presence engine (runtime state + durable last seen)
  *  - AppGateway now injects PresenceService and AuthService for authenticated
  *    presence transport (Threat T-03-05: unauthenticated sockets are rejected).
+ *
+ * Phase 4-02 additions:
+ *  - RoomsModule: room creation, public catalog, join/leave HTTP endpoints.
  */
 @Module({
   imports: [
@@ -28,6 +32,7 @@ import { PresenceModule } from './presence/presence.module.js';
     QueueModule,
     AuthModule,
     PresenceModule,
+    RoomsModule,
   ],
   controllers: [HealthController, MetaController],
   providers: [AppGateway],
