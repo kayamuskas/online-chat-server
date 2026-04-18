@@ -145,6 +145,64 @@ CREATE TABLE IF NOT EXISTS room_bans (
 
 CREATE INDEX IF NOT EXISTS idx_room_bans_room_id        ON room_bans (room_id);
 CREATE INDEX IF NOT EXISTS idx_room_bans_banned_user_id ON room_bans (banned_user_id);
+
+-- ── Phase 5: Contacts domain tables (migration 0004_contacts_core) ──────────
+
+CREATE TABLE IF NOT EXISTS friend_requests (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  requester_id    UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  target_id       UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  message         TEXT,
+  status          TEXT        NOT NULL DEFAULT 'pending'
+                              CHECK (status IN ('pending', 'accepted', 'declined', 'cancelled')),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT friend_requests_pair_unique UNIQUE (requester_id, target_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_friend_requests_requester ON friend_requests (requester_id);
+CREATE INDEX IF NOT EXISTS idx_friend_requests_target    ON friend_requests (target_id);
+
+CREATE TABLE IF NOT EXISTS friendships (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_a_id   UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  user_b_id   UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT friendships_unique  UNIQUE (user_a_id, user_b_id),
+  CONSTRAINT friendships_no_self CHECK  (user_a_id <> user_b_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_friendships_user_a ON friendships (user_a_id);
+CREATE INDEX IF NOT EXISTS idx_friendships_user_b ON friendships (user_b_id);
+
+CREATE TABLE IF NOT EXISTS user_bans (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  banner_user_id  UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  banned_user_id  UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT user_bans_unique  UNIQUE (banner_user_id, banned_user_id),
+  CONSTRAINT user_bans_no_self CHECK  (banner_user_id <> banned_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_bans_banner ON user_bans (banner_user_id);
+CREATE INDEX IF NOT EXISTS idx_user_bans_banned ON user_bans (banned_user_id);
+
+CREATE TABLE IF NOT EXISTS dm_conversations (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_a_id   UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  user_b_id   UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  frozen      BOOLEAN     NOT NULL DEFAULT FALSE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT dm_conversations_unique  UNIQUE (user_a_id, user_b_id),
+  CONSTRAINT dm_conversations_no_self CHECK  (user_a_id <> user_b_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_dm_conversations_user_a ON dm_conversations (user_a_id);
+CREATE INDEX IF NOT EXISTS idx_dm_conversations_user_b ON dm_conversations (user_b_id);
 `;
 
 @Injectable()
