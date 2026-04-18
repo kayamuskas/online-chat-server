@@ -23,6 +23,10 @@ import type {
   RoomAdmin,
   RoomBan,
   RoomCatalogRow,
+  PrivateRoomMembershipRow,
+  PendingRoomInviteRow,
+  PrivateRoomMembershipView,
+  PendingRoomInviteView,
   CreateRoomServiceInput,
 } from './rooms.types.js';
 
@@ -88,6 +92,22 @@ export class RoomsService {
   /** List public rooms, optionally searching by name or description. */
   async listPublicRooms(search?: string): Promise<RoomCatalogRow[]> {
     return this.roomsRepo.listPublic(search);
+  }
+
+  /**
+   * List the authenticated user's private-room memberships with room details.
+   */
+  async getMyPrivateRooms(userId: string): Promise<PrivateRoomMembershipView[]> {
+    const rows = await this.roomsRepo.listPrivateRoomsByUser(userId);
+    return rows.map((row) => this.mapPrivateMembershipRow(row));
+  }
+
+  /**
+   * List pending private-room invites addressed to the authenticated user.
+   */
+  async getPendingPrivateInvites(userId: string): Promise<PendingRoomInviteView[]> {
+    const rows = await this.roomsRepo.listPendingInvitesByUser(userId);
+    return rows.map((row) => this.mapPendingInviteRow(row));
   }
 
   // ── Membership ─────────────────────────────────────────────────────────────
@@ -170,6 +190,67 @@ export class RoomsService {
       invited_by_user_id: inviterUserId,
       invited_user_id: targetUser.id,
     });
+  }
+
+  /**
+   * Accept a pending private-room invite owned by the authenticated user.
+   */
+  async acceptInvite(roomId: string, inviteId: string, userId: string): Promise<RoomMembership> {
+    const room = await this.getRoom(roomId);
+    if (room.visibility !== 'private') {
+      throw new BadRequestException('Invite acceptance is only supported for private rooms');
+    }
+
+    const invite = await this.roomsRepo.findInviteForRecipient(roomId, inviteId, userId);
+    if (!invite) {
+      throw new NotFoundException('Invite not found for this user and room');
+    }
+
+    if (invite.status !== 'pending') {
+      throw new BadRequestException('Invite is no longer pending');
+    }
+
+    const banned = await this.roomsRepo.isBanned(roomId, userId);
+    if (banned) {
+      throw new BadRequestException('You are banned from this room');
+    }
+
+    const existingMembership = await this.roomsRepo.getMembership(roomId, userId);
+    if (existingMembership) {
+      throw new ConflictException('You are already a member of this room');
+    }
+
+    const membership = await this.roomsRepo.addMember({
+      room_id: roomId,
+      user_id: userId,
+      role: 'member',
+    });
+
+    const accepted = await this.roomsRepo.acceptInvite(inviteId);
+    if (!accepted) {
+      throw new ConflictException('Invite could not be accepted');
+    }
+
+    return membership;
+  }
+
+  /**
+   * Decline a pending private-room invite owned by the authenticated user.
+   */
+  async declineInvite(roomId: string, inviteId: string, userId: string): Promise<void> {
+    const invite = await this.roomsRepo.findInviteForRecipient(roomId, inviteId, userId);
+    if (!invite) {
+      throw new NotFoundException('Invite not found for this user and room');
+    }
+
+    if (invite.status !== 'pending') {
+      throw new BadRequestException('Invite is no longer pending');
+    }
+
+    const declined = await this.roomsRepo.declineInvite(inviteId);
+    if (!declined) {
+      throw new ConflictException('Invite could not be declined');
+    }
   }
 
   /** Validate that a username maps to a registered user. Returns the user ID or null. */
@@ -308,5 +389,50 @@ export class RoomsService {
     const owner = await this.isOwner(roomId, userId);
     if (owner) return true;
     return this.roomsRepo.isAdmin(roomId, userId);
+  }
+
+  private mapPrivateMembershipRow(row: PrivateRoomMembershipRow): PrivateRoomMembershipView {
+    return {
+      room: {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        visibility: row.visibility,
+        owner_id: row.owner_id,
+        member_count: row.member_count,
+        created_at: row.created_at,
+      },
+      membership: {
+        id: row.membership_id,
+        room_id: row.id,
+        user_id: row.membership_user_id,
+        role: row.membership_role,
+        joined_at: row.membership_joined_at,
+      },
+    };
+  }
+
+  private mapPendingInviteRow(row: PendingRoomInviteRow): PendingRoomInviteView {
+    return {
+      invite: {
+        id: row.id,
+        room_id: row.room_id,
+        invited_by_user_id: row.invited_by_user_id,
+        invited_user_id: row.invited_user_id,
+        status: row.status,
+        created_at: row.created_at,
+        expires_at: row.expires_at,
+      },
+      room: {
+        id: row.room_id,
+        name: row.room_name,
+        description: row.room_description,
+        visibility: row.room_visibility,
+        owner_id: row.room_owner_id,
+        member_count: row.room_member_count,
+        created_at: row.room_created_at,
+      },
+      inviter_username: row.inviter_username,
+    };
   }
 }

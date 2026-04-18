@@ -114,6 +114,28 @@ export class RoomsController {
   }
 
   /**
+   * GET /api/v1/rooms/mine/private
+   *
+   * List private rooms where the authenticated user currently has membership.
+   */
+  @Get('mine/private')
+  async myPrivateRooms(@CurrentUser() ctx: AuthContext) {
+    const rooms = await this.roomsService.getMyPrivateRooms(ctx.user.id);
+    return { rooms };
+  }
+
+  /**
+   * GET /api/v1/rooms/invites/pending
+   *
+   * List pending private-room invites addressed to the authenticated user.
+   */
+  @Get('invites/pending')
+  async pendingInvites(@CurrentUser() ctx: AuthContext) {
+    const invites = await this.roomsService.getPendingPrivateInvites(ctx.user.id);
+    return { invites };
+  }
+
+  /**
    * POST /api/v1/rooms/:id/join
    *
    * Join a public room as an ordinary member.
@@ -147,5 +169,36 @@ export class RoomsController {
     @CurrentUser() ctx: AuthContext,
   ): Promise<void> {
     await this.roomsService.leaveRoom(roomId, ctx.user.id);
+  }
+
+  /**
+   * POST /api/v1/rooms/:id/invites/:inviteId/accept
+   *
+   * Accept a pending private-room invite addressed to the authenticated user.
+   */
+  @Post(':id/invites/:inviteId/accept')
+  @HttpCode(HttpStatus.OK)
+  async acceptInvite(
+    @Param('id') roomId: string,
+    @Param('inviteId') inviteId: string,
+    @CurrentUser() ctx: AuthContext,
+  ) {
+    const membership = await this.roomsService.acceptInvite(roomId, inviteId, ctx.user.id);
+    return { membership };
+  }
+
+  /**
+   * POST /api/v1/rooms/:id/invites/:inviteId/decline
+   *
+   * Decline a pending private-room invite addressed to the authenticated user.
+   */
+  @Post(':id/invites/:inviteId/decline')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async declineInvite(
+    @Param('id') roomId: string,
+    @Param('inviteId') inviteId: string,
+    @CurrentUser() ctx: AuthContext,
+  ): Promise<void> {
+    await this.roomsService.declineInvite(roomId, inviteId, ctx.user.id);
   }
 }

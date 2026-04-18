@@ -21,6 +21,8 @@ import type {
   RoomAdmin,
   RoomBan,
   RoomCatalogRow,
+  PrivateRoomMembershipRow,
+  PendingRoomInviteRow,
   CreateRoomInput,
   AddMemberInput,
   CreateInviteInput,
@@ -151,6 +153,34 @@ export class RoomsRepository {
     return parseInt(result.rows[0]?.count ?? '0', 10);
   }
 
+  /**
+   * List private rooms where the given user has active membership.
+   * Includes room details, member count, and the caller's membership row.
+   */
+  async listPrivateRoomsByUser(user_id: string): Promise<PrivateRoomMembershipRow[]> {
+    const result = await this.db.query<PrivateRoomMembershipRow>(
+      `SELECT r.id,
+              r.name,
+              r.description,
+              r.visibility,
+              r.owner_id,
+              r.created_at,
+              COUNT(all_members.id)::INT AS member_count,
+              m.id AS membership_id,
+              m.user_id AS membership_user_id,
+              m.role AS membership_role,
+              m.joined_at AS membership_joined_at
+       FROM room_memberships m
+       INNER JOIN rooms r ON r.id = m.room_id
+       LEFT JOIN room_memberships all_members ON all_members.room_id = r.id
+       WHERE m.user_id = $1 AND r.visibility = 'private'
+       GROUP BY r.id, m.id
+       ORDER BY r.name ASC`,
+      [user_id],
+    );
+    return result.rows;
+  }
+
   // ── Admin grants ───────────────────────────────────────────────────────────
 
   /** Grant admin privileges to a user within a room. Returns the admin row. */
@@ -206,6 +236,52 @@ export class RoomsRepository {
       `SELECT id, room_id, invited_by_user_id, invited_user_id, status, created_at, expires_at
        FROM room_invites WHERE room_id = $1 AND invited_user_id = $2 LIMIT 1`,
       [room_id, user_id],
+    );
+    return result.rows[0] ?? null;
+  }
+
+  /**
+   * List pending invites addressed to the given user, enriched with room context.
+   */
+  async listPendingInvitesByUser(user_id: string): Promise<PendingRoomInviteRow[]> {
+    const result = await this.db.query<PendingRoomInviteRow>(
+      `SELECT ri.id,
+              ri.room_id,
+              ri.invited_by_user_id,
+              ri.invited_user_id,
+              ri.status,
+              ri.created_at,
+              ri.expires_at,
+              r.name AS room_name,
+              r.description AS room_description,
+              r.visibility AS room_visibility,
+              r.owner_id AS room_owner_id,
+              r.created_at AS room_created_at,
+              COUNT(m.id)::INT AS room_member_count,
+              inviter.username AS inviter_username
+       FROM room_invites ri
+       INNER JOIN rooms r ON r.id = ri.room_id
+       LEFT JOIN room_memberships m ON m.room_id = r.id
+       LEFT JOIN users inviter ON inviter.id = ri.invited_by_user_id
+       WHERE ri.invited_user_id = $1
+         AND ri.status = 'pending'
+       GROUP BY ri.id, r.id, inviter.username
+       ORDER BY ri.created_at DESC`,
+      [user_id],
+    );
+    return result.rows;
+  }
+
+  /**
+   * Find a specific invite owned by the recipient for accept/decline flows.
+   */
+  async findInviteForRecipient(room_id: string, invite_id: string, user_id: string): Promise<RoomInvite | null> {
+    const result = await this.db.query<RoomInvite>(
+      `SELECT id, room_id, invited_by_user_id, invited_user_id, status, created_at, expires_at
+       FROM room_invites
+       WHERE id = $1 AND room_id = $2 AND invited_user_id = $3
+       LIMIT 1`,
+      [invite_id, room_id, user_id],
     );
     return result.rows[0] ?? null;
   }

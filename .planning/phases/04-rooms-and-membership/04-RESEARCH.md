@@ -162,17 +162,15 @@ There is one explicit override relative to the original roadmap: the locked cont
 </common_pitfalls>
 
 <open_questions>
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **How much of ROOM-07/ROOM-08 should be considered formally pulled into Phase 4?**
-   - What we know: The locked context explicitly requires full owner/admin/member management UI and ban-list operations in Phase 4.
-   - What's unclear: The roadmap still assigns `ROOM-07` and `ROOM-08` to Phase 8.
-   - Recommendation: Plan Phase 4 as the intentional source of base room authority and ban-list operations; later roadmap maintenance should reflect that pull-forward to avoid duplicate planning.
+1. **ROOM-07 / ROOM-08 pull-forward scope**
+   - Resolution: Treat Phase 4 as the intentional implementation point for the base owner/admin/member authority model and room-ban lifecycle because the locked context explicitly pulled those behaviors forward.
+   - Planning impact: Phase 4 plans and summaries should continue to cover the concrete authority and ban-list work already implemented. Later roadmap and traceability cleanup should record the pull-forward so Phase 8 does not replan the same base mechanics.
 
-2. **Should public room filtering include additional sort/filter controls now?**
-   - What we know: The locked context requires name/description/member-count and search by name + description.
-   - What's unclear: Whether extra filters/sorting are desired now.
-   - Recommendation: Keep Phase 4 to search plus a straightforward catalog presentation; avoid speculative filter scope.
+2. **Public room filtering scope**
+   - Resolution: Keep Phase 4 to the required search behavior only: match room name and description and show member count in a straightforward catalog surface.
+   - Planning impact: Do not add speculative sort controls or extra filters in Phase 4 planning. Any richer catalog refinement belongs in a later roadmap change, not this phase.
 
 </open_questions>
 

@@ -2,29 +2,29 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: Phase 3 - Sessions and Presence
+current_phase: Phase 4 - Rooms and Membership
 status: complete
-last_updated: "2026-04-18T17:34:00.000Z"
+last_updated: "2026-04-18T20:22:56.000Z"
 progress:
   total_phases: 10
-  completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  completed_phases: 4
+  total_plans: 17
+  completed_plans: 17
+  percent: 40
 ---
 
 # State
 
 **Updated:** 2026-04-18
-**Current phase:** Phase 3 - Sessions and Presence
-**Status:** Phase 3 COMPLETE — all 4 plans executed
+**Current phase:** Phase 4 - Rooms and Membership
+**Status:** Phase 4 COMPLETE — all 5 plans executed, including gap closure
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-04-18)
 
 **Core value:** A fresh clone must start a fully functional classic chat system locally, offline, and in a way that matches the written requirements more strictly than any existing prototype.
-**Current focus:** Phase 3 complete. Phase 4 (rooms and contacts) is next.
+**Current focus:** Phase 4 complete. Phase 5 (contacts and DM policy) is next.
 
 ## Phase 1 Plans Completed
 
@@ -47,26 +47,24 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - [x] 03-03: Active sessions web UI (COMPLETE)
 - [x] 03-04: Presence presentation and validation (COMPLETE)
 
-## Key Decisions (Phase 3)
+## Phase 4 Plans Completed
 
-- Session metadata (IP, user-agent) captured at session creation time, not lazily at inventory-read time
-- IP extraction centralized in session-metadata.ts using X-Forwarded-For → request.ip → socket.remoteAddress priority
-- revokeSession verifies ownership via findAllByUserId before deleteById (defense in depth beyond SQL predicate)
-- Bootstrap SQL in postgres.service.ts kept in sync with migration files for offline fresh-start compatibility
-- Per-tab aggregation (not per-user flag): satisfies the raw-spec 'most active tab' and 'all tabs inactive' rules
-- Live presence reads never touch PostgreSQL — getUserPresence/getUsersPresence read only the in-memory tabs Map
-- Durable last seen written fire-and-forget only when the last tab disconnects (offline transition)
-- afkTimeoutMs and offlineSweepMs injected via PRESENCE_CONFIG_TOKEN so production one-minute rule cannot be bypassed
-- socketUserMap pattern: single auth check at connect time, socket.id lookup on all subsequent events
-- Inline confirm block chosen over modal for session revoke (D-04 agent discretion): faster, contextual, no overlay state
-- Current-session revoke calls onSignedOut directly (T-03-09): reuses same sign-in return path as POST /sign-out
-- Sign out all other sessions button hidden when only one session exists (otherSessionCount === 0)
-- PresenceDot used without PresenceLabel in CompactPresenceList — compact contract (D-10) enforced at component boundary
-- DetailedPresencePanel shows PresenceTimestamp only when status === 'offline' — prevents last-seen leakage (D-13)
+- [x] 04-01: Room schema, durable domain contracts, and globally unique room identity (COMPLETE)
+- [x] 04-02: Public catalog, room creation contract, and join/leave backend flows (COMPLETE)
+- [x] 04-03: Private invites, admin authority, and ban-list backend flows (COMPLETE)
+- [x] 04-04: Phase 4 room shell, public/private room views, and management UI (COMPLETE)
+- [x] 04-05: Gap closure for recipient invite acceptance and private-room membership loading (COMPLETE)
+
+## Key Decisions (Phase 4)
+
+- Room names remain globally unique across public and private spaces at the database layer, with service-layer pre-checks for clearer UX.
+- Owner/admin/member and ban-list mechanics were intentionally pulled into Phase 4 as foundational room authority, even though later roadmap text still assigns ROOM-07/ROOM-08 to Phase 8.
+- Recipient invite actions live in the main rooms controller, while owner/admin actions stay in the management controller.
+- `App.tsx` owns private-room and pending-invite loading so room shell state refreshes centrally after accept, decline, create, and leave actions.
 
 ## Next Up
 
-- Phase 4: Rooms and Contacts — room creation, membership, contacts/DM workflows
+- Phase 5: Contacts and DM Policy — friendships, bans, and DM eligibility workflows
 
 ---
-*State initialized: 2026-04-18 | Updated: 2026-04-18T17:34:00Z*
+*State initialized: 2026-04-18 | Updated: 2026-04-18T20:22:56Z*

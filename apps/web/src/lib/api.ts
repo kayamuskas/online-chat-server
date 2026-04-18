@@ -247,6 +247,17 @@ export interface RoomBan {
   banned_at: string;
 }
 
+export interface PrivateRoomEntry {
+  room: RoomCatalogRow;
+  membership: RoomMembership;
+}
+
+export interface PendingRoomInviteEntry {
+  invite: RoomInvite;
+  room: RoomCatalogRow;
+  inviter_username: string | null;
+}
+
 // ── Room API calls ─────────────────────────────────────────────────────────────
 
 /**
@@ -287,6 +298,41 @@ export async function joinRoom(roomId: string): Promise<{ membership: RoomMember
  */
 export async function leaveRoom(roomId: string): Promise<void> {
   return post(`/rooms/${encodeURIComponent(roomId)}/leave`);
+}
+
+/**
+ * GET /api/v1/rooms/mine/private
+ * List authenticated user's private-room memberships.
+ */
+export async function getMyPrivateRooms(): Promise<{ rooms: PrivateRoomEntry[] }> {
+  return get("/rooms/mine/private");
+}
+
+/**
+ * GET /api/v1/rooms/invites/pending
+ * List pending private-room invites addressed to the current user.
+ */
+export async function getPendingPrivateInvites(): Promise<{ invites: PendingRoomInviteEntry[] }> {
+  return get("/rooms/invites/pending");
+}
+
+/**
+ * POST /api/v1/rooms/:id/invites/:inviteId/accept
+ * Accept a private-room invite owned by the authenticated user.
+ */
+export async function acceptRoomInvite(
+  roomId: string,
+  inviteId: string,
+): Promise<{ membership: RoomMembership }> {
+  return post(`/rooms/${encodeURIComponent(roomId)}/invites/${encodeURIComponent(inviteId)}/accept`);
+}
+
+/**
+ * POST /api/v1/rooms/:id/invites/:inviteId/decline
+ * Decline a private-room invite owned by the authenticated user.
+ */
+export async function declineRoomInvite(roomId: string, inviteId: string): Promise<void> {
+  return post(`/rooms/${encodeURIComponent(roomId)}/invites/${encodeURIComponent(inviteId)}/decline`);
 }
 
 /**

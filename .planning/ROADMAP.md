@@ -85,6 +85,14 @@ Goal: Model rooms, catalog behavior, global room uniqueness, invite constraints,
 
 Requirements: `ROOM-01`, `ROOM-02`, `ROOM-03`, `ROOM-04`, `ROOM-05`, `ROOM-06`, `ROOM-10`, `ROOM-11`
 
+Plans: 5 plans
+
+- [x] `04-01-PLAN.md` — Room schema, durable domain contracts, and globally unique room identity. *(complete 2026-04-18)*
+- [x] `04-02-PLAN.md` — Public catalog, room creation contract, and join/leave backend flows. *(complete 2026-04-18)*
+- [x] `04-03-PLAN.md` — Private invites, admin authority, and ban-list backend flows. *(complete 2026-04-18)*
+- [x] `04-04-PLAN.md` — Phase 4 room shell, public/private room views, and management UI. *(complete 2026-04-18)*
+- [x] `04-05-PLAN.md` — Gap closure for recipient invite acceptance and real private-room membership loading. *(complete 2026-04-18)*
+
 Success criteria:
 1. User can create rooms with required metadata and role model.
 2. Public room catalog supports search and displays member counts.

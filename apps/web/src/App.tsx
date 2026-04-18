@@ -17,7 +17,19 @@
  */
 
 import { useEffect, useState } from "react";
-import { me, type PublicUser } from "./lib/api";
+import {
+  me,
+  getMyPrivateRooms,
+  getPendingPrivateInvites,
+  acceptRoomInvite,
+  declineRoomInvite,
+  leaveRoom,
+  type PublicUser,
+  type PendingRoomInviteEntry,
+  type PrivateRoomEntry,
+  type RoomCatalogRow,
+  type Room,
+} from "./lib/api";
 import { AuthShell } from "./features/auth/AuthShell";
 import { PasswordSettingsView } from "./features/account/PasswordSettingsView";
 import { ActiveSessionsView } from "./features/account/ActiveSessionsView";
@@ -27,7 +39,6 @@ import { PublicRoomsView } from "./features/rooms/PublicRoomsView";
 import { CreateRoomView } from "./features/rooms/CreateRoomView";
 import { PrivateRoomsView } from "./features/rooms/PrivateRoomsView";
 import { ManageRoomView } from "./features/rooms/ManageRoomView";
-import type { RoomCatalogRow, Room } from "./lib/api";
 
 type AppTab =
   | "password"
@@ -60,6 +71,11 @@ function App() {
   const [tab, setTab] = useState<AppTab>("public-rooms");
   const [checkingSession, setCheckingSession] = useState(isAccountRoute());
   const [managedRoom, setManagedRoom] = useState<RoomCatalogRow | null>(null);
+  const [privateRooms, setPrivateRooms] = useState<PrivateRoomEntry[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingRoomInviteEntry[]>([]);
+  const [privateRoomsLoading, setPrivateRoomsLoading] = useState(false);
+  const [privateRoomsError, setPrivateRoomsError] = useState<string | null>(null);
+  const [inviteActionId, setInviteActionId] = useState<string | null>(null);
 
   function handleAuthenticated(nextUser: PublicUser) {
     setUser(nextUser);
@@ -68,6 +84,9 @@ function App() {
 
   function handleSignedOut() {
     setUser(null);
+    setPrivateRooms([]);
+    setPendingInvites([]);
+    setManagedRoom(null);
     window.history.replaceState(null, "", "/");
   }
 
@@ -105,6 +124,100 @@ function App() {
     };
   }, []);
 
+  function handleManageRoom(room: RoomCatalogRow) {
+    setManagedRoom(room);
+    setTab("manage-room");
+  }
+
+  async function loadPrivateRoomData() {
+    setPrivateRoomsLoading(true);
+    setPrivateRoomsError(null);
+    try {
+      const [roomsResult, invitesResult] = await Promise.all([
+        getMyPrivateRooms(),
+        getPendingPrivateInvites(),
+      ]);
+      setPrivateRooms(roomsResult.rooms);
+      setPendingInvites(invitesResult.invites);
+    } catch (error) {
+      setPrivateRoomsError(
+        error instanceof Error ? error.message : "Failed to load private-room data",
+      );
+    } finally {
+      setPrivateRoomsLoading(false);
+    }
+  }
+
+  function handleRoomCreated(room: Room) {
+    // After creating, if private navigate to private rooms; else public rooms
+    if (room.visibility === "private") {
+      void loadPrivateRoomData();
+      setTab("private-rooms");
+    } else {
+      setTab("public-rooms");
+    }
+  }
+
+  function handleRoomJoined(_room: RoomCatalogRow) {
+    setTab("public-rooms");
+  }
+
+  async function handleAcceptInvite(roomId: string, inviteId: string) {
+    setInviteActionId(inviteId);
+    setPrivateRoomsError(null);
+    try {
+      await acceptRoomInvite(roomId, inviteId);
+      await loadPrivateRoomData();
+    } catch (error) {
+      setPrivateRoomsError(
+        error instanceof Error ? error.message : "Failed to accept invite",
+      );
+    } finally {
+      setInviteActionId(null);
+    }
+  }
+
+  async function handleDeclineInvite(roomId: string, inviteId: string) {
+    setInviteActionId(inviteId);
+    setPrivateRoomsError(null);
+    try {
+      await declineRoomInvite(roomId, inviteId);
+      await loadPrivateRoomData();
+    } catch (error) {
+      setPrivateRoomsError(
+        error instanceof Error ? error.message : "Failed to decline invite",
+      );
+    } finally {
+      setInviteActionId(null);
+    }
+  }
+
+  async function handleLeavePrivateRoom(room: RoomCatalogRow) {
+    setPrivateRoomsError(null);
+    try {
+      await leaveRoom(room.id);
+      if (managedRoom?.id === room.id) {
+        setManagedRoom(null);
+      }
+      await loadPrivateRoomData();
+    } catch (error) {
+      setPrivateRoomsError(
+        error instanceof Error ? error.message : "Failed to leave private room",
+      );
+    }
+  }
+
+  useEffect(() => {
+    if (!user) {
+      setPrivateRooms([]);
+      setPendingInvites([]);
+      setManagedRoom(null);
+      return;
+    }
+
+    void loadPrivateRoomData();
+  }, [user]);
+
   if (checkingSession) {
     return (
       <div className="auth-layout">
@@ -124,24 +237,6 @@ function App() {
 
   if (!user) {
     return <AuthShell onAuthenticated={handleAuthenticated} />;
-  }
-
-  function handleManageRoom(room: RoomCatalogRow) {
-    setManagedRoom(room);
-    setTab("manage-room");
-  }
-
-  function handleRoomCreated(room: Room) {
-    // After creating, if private navigate to private rooms; else public rooms
-    if (room.visibility === "private") {
-      setTab("private-rooms");
-    } else {
-      setTab("public-rooms");
-    }
-  }
-
-  function handleRoomJoined(_room: RoomCatalogRow) {
-    setTab("public-rooms");
   }
 
   return (
@@ -209,9 +304,16 @@ function App() {
           )}
           {tab === "private-rooms" && (
             <PrivateRoomsView
-              rooms={[]}
+              rooms={privateRooms}
+              pendingInvites={pendingInvites}
               onManage={handleManageRoom}
+              onLeave={(room) => void handleLeavePrivateRoom(room)}
+              onAcceptInvite={(roomId, inviteId) => void handleAcceptInvite(roomId, inviteId)}
+              onDeclineInvite={(roomId, inviteId) => void handleDeclineInvite(roomId, inviteId)}
               onCreateRoom={() => setTab("create-room")}
+              loading={privateRoomsLoading}
+              error={privateRoomsError}
+              inviteActionId={inviteActionId}
             />
           )}
           {tab === "create-room" && (

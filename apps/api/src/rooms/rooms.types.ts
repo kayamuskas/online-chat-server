@@ -119,6 +119,49 @@ export interface RoomCatalogRow {
   created_at: Date;
 }
 
+/**
+ * Private room membership projection used for the authenticated user's
+ * private-room listing. Includes room details plus the caller's membership row.
+ */
+export interface PrivateRoomMembershipRow extends RoomCatalogRow {
+  membership_id: string;
+  membership_user_id: string;
+  membership_role: RoomRole;
+  membership_joined_at: Date;
+}
+
+/**
+ * Pending invite projection for recipient-facing private-room invite surfaces.
+ * Includes invite data plus minimal room context for display.
+ */
+export interface PendingRoomInviteRow {
+  id: string;
+  room_id: string;
+  invited_by_user_id: string;
+  invited_user_id: string;
+  status: InviteStatus;
+  created_at: Date;
+  expires_at: Date | null;
+  room_name: string;
+  room_description: string | null;
+  room_visibility: RoomVisibility;
+  room_owner_id: string;
+  room_created_at: Date;
+  room_member_count: number;
+  inviter_username: string | null;
+}
+
+export interface PrivateRoomMembershipView {
+  room: RoomCatalogRow;
+  membership: RoomMembership;
+}
+
+export interface PendingRoomInviteView {
+  invite: RoomInvite;
+  room: RoomCatalogRow;
+  inviter_username: string | null;
+}
+
 // ── Input types ───────────────────────────────────────────────────────────────
 
 export interface CreateRoomInput {
