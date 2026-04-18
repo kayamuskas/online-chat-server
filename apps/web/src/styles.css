@@ -1,5 +1,5 @@
 /*
- * Phase 1 shell styles — local only.
+ * Phase 2 styles — auth shell + minimal account surface.
  *
  * All rules are self-contained. No @import, no external font URLs,
  * no hosted CDN references. Fonts fall back to the system stack.
@@ -21,10 +21,12 @@
   --color-muted: #8b8fa8;
   --color-accent: #5b7cf6;
   --color-ok: #4ade80;
+  --color-error: #f87171;
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
+  --radius: 0.375rem;
 }
 
 html,
@@ -37,110 +39,383 @@ body {
   min-height: 100dvh;
 }
 
-.shell {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem;
-}
+/* ── Auth layout ─────────────────────────────────────────────────────────── */
 
-.shell__header {
+.auth-layout {
+  min-height: 100dvh;
   display: flex;
-  align-items: baseline;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 1rem;
+  flex-direction: column;
+  background-color: var(--color-bg);
 }
 
-.shell__header h1 {
-  font-size: 1.5rem;
+/* Top bar */
+.auth-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  height: 3.25rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.auth-topbar__logo {
   font-weight: 700;
-  color: var(--color-text);
-}
-
-.shell__badge {
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.625rem;
-  border-radius: 9999px;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  white-space: nowrap;
-}
-
-.shell__section {
-  margin-bottom: 2rem;
-}
-
-.shell__section h2 {
   font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-accent);
-  margin-bottom: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.shell__section p {
   color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.auth-topbar__nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.auth-topbar__btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--color-muted);
+  padding: 0.25rem 0.875rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.auth-topbar__btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.auth-topbar__btn--active {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background-color: rgba(91, 124, 246, 0.08);
+}
+
+/* Centered card area */
+.auth-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+}
+
+.auth-center__card {
+  width: 100%;
+  max-width: 360px;
+}
+
+/* ── Auth card ────────────────────────────────────────────────────────────── */
+
+.auth-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.75rem 1.5rem;
+}
+
+.auth-card h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.375rem;
+}
+
+.auth-card__sub {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.auth-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.auth-card__error {
+  font-size: 0.875rem;
+  color: var(--color-error);
   margin-bottom: 0.75rem;
 }
 
-.shell__status {
-  display: inline-block;
-  font-family: var(--font-mono);
+.auth-card__foot {
+  text-align: center;
   font-size: 0.875rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.25rem;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  margin-top: 1rem;
 }
 
-.shell__status--ok {
-  color: var(--color-ok);
-  border-color: var(--color-ok);
+/* ── Form fields ──────────────────────────────────────────────────────────── */
+
+.field {
+  margin-bottom: 1rem;
 }
 
-.shell__table {
+.field__label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  margin-bottom: 0.375rem;
+}
+
+.field__input {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-  margin-top: 0.75rem;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  transition: border-color 0.15s;
 }
 
-.shell__table th {
-  text-align: left;
-  font-weight: 600;
+.field__input::placeholder {
   color: var(--color-muted);
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--color-border);
-  background-color: var(--color-surface);
+  opacity: 0.7;
 }
 
-.shell__table td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: top;
+.field__input:focus {
+  border-color: var(--color-accent);
 }
 
-.shell__table tr:last-child td {
-  border-bottom: none;
+/* ── Checkbox ─────────────────────────────────────────────────────────────── */
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  cursor: pointer;
+  user-select: none;
 }
 
-code {
-  font-family: var(--font-mono);
-  font-size: 0.875em;
-  background-color: var(--color-surface);
-  padding: 0.1em 0.4em;
-  border-radius: 0.25em;
+.checkbox input[type="checkbox"] {
+  accent-color: var(--color-accent);
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+
+.btn {
+  background-color: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  padding: 0.5625rem 1rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--block {
+  width: 100%;
+  text-align: center;
+}
+
+.btn--soft {
+  background-color: transparent;
+  color: var(--color-muted);
   border: 1px solid var(--color-border);
 }
 
-.shell__footer {
-  margin-top: 3rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
-  color: var(--color-muted);
+.btn--soft:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-muted);
+  opacity: 1;
+}
+
+.btn--danger {
+  background-color: #7f1d1d;
+  color: #fecaca;
+}
+
+/* ── Link button ─────────────────────────────────────────────────────────── */
+
+.link {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-size: inherit;
+  font-family: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* ── App layout (logged-in) ───────────────────────────────────────────────── */
+
+.app-layout {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg);
+}
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  height: 3.25rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.app-topbar__logo {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.app-topbar__user {
   font-size: 0.875rem;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+}
+
+.app-account {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  max-width: 960px;
+  margin: 2rem auto;
+  width: 100%;
+  padding: 0 1.5rem;
+  gap: 1.75rem;
+}
+
+/* Account side nav */
+.app-account__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.app-account__nav-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  padding: 0.25rem 0.625rem;
+  margin-bottom: 0.25rem;
+}
+
+.app-account__nav-item {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.app-account__nav-item:hover {
+  background-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.app-account__nav-item--active {
+  background-color: var(--color-border);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.app-account__content {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.app-account__content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.app-account__content .sub {
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+  margin-bottom: 1.25rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.success-msg {
+  font-size: 0.875rem;
+  color: var(--color-ok);
+  margin-bottom: 0.75rem;
+}
+
+.error-msg {
+  font-size: 0.875rem;
+  color: var(--color-error);
+  margin-bottom: 0.75rem;
+}
+
+/* ── Current session box ─────────────────────────────────────────────────── */
+
+.session-box {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.session-box__label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  margin-bottom: 0.5rem;
+}
+
+.session-box__user {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.session-box__note {
+  font-size: 0.8125rem;
+  color: var(--color-muted);
 }
