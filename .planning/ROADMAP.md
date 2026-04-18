@@ -34,10 +34,10 @@ Requirements: `OPS-01`, `OPS-02`, `ARCH-01`, `ARCH-02`
 
 Plans: 4 plans
 
-- [ ] `01-01-PLAN.md` — Create the monorepo workspace, shared contracts, and offline dependency strategy.
-- [ ] `01-02-PLAN.md` — Replace CDN/runtime frontend delivery with a local bundled web shell.
-- [ ] `01-03-PLAN.md` — Bootstrap the Nest REST/WebSocket API and BullMQ worker foundation.
-- [ ] `01-04-PLAN.md` — Package the stack with Docker Compose, offline Dockerfiles, and QA smoke scripts.
+- [x] `01-01-PLAN.md` — Create the monorepo workspace, shared contracts, and offline dependency strategy. *(complete 2026-04-18)*
+- [x] `01-02-PLAN.md` — Replace CDN/runtime frontend delivery with a local bundled web shell. *(complete 2026-04-18)*
+- [x] `01-03-PLAN.md` — Bootstrap the Nest REST/WebSocket API and BullMQ worker foundation. *(complete 2026-04-18)*
+- [x] `01-04-PLAN.md` — Package the stack with Docker Compose, offline Dockerfiles, and QA smoke scripts. *(complete 2026-04-18)*
 
 Success criteria:
 1. Repository contains backend, frontend, infra, and docs structure that supports planned implementation.
