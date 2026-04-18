@@ -735,3 +735,347 @@ body {
   border-radius: var(--radius);
   padding: 1rem;
 }
+
+/* ── Room views (Phase 4) ─────────────────────────────────────────────────── */
+
+.rooms-view {
+  /* Uses the same content container as other account tabs */
+}
+
+.rooms-view__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.rooms-search {
+  margin-bottom: 1rem;
+}
+
+.rooms-search .field__input {
+  max-width: 480px;
+}
+
+.rooms-loading,
+.rooms-empty {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  margin: 1rem 0;
+}
+
+/* ── Room list ────────────────────────────────────────────────────────────── */
+
+.rooms-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.rooms-list__item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.1s;
+}
+
+.rooms-list__item:last-child {
+  border-bottom: none;
+}
+
+.rooms-list__item:hover {
+  background-color: rgba(91, 124, 246, 0.04);
+}
+
+.rooms-list__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.rooms-list__name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.rooms-list__desc {
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rooms-list__meta {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+}
+
+.rooms-list__role {
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.rooms-list__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Room type badge */
+.rooms-badge {
+  display: inline-block;
+  padding: 0.1em 0.45em;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: 0.03em;
+  border-radius: 0.25rem;
+  vertical-align: middle;
+  text-transform: lowercase;
+}
+
+.rooms-badge--private {
+  color: var(--color-muted);
+  background-color: rgba(139, 143, 168, 0.12);
+  border: 1px solid rgba(139, 143, 168, 0.25);
+}
+
+/* ── Create room form ─────────────────────────────────────────────────────── */
+
+.create-room-form {
+  max-width: 480px;
+}
+
+.field__optional {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-weight: 400;
+  margin-left: 0.25rem;
+}
+
+/* Radio group */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+  accent-color: var(--color-accent);
+  margin-top: 0.1rem;
+  cursor: pointer;
+}
+
+.radio-option__text strong {
+  font-weight: 600;
+}
+
+/* ── Room management (Phase 4) ────────────────────────────────────────────── */
+
+.manage-room {
+  /* content area — inherits .app-account__content sizing */
+}
+
+.manage-room__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.manage-room__section {
+  margin-bottom: 1.75rem;
+}
+
+.manage-room__section-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.625rem;
+}
+
+/* Invite form */
+.invite-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.invite-form .field {
+  flex: 1;
+  min-width: 180px;
+  margin-bottom: 0;
+}
+
+/* Members table */
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.members-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  padding: 0 0.5rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 500;
+}
+
+.members-table td {
+  padding: 0.625rem 0.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.members-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.members-table__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.members-table__actions .btn + .btn {
+  margin-left: 0.375rem;
+}
+
+.members-table__role {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.1em 0.4em;
+  border-radius: 0.25rem;
+  background-color: var(--color-border);
+  color: var(--color-muted);
+}
+
+.members-table__role--owner {
+  background-color: rgba(91, 124, 246, 0.15);
+  color: var(--color-accent);
+}
+
+.members-table__role--admin {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+/* Owner leave warning */
+.owner-leave-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background-color: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: var(--radius);
+  margin-top: 1rem;
+}
+
+.owner-leave-warning__icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.owner-leave-warning__text {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.owner-leave-warning__text strong {
+  color: var(--color-error);
+}
+
+/* Ban list */
+.ban-list {
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.ban-list__item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ban-list__item:last-child {
+  border-bottom: none;
+}
+
+.ban-list__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ban-list__username {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.ban-list__meta {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+}
+
+.ban-list__empty {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+/* cannot-leave notice for non-owner rooms */
+.rooms-notice {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  padding: 0.75rem 1rem;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-top: 0.75rem;
+}
