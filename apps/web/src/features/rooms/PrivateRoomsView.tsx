@@ -33,6 +33,8 @@ interface PrivateRoomsViewProps {
   onDeclineInvite?: (roomId: string, inviteId: string) => void;
   /** Called when user wants to create a new private room. */
   onCreateRoom?: () => void;
+  /** Called when user wants to open the chat for a room they belong to. */
+  onOpenChat?: (room: RoomCatalogRow) => void;
   loading?: boolean;
   error?: string | null;
   inviteActionId?: string | null;
@@ -46,6 +48,7 @@ export function PrivateRoomsView({
   onAcceptInvite,
   onDeclineInvite,
   onCreateRoom,
+  onOpenChat,
   loading = false,
   error,
   inviteActionId = null,
@@ -148,6 +151,15 @@ export function PrivateRoomsView({
                   </span>
                 </div>
                 <div className="rooms-list__actions">
+                  {onOpenChat && (
+                    <button
+                      type="button"
+                      className="btn btn--xs"
+                      onClick={() => onOpenChat(room)}
+                    >
+                      Open chat
+                    </button>
+                  )}
                   {isAdminOrOwner && onManage && (
                     <button
                       type="button"
