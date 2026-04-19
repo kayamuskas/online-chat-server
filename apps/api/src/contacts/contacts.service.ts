@@ -265,17 +265,30 @@ export class ContactsService {
   /**
    * Initiate a DM conversation between the caller and a target user.
    *
-   * - Calls checkDmEligibility first; throws ForbiddenException if not eligible (T-05-09).
-   * - Creates or retrieves the DM conversation row (idempotent via ON CONFLICT in repository).
+   * - Calls checkDmEligibility first.
+   * - ban_exists (D-32): returns HTTP 200 { conversation, eligible: false } so the
+   *   client can render frozen read-only history instead of a raw error string (T-06-07).
+   *   createDmConversation is idempotent and preserves the existing frozen=TRUE state.
+   * - not_friends: throws ForbiddenException (403) — no shared history exists to show.
    */
   async initiateDm(
     callerId: string,
     targetId: string,
   ): Promise<{ conversation: DmConversation; eligible: boolean }> {
     const eligibility = await this.checkDmEligibility(callerId, targetId);
+
     if (!eligibility.eligible) {
+      if (eligibility.reason === 'ban_exists') {
+        // D-32: A ban freezes the conversation history but does not erase it.
+        // Return the conversation row (creating it if it does not exist yet) with
+        // eligible=false so the client can render frozen read-only history.
+        const conversation = await this.repo.createDmConversation(callerId, targetId);
+        return { conversation, eligible: false };
+      }
+      // not_friends: no shared history exists; throwing is correct (no conversation to show).
       throw new ForbiddenException(`DM not allowed: ${eligibility.reason}`);
     }
+
     const conversation = await this.repo.createDmConversation(callerId, targetId);
     return { conversation, eligible: true };
   }
