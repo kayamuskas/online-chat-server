@@ -126,6 +126,16 @@ Goal: Implement the message engine shared by rooms and direct dialogs, including
 
 Requirements: `MSG-01`, `MSG-02`, `MSG-03`, `MSG-04`, `MSG-08`
 
+Plans: 7 plans
+
+- [x] `06-01-PLAN.md` — Messages schema, watermark types, and TDD scaffold. *(complete 2026-04-19)*
+- [x] `06-02-PLAN.md` — MessagesRepository and MessagesService implementation. *(complete 2026-04-19)*
+- [x] `06-03-PLAN.md` — MessagesController and MessagesModule wiring. *(complete 2026-04-19)*
+- [x] `06-04-PLAN.md` — Frontend message engine — RoomChatView, DmChatView, useMessages hook. *(complete 2026-04-19)*
+- [x] `06-05-PLAN.md` — Shell integration — RoomChatView wired into room nav, DM stub wired. *(complete 2026-04-19)*
+- [x] `06-06-PLAN.md` — Gap closure — reply_preview hydration at send-time + unfreeze after unban. *(complete 2026-04-19)*
+- [ ] `06-07-PLAN.md` — Remaining gap closure items (if any).
+
 Success criteria:
 1. Users can send multiline UTF-8 messages with reply references.
 2. Room and DM chats share the same core message capabilities.

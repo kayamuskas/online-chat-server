@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 5 - Contacts and DM Policy
-status: in-progress
-last_updated: "2026-04-19T00:25:34.000Z"
+status: completed
+last_updated: "2026-04-19T09:10:04.920Z"
 progress:
   total_phases: 10
-  completed_phases: 4
-  total_plans: 21
-  completed_plans: 20
-  percent: 48
+  completed_phases: 5
+  total_plans: 31
+  completed_plans: 30
+  percent: 97
 ---
 
 # State
@@ -89,9 +89,24 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - addFriendTarget stores username string in ManageRoomView to avoid prop-drilling contacts list through room management hierarchy
 - RoomMembersTable Add friend button is optional (onSendFriendRequest?) — fully backward-compatible with existing call sites
 
+## Phase 6 Plans
+
+- [x] 06-01: Messages schema, watermark types, and TDD scaffold (COMPLETE)
+- [x] 06-02: MessagesRepository and MessagesService implementation (COMPLETE)
+- [x] 06-03: MessagesController and MessagesModule wiring (COMPLETE)
+- [x] 06-04: Frontend message engine — RoomChatView, DmChatView, useMessages hook (COMPLETE)
+- [x] 06-05: Shell integration — RoomChatView wired into room nav, DM stub wired (COMPLETE)
+- [x] 06-06: Gap closure — reply_preview hydration at send-time + unfreeze after unban (COMPLETE)
+
+## Key Decisions (Phase 6, Plan 06)
+
+- findMessageViewById uses LIMIT 1 JOIN matching listHistory — reuses rowToMessageView helper
+- unfreezeConversation uses plain UPDATE (not upsert) — no-op if no conversation row exists, correct behavior
+- sendMessage return type changed to Promise<MessageView>; controller passes result directly to gateway without changes
+
 ## Next Up
 
-- Phase 6: Real-time messaging engine
+- Phase 6 Plan 07 (if exists) or Phase 7: Attachments and Durable Delivery
 
 ---
-*State initialized: 2026-04-18 | Updated: 2026-04-18T21:39:10Z*
+*State initialized: 2026-04-18 | Updated: 2026-04-19T09:08:55Z*
