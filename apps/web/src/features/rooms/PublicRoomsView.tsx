@@ -58,6 +58,12 @@ export function PublicRoomsView({ onJoined, onCreateRoom }: PublicRoomsViewProps
       await joinRoom(room.id);
       onJoined?.(room);
     } catch (e) {
+      const statusCode = (e as { statusCode?: number }).statusCode;
+      // Already a member — treat as success and open chat
+      if (statusCode === 409) {
+        onJoined?.(room);
+        return;
+      }
       setJoinError(e instanceof Error ? e.message : "Failed to join room");
     } finally {
       setJoiningId(null);

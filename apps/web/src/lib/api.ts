@@ -580,6 +580,34 @@ export interface ReplyPreview {
 }
 
 /**
+ * Transform raw API MessageView (snake_case) to the frontend camelCase contract.
+ * The backend serialises postgres rows directly without a camelCase transform layer.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapMessageView(raw: any): MessageView {
+  const rp = raw.reply_preview ?? raw.replyPreview;
+  return {
+    id: raw.id,
+    conversationType: raw.conversation_type ?? raw.conversationType,
+    conversationId: raw.conversation_id ?? raw.conversationId,
+    authorId: raw.author_id ?? raw.authorId,
+    authorUsername: raw.author_username ?? raw.authorUsername,
+    content: raw.content,
+    replyToId: raw.reply_to_id ?? raw.replyToId ?? null,
+    replyPreview: rp
+      ? {
+          id: rp.id,
+          authorUsername: rp.author_username ?? rp.authorUsername,
+          contentSnippet: rp.content_preview ?? rp.contentSnippet,
+        }
+      : null,
+    editedAt: raw.edited_at ?? raw.editedAt ?? null,
+    createdAt: raw.created_at ?? raw.createdAt,
+    conversationWatermark: Number(raw.conversation_watermark ?? raw.conversationWatermark),
+  };
+}
+
+/**
  * A fully-enriched message row as returned by history endpoints.
  * Mirrors MessageView from the API messages.types.ts.
  */
@@ -633,7 +661,10 @@ export async function getRoomHistory(
     params.set("limit", String(opts.limit));
   }
   const qs = params.size > 0 ? `?${params.toString()}` : "";
-  return get(`/messages/rooms/${encodeURIComponent(roomId)}/history${qs}`);
+  const raw = await get<{ messages: unknown[]; range: MessageHistoryRange }>(
+    `/messages/rooms/${encodeURIComponent(roomId)}/history${qs}`,
+  );
+  return { messages: raw.messages.map(mapMessageView), range: raw.range };
 }
 
 /**
@@ -645,7 +676,11 @@ export async function sendRoomMessage(
   roomId: string,
   body: { content: string; replyToId?: string },
 ): Promise<{ message: MessageView }> {
-  return post(`/messages/rooms/${encodeURIComponent(roomId)}/messages`, body);
+  const raw = await post<{ message: unknown }>(
+    `/messages/rooms/${encodeURIComponent(roomId)}/messages`,
+    { content: body.content, ...(body.replyToId ? { reply_to_id: body.replyToId } : {}) },
+  );
+  return { message: mapMessageView(raw.message) };
 }
 
 /**
@@ -663,7 +698,7 @@ export async function editRoomMessage(
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(body),
+      body: JSON.stringify({ new_content: body.content }),
     },
   );
   if (!res.ok) {
@@ -673,7 +708,8 @@ export async function editRoomMessage(
     err.statusCode = res.status;
     throw err;
   }
-  return res.json() as Promise<{ message: MessageView }>;
+  const raw = (await res.json()) as { message: unknown };
+  return { message: mapMessageView(raw.message) };
 }
 
 /**
@@ -693,7 +729,10 @@ export async function getDmHistory(
     params.set("limit", String(opts.limit));
   }
   const qs = params.size > 0 ? `?${params.toString()}` : "";
-  return get(`/messages/dm/${encodeURIComponent(conversationId)}/history${qs}`);
+  const raw = await get<{ messages: unknown[]; range: MessageHistoryRange }>(
+    `/messages/dm/${encodeURIComponent(conversationId)}/history${qs}`,
+  );
+  return { messages: raw.messages.map(mapMessageView), range: raw.range };
 }
 
 /**
@@ -704,7 +743,11 @@ export async function sendDmMessage(
   conversationId: string,
   body: { content: string; replyToId?: string },
 ): Promise<{ message: MessageView }> {
-  return post(`/messages/dm/${encodeURIComponent(conversationId)}/messages`, body);
+  const raw = await post<{ message: unknown }>(
+    `/messages/dm/${encodeURIComponent(conversationId)}/messages`,
+    { content: body.content, ...(body.replyToId ? { reply_to_id: body.replyToId } : {}) },
+  );
+  return { message: mapMessageView(raw.message) };
 }
 
 /**
@@ -722,7 +765,7 @@ export async function editDmMessage(
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(body),
+      body: JSON.stringify({ new_content: body.content }),
     },
   );
   if (!res.ok) {
@@ -732,7 +775,8 @@ export async function editDmMessage(
     err.statusCode = res.status;
     throw err;
   }
-  return res.json() as Promise<{ message: MessageView }>;
+  const raw = (await res.json()) as { message: unknown };
+  return { message: mapMessageView(raw.message) };
 }
 
 // ── Session management API calls ──────────────────────────────────────────────
