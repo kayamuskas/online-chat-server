@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 5 - Contacts and DM Policy
 status: completed
-last_updated: "2026-04-19T09:10:04.920Z"
+last_updated: "2026-04-19T09:13:43.901Z"
 progress:
   total_phases: 10
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 31
-  completed_plans: 30
-  percent: 97
+  completed_plans: 31
+  percent: 100
 ---
 
 # State
@@ -104,9 +104,17 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - unfreezeConversation uses plain UPDATE (not upsert) — no-op if no conversation row exists, correct behavior
 - sendMessage return type changed to Promise<MessageView>; controller passes result directly to gateway without changes
 
+  - [x] 06-07: Gap closure — banned DM returns 200 eligible:false; DmChatView renders frozen history (COMPLETE)
+
+## Key Decisions (Phase 6, Plan 07)
+
+- ban_exists returns HTTP 200 with eligible:false instead of 403 — client renders frozen read-only history (D-32)
+- not_friends still returns 403 but catch block now translates it to setIneligibleReason instead of setInitError
+- createDmConversation idempotent upsert preserves existing frozen=TRUE state set by banUser
+
 ## Next Up
 
-- Phase 6 Plan 07 (if exists) or Phase 7: Attachments and Durable Delivery
+- Phase 7: Attachments and Durable Delivery
 
 ---
-*State initialized: 2026-04-18 | Updated: 2026-04-19T09:08:55Z*
+*State initialized: 2026-04-18 | Updated: 2026-04-19T09:12:39Z*

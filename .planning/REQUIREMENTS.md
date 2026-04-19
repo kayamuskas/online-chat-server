@@ -52,7 +52,7 @@
 ### Messaging and History
 
 - [ ] **MSG-01**: Room chats and personal dialogs support the same core message features from the UI perspective.
-- [ ] **MSG-02**: User can send UTF-8 plain or multiline text messages up to 3 KB.
+- [x] **MSG-02**: User can send UTF-8 plain or multiline text messages up to 3 KB.
 - [ ] **MSG-03**: User can send emoji and replies/reference another message.
 - [ ] **MSG-04**: User can edit their own messages and the UI shows an edited marker.
 - [ ] **MSG-05**: Message author can delete their own messages, and room admins can delete room messages.
@@ -143,7 +143,7 @@
 | ROOM-08 | Phase 8 | Pending |
 | ROOM-09 | Phase 8 | Pending |
 | MSG-01 | Phase 6 | Pending |
-| MSG-02 | Phase 6 | Pending |
+| MSG-02 | Phase 6 | Complete |
 | MSG-03 | Phase 6 | Pending |
 | MSG-04 | Phase 6 | Pending |
 | MSG-05 | Phase 8 | Pending |

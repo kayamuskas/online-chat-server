@@ -18,7 +18,7 @@ This roadmap assumes a greenfield implementation using the existing requirements
 | 3 | Sessions and Presence | Implement multi-session management, IP tracking, last-seen persistence, and correct online/AFK/offline semantics | SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07 | 5 |
 | 4 | Rooms and Membership | Implement room catalog, global uniqueness, invite constraints, join/leave behavior, and room state model | ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, ROOM-06, ROOM-10, ROOM-11 | 5 |
 | 5 | Contacts and DM Policy | Implement friendships, friend requests, user bans, and DM eligibility rules | FRND-01, FRND-02, FRND-03, FRND-04, FRND-05, FRND-06 | 4 |
-| 6 | Messaging Core | Implement room and DM message send/edit/reply flows with durable ordering and watermark integrity checks | MSG-01, MSG-02, MSG-03, MSG-04, MSG-08 | 5 |
+| 6 | Messaging Core | 7/7 | Complete   | 2026-04-19 |
 | 7 | Attachments and Durable Delivery | Add attachment flow, ACL enforcement, offline delivery, bounded queue strategy, and filesystem-backed persistence | MSG-06, MSG-09, FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-06, OPS-03 | 5 |
 | 8 | Moderation and Destructive Actions | Complete admin controls, bans, message deletion, room deletion, and account deletion side effects | ROOM-07, ROOM-08, ROOM-09, MSG-05, AUTH-08 | 4 |
 | 9 | Frontend Productization | Replace the prototype shell with the real app UI, navigation, unread indicators, infinite scroll, session screens, and modal admin UX | MSG-07, NOTF-01, NOTF-02, UI-01, UI-02, UI-03 | 5 |
