@@ -25,6 +25,7 @@ import type { RoomsRepository } from '../../rooms/rooms.repository.js';
 import type { ContactsRepository } from '../../contacts/contacts.repository.js';
 import type {
   Message,
+  MessageView,
   SendMessageInput,
   EditMessageInput,
   MessageHistoryQuery,
@@ -42,6 +43,23 @@ function makeMessage(overrides: Partial<Message> = {}): Message {
     author_id: 'user-a',
     content: 'Hello world',
     reply_to_id: null,
+    edited_at: null,
+    conversation_watermark: 1,
+    created_at: new Date('2026-01-01T00:00:00Z'),
+    ...overrides,
+  };
+}
+
+function makeMessageView(overrides: Partial<MessageView> = {}): MessageView {
+  return {
+    id: 'msg-1',
+    conversation_type: 'room',
+    conversation_id: 'room-1',
+    author_id: 'user-a',
+    author_username: 'alice',
+    content: 'Hello world',
+    reply_to_id: null,
+    reply_preview: null,
     edited_at: null,
     conversation_watermark: 1,
     created_at: new Date('2026-01-01T00:00:00Z'),
@@ -78,6 +96,7 @@ function makeMessagesRepoStub(overrides: Partial<MessagesRepository> = {}): Mess
     createMessage: vi.fn().mockResolvedValue(makeMessage()),
     editMessage: vi.fn().mockResolvedValue(makeMessage({ content: 'Edited', edited_at: new Date() })),
     findMessageById: vi.fn().mockResolvedValue(makeMessage()),
+    findMessageViewById: vi.fn().mockResolvedValue(makeMessageView()),
     listHistory: vi.fn().mockResolvedValue({ messages: [], range: { firstWatermark: 0, lastWatermark: 0, hasMoreBefore: false, totalCount: 0 } }),
     resolveReplyMessage: vi.fn().mockResolvedValue(null),
     ...overrides,
