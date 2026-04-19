@@ -1,5 +1,6 @@
 /**
- * Phase 3 + 4 API client — auth flows, session management, and room surfaces.
+ * Phase 3 + 4 + 5 + 6 API client — auth flows, session management, room surfaces,
+ * contacts / DM policy, and messaging contracts.
  *
  * All requests are made to the NestJS API running on SERVICE_PORTS.apiHttp.
  * Credentials (session cookies) are sent with every request via credentials: "include".
@@ -27,6 +28,14 @@
  *   DELETE /api/v1/rooms/:id/manage/members/:userId
  *   GET    /api/v1/rooms/:id/manage/bans
  *   DELETE /api/v1/rooms/:id/manage/bans/:userId
+ *
+ * Phase 6 messaging surfaces:
+ *   GET    /api/v1/messages/rooms/:roomId/history
+ *   POST   /api/v1/messages/rooms/:roomId/messages
+ *   PATCH  /api/v1/messages/rooms/:roomId/messages/:messageId
+ *   GET    /api/v1/messages/dm/:conversationId/history
+ *   POST   /api/v1/messages/dm/:conversationId/messages
+ *   PATCH  /api/v1/messages/dm/:conversationId/messages/:messageId
  */
 
 import { SERVICE_PORTS } from "@chat/shared";
@@ -559,6 +568,171 @@ export async function initiateDm(userId: string) {
 export async function getPendingRequestCount() {
   const result = await getIncomingRequests();
   return result.requests.length;
+}
+
+// ── Phase 6: Messaging types ──────────────────────────────────────────────────
+
+/** Reply preview embedded in a MessageView. */
+export interface ReplyPreview {
+  id: string;
+  authorUsername: string;
+  contentSnippet: string;
+}
+
+/**
+ * A fully-enriched message row as returned by history endpoints.
+ * Mirrors MessageView from the API messages.types.ts.
+ */
+export interface MessageView {
+  id: string;
+  conversationType: 'room' | 'dm';
+  conversationId: string;
+  authorId: string;
+  authorUsername: string;
+  content: string;
+  replyToId: string | null;
+  replyPreview: ReplyPreview | null;
+  editedAt: string | null;
+  createdAt: string;
+  conversationWatermark: number;
+}
+
+/**
+ * Watermark range metadata returned alongside every history page.
+ * Mirrors MessageHistoryRange from the API messages.types.ts.
+ */
+export interface MessageHistoryRange {
+  firstWatermark: number;
+  lastWatermark: number;
+  hasMoreBefore: boolean;
+  totalCount: number;
+}
+
+/** Response shape for all history endpoints. */
+export interface MessageHistoryResponse {
+  messages: MessageView[];
+  range: MessageHistoryRange;
+}
+
+// ── Phase 6: Messaging API calls ──────────────────────────────────────────────
+
+/**
+ * GET /api/v1/messages/rooms/:roomId/history
+ * Returns paginated room message history in chronological order.
+ * Optionally pass `beforeWatermark` for older-page cursor and `limit` for page size.
+ */
+export async function getRoomHistory(
+  roomId: string,
+  opts?: { beforeWatermark?: number; limit?: number },
+): Promise<MessageHistoryResponse> {
+  const params = new URLSearchParams();
+  if (opts?.beforeWatermark !== undefined) {
+    params.set("before_watermark", String(opts.beforeWatermark));
+  }
+  if (opts?.limit !== undefined) {
+    params.set("limit", String(opts.limit));
+  }
+  const qs = params.size > 0 ? `?${params.toString()}` : "";
+  return get(`/messages/rooms/${encodeURIComponent(roomId)}/history${qs}`);
+}
+
+/**
+ * POST /api/v1/messages/rooms/:roomId/messages
+ * Send a message in a room. Returns the created MessageView.
+ * `replyToId` is optional — supply to create a threaded reply.
+ */
+export async function sendRoomMessage(
+  roomId: string,
+  body: { content: string; replyToId?: string },
+): Promise<{ message: MessageView }> {
+  return post(`/messages/rooms/${encodeURIComponent(roomId)}/messages`, body);
+}
+
+/**
+ * PATCH /api/v1/messages/rooms/:roomId/messages/:messageId
+ * Edit a room message. Only the original author may edit. Returns updated MessageView.
+ */
+export async function editRoomMessage(
+  roomId: string,
+  messageId: string,
+  body: { content: string },
+): Promise<{ message: MessageView }> {
+  const res = await fetch(
+    `${BASE_URL}/messages/rooms/${encodeURIComponent(roomId)}/messages/${encodeURIComponent(messageId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(body),
+    },
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const msg = typeof data?.message === "string" ? data.message : res.statusText || "Request failed";
+    const err = new Error(msg) as Error & { statusCode: number };
+    err.statusCode = res.status;
+    throw err;
+  }
+  return res.json() as Promise<{ message: MessageView }>;
+}
+
+/**
+ * GET /api/v1/messages/dm/:conversationId/history
+ * Returns paginated DM message history in chronological order.
+ * Frozen conversations are read-only but still readable.
+ */
+export async function getDmHistory(
+  conversationId: string,
+  opts?: { beforeWatermark?: number; limit?: number },
+): Promise<MessageHistoryResponse> {
+  const params = new URLSearchParams();
+  if (opts?.beforeWatermark !== undefined) {
+    params.set("before_watermark", String(opts.beforeWatermark));
+  }
+  if (opts?.limit !== undefined) {
+    params.set("limit", String(opts.limit));
+  }
+  const qs = params.size > 0 ? `?${params.toString()}` : "";
+  return get(`/messages/dm/${encodeURIComponent(conversationId)}/history${qs}`);
+}
+
+/**
+ * POST /api/v1/messages/dm/:conversationId/messages
+ * Send a DM message. Rejected server-side if the conversation is frozen (D-32).
+ */
+export async function sendDmMessage(
+  conversationId: string,
+  body: { content: string; replyToId?: string },
+): Promise<{ message: MessageView }> {
+  return post(`/messages/dm/${encodeURIComponent(conversationId)}/messages`, body);
+}
+
+/**
+ * PATCH /api/v1/messages/dm/:conversationId/messages/:messageId
+ * Edit a DM message. Only the original author may edit.
+ */
+export async function editDmMessage(
+  conversationId: string,
+  messageId: string,
+  body: { content: string },
+): Promise<{ message: MessageView }> {
+  const res = await fetch(
+    `${BASE_URL}/messages/dm/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(body),
+    },
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const msg = typeof data?.message === "string" ? data.message : res.statusText || "Request failed";
+    const err = new Error(msg) as Error & { statusCode: number };
+    err.statusCode = res.status;
+    throw err;
+  }
+  return res.json() as Promise<{ message: MessageView }>;
 }
 
 // ── Session management API calls ──────────────────────────────────────────────
