@@ -41,8 +41,12 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Socket-ID → userId map for authenticated connections.
    * Used to look up userId on disconnect and activity events without
    * re-validating the session cookie on every message.
+   *
+   * Public so MessagesGateway can verify authentication before accepting
+   * subscription events (Phase 6 — joinRoom / joinDm). The map is owned
+   * by AppGateway; external callers must treat it as read-only.
    */
-  private readonly socketUserMap = new Map<string, string>();
+  readonly socketUserMap = new Map<string, string>();
 
   constructor(
     private readonly presenceService: PresenceService,

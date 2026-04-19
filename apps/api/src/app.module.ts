@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { PresenceModule } from './presence/presence.module.js';
 import { RoomsModule } from './rooms/rooms.module.js';
 import { ContactsModule } from './contacts/contacts.module.js';
+import { MessagesModule } from './messages/messages.module.js';
 
 /**
  * AppModule — root Nest module for the hybrid REST + WebSocket API.
@@ -22,6 +23,12 @@ import { ContactsModule } from './contacts/contacts.module.js';
  *
  * Phase 5 additions:
  *  - ContactsModule: friendship lifecycle, user-to-user bans, DM eligibility enforcement
+ *
+ * Phase 6 additions:
+ *  - MessagesModule: shared messaging engine — HTTP endpoints, realtime fanout,
+ *    watermark integrity, room/DM access control (MSG-01..04, MSG-08).
+ *    AppGateway is provided inside MessagesModule; removed from root providers
+ *    to avoid duplicate instantiation.
  */
 @Module({
   imports: [
@@ -38,6 +45,7 @@ import { ContactsModule } from './contacts/contacts.module.js';
     PresenceModule,
     RoomsModule,
     ContactsModule,   // Phase 5: friendship lifecycle, user bans, DM eligibility
+    MessagesModule,   // Phase 6: shared messaging engine, HTTP + WebSocket fanout
   ],
   controllers: [HealthController, MetaController],
   providers: [AppGateway],

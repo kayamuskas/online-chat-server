@@ -16,6 +16,6 @@ import { UserRepository } from '../auth/user.repository.js';
   imports: [DbModule, AuthModule],
   controllers: [ContactsController],
   providers: [ContactsRepository, ContactsService, UserRepository],
-  exports: [ContactsService],
+  exports: [ContactsService, ContactsRepository],
 })
 export class ContactsModule {}
