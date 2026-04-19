@@ -203,6 +203,37 @@ CREATE TABLE IF NOT EXISTS dm_conversations (
 
 CREATE INDEX IF NOT EXISTS idx_dm_conversations_user_a ON dm_conversations (user_a_id);
 CREATE INDEX IF NOT EXISTS idx_dm_conversations_user_b ON dm_conversations (user_b_id);
+
+-- ── Phase 6: Messages core (migration 0005_messages_core) ────────────────────
+
+CREATE TABLE IF NOT EXISTS messages (
+  id                      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_type       TEXT        NOT NULL
+                                      CHECK (conversation_type IN ('room', 'dm')),
+  conversation_id         UUID        NOT NULL,
+  author_id               UUID        NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  content                 TEXT        NOT NULL,
+  reply_to_id             UUID        REFERENCES messages (id) ON DELETE SET NULL,
+  edited_at               TIMESTAMPTZ,
+  conversation_watermark  BIGINT      NOT NULL,
+  created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT messages_watermark_unique
+    UNIQUE (conversation_type, conversation_id, conversation_watermark),
+
+  CONSTRAINT messages_no_self_reply
+    CHECK (reply_to_id IS NULL OR reply_to_id <> id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_conversation
+  ON messages (conversation_type, conversation_id, conversation_watermark ASC);
+
+CREATE INDEX IF NOT EXISTS idx_messages_author_id
+  ON messages (author_id);
+
+CREATE INDEX IF NOT EXISTS idx_messages_reply_to_id
+  ON messages (reply_to_id)
+  WHERE reply_to_id IS NOT NULL;
 `;
 
 @Injectable()
