@@ -169,6 +169,14 @@ Goal: Add attachment upload/download, ACL enforcement, offline delivery, bounded
 
 Requirements: `MSG-06`, `MSG-09`, `FILE-01`, `FILE-02`, `FILE-03`, `FILE-04`, `FILE-05`, `FILE-06`, `OPS-03`
 
+Plans: 5 plans
+
+- [ ] `07-01-PLAN.md` — Attachments migration, domain types, repository, Multer install, Docker volume
+- [ ] `07-02-PLAN.md` — Durable delivery: after_watermark on messages history endpoint
+- [ ] `07-03-PLAN.md` — AttachmentsService (ACL + upload logic), AttachmentsController, module wiring
+- [ ] `07-04-PLAN.md` — Messages module extension: MessageView.attachments[], sendMessage binding, gateway fanout
+- [ ] `07-05-PLAN.md` — Frontend: upload API, MessageComposer file/paste, attachment rendering, reconnect catch-up
+
 Success criteria:
 1. Users can upload files and images by button and paste, with comments and preserved filenames.
 2. Attachment downloads are authorized against current membership or DM participation.
