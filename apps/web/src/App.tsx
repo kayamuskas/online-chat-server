@@ -16,7 +16,7 @@
  *
  * Phase 5 tabs added:
  *   - "contacts" → ContactsView (full management page)
- *   - "dm"       → DmScreenStub (DM empty-state; replaced in Phase 6)
+ *   - "dm"       → DmChatView (real DM conversation surface; Phase 6)
  */
 
 import { useEffect, useState, useCallback } from "react";
@@ -42,7 +42,7 @@ import {
 import { ContactsSidebar, type ContactRow } from "./features/contacts/ContactsSidebar";
 import { FriendRequestDropdown } from "./features/contacts/FriendRequestDropdown";
 import { AddContactModal } from "./features/contacts/AddContactModal";
-import { DmScreenStub } from "./features/contacts/DmScreenStub";
+import { DmChatView } from "./features/messages/DmChatView";
 import { ContactsView } from "./features/contacts/ContactsView";
 import { AuthShell } from "./features/auth/AuthShell";
 import { PasswordSettingsView } from "./features/account/PasswordSettingsView";
@@ -462,12 +462,13 @@ function App() {
             />
           )}
           {tab === "contacts" && <ContactsView currentUserId={user.id} />}
-          {tab === "dm" && (() => {
+          {tab === "dm" && dmPartnerId && (() => {
             const partner = contacts.find((c) => c.userId === dmPartnerId);
             return (
-              <DmScreenStub
-                partnerUsername={partner?.username ?? dmPartnerId ?? "Unknown"}
-                frozen={false}
+              <DmChatView
+                partnerId={dmPartnerId}
+                partnerUsername={partner?.username ?? dmPartnerId}
+                currentUserId={user.id}
               />
             );
           })()}
