@@ -143,6 +143,18 @@ Success criteria:
 4. Messages persist and render in chronological order.
 5. Chat watermarks allow the client to detect missing ranges and trigger history recovery.
 
+### Phase 6.1: WebSocket Real-Time Client (INSERTED)
+
+Goal: Wire the frontend to the existing Socket.IO gateways so messages, edits, friend-request notifications, and presence updates arrive in real-time without a page refresh.
+
+Requirements: `MSG-01`, `MSG-03`, `MSG-07`
+
+Success criteria:
+1. Sending a message in a room or DM appears in the timeline immediately via WebSocket push — no reload required.
+2. Editing a message updates in-place for all participants in real-time.
+3. Incoming friend requests show the notification badge without a page refresh.
+4. Presence status of contacts updates live as friends connect/disconnect.
+
 ### Phase 7: Attachments and Durable Delivery
 
 Goal: Add attachment upload/download, ACL enforcement, offline delivery, bounded queue strategy, and persistent storage.

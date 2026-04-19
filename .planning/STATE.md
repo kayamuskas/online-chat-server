@@ -112,8 +112,13 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - not_friends still returns 403 but catch block now translates it to setIneligibleReason instead of setInitError
 - createDmConversation idempotent upsert preserves existing frozen=TRUE state set by banUser
 
+## Roadmap Evolution
+
+- Phase 6.1 inserted after Phase 6: WebSocket Real-Time Client (URGENT) — WS client deferred from Phase 6, discovered during UAT
+
 ## Next Up
 
+- Phase 6.1: WebSocket Real-Time Client (inserted)
 - Phase 7: Attachments and Durable Delivery
 
 ---
