@@ -316,6 +316,25 @@ export class ContactsRepository {
   }
 
   /**
+   * Unfreeze a DM conversation between two users.
+   * Called by unbanUser() after removing the ban record so subsequent
+   * initiateDm calls return frozen=FALSE (D-32 gap closure).
+   *
+   * Uses a plain UPDATE (no upsert): if no conversation row exists yet
+   * the UPDATE is a no-op, which is correct — the next createDmConversation
+   * call will create it with frozen=FALSE anyway.
+   *
+   * Normalizes pair ordering: user_a_id < user_b_id.
+   */
+  async unfreezeConversation(userAId: string, userBId: string): Promise<void> {
+    const [a, b] = userAId < userBId ? [userAId, userBId] : [userBId, userAId];
+    await this.db.query(
+      `UPDATE dm_conversations SET frozen = FALSE WHERE user_a_id = $1 AND user_b_id = $2`,
+      [a, b],
+    );
+  }
+
+  /**
    * Create or get a DM conversation, preserving existing frozen state.
    * Normalizes pair ordering: user_a_id < user_b_id.
    */

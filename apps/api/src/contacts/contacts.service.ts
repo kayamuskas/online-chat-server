@@ -235,6 +235,7 @@ export class ContactsService {
       throw new NotFoundException('Ban not found');
     }
     await this.repo.removeBan(callerId, targetId);
+    await this.repo.unfreezeConversation(callerId, targetId);
   }
 
   // ── DM eligibility ─────────────────────────────────────────────────────────
