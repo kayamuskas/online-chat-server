@@ -68,10 +68,21 @@ export class AuthController {
    */
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() body: unknown) {
+  async register(
+    @Body() body: unknown,
+    @Req() req: RequestLike,
+    @Res({ passthrough: true }) res: ResponseLike,
+  ) {
     const input = parseRegisterBody(body);
-    const user = await this.authService.register(input);
-    return { user };
+    const metadata = buildSessionMetadata(req);
+    const result = await this.authService.register(input, metadata);
+
+    setSessionCookie(res, result.sessionToken, {
+      maxAge: result.sessionTtlSeconds,
+      persistent: result.isPersistent,
+    });
+
+    return { user: result.user };
   }
 
   /**

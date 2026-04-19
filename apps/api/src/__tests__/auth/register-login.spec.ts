@@ -83,6 +83,7 @@ describe('AuthService — register', () => {
   it('creates a new user and returns a PublicUser (no password_hash)', async () => {
     mockUserRepo.findByEmail.mockResolvedValue(null);
     mockUserRepo.findByUsername.mockResolvedValue(null);
+    mockSessionRepo.create.mockResolvedValue(makeSession());
     const user = makeUser();
     mockUserRepo.create.mockResolvedValue(user);
 
@@ -92,8 +93,9 @@ describe('AuthService — register', () => {
       password: 'Str0ngP@ss!',
     });
 
-    expect(result).not.toHaveProperty('password_hash');
-    expect(result).toMatchObject({ email: 'alice@example.com', username: 'alice' });
+    expect(result.user).not.toHaveProperty('password_hash');
+    expect(result.user).toMatchObject({ email: 'alice@example.com', username: 'alice' });
+    expect(result.sessionToken).toBe('opaque-token-abc');
     expect(mockUserRepo.create).toHaveBeenCalledOnce();
   });
 
@@ -118,6 +120,7 @@ describe('AuthService — register', () => {
     mockUserRepo.findByEmail.mockResolvedValue(null);
     mockUserRepo.findByUsername.mockResolvedValue(null);
     mockUserRepo.create.mockResolvedValue(makeUser());
+    mockSessionRepo.create.mockResolvedValue(makeSession());
 
     const result = await service.register({
       email: 'alice@example.com',
@@ -125,7 +128,7 @@ describe('AuthService — register', () => {
       password: 'pass',
     });
 
-    expect(Object.keys(result)).not.toContain('password_hash');
+    expect(Object.keys(result.user)).not.toContain('password_hash');
   });
 });
 

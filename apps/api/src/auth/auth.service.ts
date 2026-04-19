@@ -51,7 +51,7 @@ export class AuthService {
    * Validates email and username uniqueness before creating the user row.
    * Returns a PublicUser projection — password_hash is never included.
    */
-  async register(input: RegisterInput): Promise<PublicUser> {
+  async register(input: RegisterInput, metadata?: ClientMetadata): Promise<SignInResult> {
     // Check email uniqueness
     const existingByEmail = await this.users.findByEmail(input.email);
     if (existingByEmail) {
@@ -71,9 +71,24 @@ export class AuthService {
       password_hash,
     });
 
-    // Strip password_hash from the returned value
+    // Auto sign-in: create a session immediately after registration
+    const policy = resolveSessionPolicy(false);
+    const { expiresAt, sessionTtlSeconds, isPersistent } = buildSessionExpiry(policy);
+    const session = await this.sessions.create({
+      userId: user.id,
+      isPersistent,
+      expiresAt,
+      ipAddress: metadata?.ip_address ?? null,
+      userAgent: metadata?.user_agent ?? null,
+    });
+
     const { password_hash: _ph, ...publicUser } = user;
-    return publicUser;
+    return {
+      user: publicUser,
+      sessionToken: session.session_token,
+      sessionTtlSeconds,
+      isPersistent,
+    };
   }
 
   /**

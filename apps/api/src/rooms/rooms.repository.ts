@@ -165,16 +165,14 @@ export class RoomsRepository {
               r.visibility,
               r.owner_id,
               r.created_at,
-              COUNT(all_members.id)::INT AS member_count,
+              (SELECT COUNT(*)::INT FROM room_memberships WHERE room_id = r.id) AS member_count,
               m.id AS membership_id,
               m.user_id AS membership_user_id,
               m.role AS membership_role,
               m.joined_at AS membership_joined_at
        FROM room_memberships m
        INNER JOIN rooms r ON r.id = m.room_id
-       LEFT JOIN room_memberships all_members ON all_members.room_id = r.id
        WHERE m.user_id = $1 AND r.visibility = 'private'
-       GROUP BY r.id, m.id
        ORDER BY r.name ASC`,
       [user_id],
     );
