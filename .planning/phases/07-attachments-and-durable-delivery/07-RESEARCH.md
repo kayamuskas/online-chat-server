@@ -554,13 +554,13 @@ LEFT JOIN (
 ### Phase Requirements → Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| FILE-01 | Upload endpoint accepts multipart, stores file | unit | `pnpm --filter @chat/api test attachments` | ❌ Wave 0 |
-| FILE-02 | original_filename and comment stored in DB | unit | same | ❌ Wave 0 |
-| FILE-03 | Download blocked for non-member | unit | same | ❌ Wave 0 |
-| FILE-04 | Download blocked after access loss | unit | same | ❌ Wave 0 |
-| FILE-05 | File persists after uploader loses access | unit | same | ❌ Wave 0 |
-| FILE-06 | 413 on oversized file; 3 MB image cap | unit | same | ❌ Wave 0 |
-| MSG-06 | after_watermark returns only missed messages | unit | `pnpm --filter @chat/api test messages` | ❌ Wave 0 |
+| FILE-01 | Upload endpoint accepts multipart, stores file | unit | `pnpm --filter @chat/api test attachments` | --- Wave 0 |
+| FILE-02 | original_filename and comment stored in DB | unit | same | --- Wave 0 |
+| FILE-03 | Download blocked for non-member | unit | same | --- Wave 0 |
+| FILE-04 | Download blocked after access loss | unit | same | --- Wave 0 |
+| FILE-05 | File persists after uploader loses access | unit | same | --- Wave 0 |
+| FILE-06 | 413 on oversized file; 3 MB image cap | unit | same | --- Wave 0 |
+| MSG-06 | after_watermark returns only missed messages | unit | `pnpm --filter @chat/api test messages` | --- Wave 0 |
 | MSG-09 | No secondary queue; bounded by messages table | integration (manual verify) | manual | — |
 | OPS-03 | Volume persists across container restart | smoke script | manual QA | — |
 
@@ -611,17 +611,19 @@ LEFT JOIN (
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Orphaned attachment cleanup timing**
+1. **Orphaned attachment cleanup timing** — RESOLVED (Plan 07-03)
    - What we know: uploads can become orphaned if sendMessage fails after upload (D-45 explicitly accepts this)
    - What's unclear: should cleanup be a startup task, a BullMQ job, or manual Phase 8 scope?
    - Recommendation: Add a simple startup cleanup in `AttachmentsService.onApplicationBootstrap` that deletes attachments with `message_id IS NULL AND created_at < NOW() - INTERVAL '1 hour'` and their disk files. No BullMQ needed.
+   - **Resolution:** Plan 07-03 implements startup cleanup in `AttachmentsService.onApplicationBootstrap`. No BullMQ.
 
-2. **after_watermark + before_watermark mutual exclusion**
+2. **after_watermark + before_watermark mutual exclusion** — RESOLVED (Plan 07-02)
    - What we know: they are logically opposed (forward vs backward pagination)
    - What's unclear: should the API reject requests with both, or silently prefer one?
    - Recommendation: Use `after_watermark` if both are present; log a warning.
+   - **Resolution:** Plan 07-02 implements `after_watermark` support in the history endpoint. If both params are present, `after_watermark` takes precedence.
 
 ---
 
