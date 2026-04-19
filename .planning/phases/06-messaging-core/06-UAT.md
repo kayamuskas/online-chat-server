@@ -1,5 +1,5 @@
 ---
-status: complete
+status: resolved
 phase: 06-messaging-core
 source:
   - 06-01-SUMMARY.md
@@ -8,7 +8,7 @@ source:
   - 06-04-SUMMARY.md
   - 06-05-SUMMARY.md
 started: 2026-04-19T08:45:00Z
-updated: 2026-04-19T09:10:00Z
+updated: 2026-04-19T11:30:00Z
 ---
 
 ## Current Test
@@ -75,31 +75,28 @@ blocked: 0
 ## Gaps
 
 - truth: "Reply message appears in timeline with a reply chip referencing the original message"
-  status: failed
+  status: resolved
   reason: "User reported: reply chip в composer работает, но после отправки в таймлайне ссылка на оригинальное сообщение не видна"
   severity: major
   test: 3
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "sendMessage returns bare Message (no reply_preview/author_username); controller sends it directly; frontend appends under-hydrated message to state. History reload works because listHistory uses a LEFT JOIN to build full MessageView."
+  fix: "Added MessagesRepository.findMessageViewById; sendMessage now returns MessageView; broadcastMessageCreated emits author_username + reply_preview (06-06)"
   debug_session: ""
 
 - truth: "DM conversation with eligible friend opens with a writable composer"
-  status: failed
+  status: resolved
   reason: "User reported: DM открывается, но показывает 'This conversation is read-only.' — написать нельзя даже для обычного друга без банов"
   severity: major
   test: 6
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "unbanUser (contacts.service.ts:232-238) calls repo.removeBan but never resets dm_conversations.frozen to FALSE. No unfreezeConversation repo method exists. Once frozen by a prior ban, the row stays frozen=TRUE forever — even after unban."
+  fix: "Added ContactsRepository.unfreezeConversation; ContactsService.unbanUser now calls it after removeBan (06-06)"
   debug_session: ""
 
 - truth: "Banned/blocked DM shows history as read-only with frozen banner; does not show error page"
-  status: failed
+  status: resolved
   reason: "User reported: вместо read-only истории с frozen баннером показывает 'DM not allowed: not_friends' — история не видна, ошибка не отражает ban-состояние"
   severity: major
   test: 7
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "initiateDm (contacts.service.ts:275-277) throws ForbiddenException for all ineligible cases including ban_exists. DmChatView catch block (line 109-113) stores raw error string in initError — never reaches the frozen history path. Backend should return {conversation, eligible:false} for ban_exists case instead of throwing."
+  fix: "initiateDm returns 200 {conversation, eligible:false} for ban_exists; DmChatView catch translates not_friends to clean UI state (06-07)"
   debug_session: ""
