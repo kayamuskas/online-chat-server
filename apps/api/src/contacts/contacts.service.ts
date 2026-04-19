@@ -26,7 +26,7 @@ import { PostgresService } from '../db/postgres.service.js';
 import type {
   FriendRequest,
   Friendship,
-  UserBan,
+  UserBanView,
   DmConversation,
   FriendWithPresence,
   IncomingFriendRequestView,
@@ -65,6 +65,10 @@ export class ContactsService {
     const friendship = await this.repo.findFriendship(callerId, target.id);
     if (friendship) {
       throw new ConflictException('You are already friends with this user');
+    }
+    const ban = await this.repo.findBanBetween(callerId, target.id);
+    if (ban) {
+      throw new ForbiddenException('Cannot send a friend request when contact is restricted');
     }
     // Check any existing request (any status) to avoid DB constraint violation
     const existing = await this.repo.findAnyFriendRequest(callerId, target.id);
@@ -202,6 +206,7 @@ export class ContactsService {
     try {
       await client.query('BEGIN');
       await this.repo.deleteFriendship(callerId, targetId, client as any);
+      await this.repo.cancelPendingRequestsBetween(callerId, targetId, client as any);
       await this.repo.createBan({ banner_user_id: callerId, banned_user_id: targetId }, client as any);
       await this.repo.freezeDmConversation(callerId, targetId, client as any);
       await client.query('COMMIT');
@@ -214,7 +219,7 @@ export class ContactsService {
   }
 
   /** Return all bans created by the caller. */
-  async getMyBans(userId: string): Promise<UserBan[]> {
+  async getMyBans(userId: string): Promise<UserBanView[]> {
     return this.repo.listBans(userId);
   }
 

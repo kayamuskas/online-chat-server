@@ -25,6 +25,7 @@ import {
   type UserBan,
 } from "../../lib/api";
 import { BanConfirmModal } from "./BanConfirmModal";
+import { RemoveFriendConfirmModal } from "./RemoveFriendConfirmModal";
 
 interface ContactsViewProps {
   currentUserId: string;
@@ -47,6 +48,7 @@ export function ContactsView({ currentUserId: _currentUserId }: ContactsViewProp
 
   /** State for ban confirmation modal — null = hidden. */
   const [confirmBan, setConfirmBan] = useState<{ userId: string; username: string } | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<{ userId: string; username: string } | null>(null);
 
   // ── Fetch helpers ───────────────────────────────────────────────────────────
 
@@ -128,8 +130,11 @@ export function ContactsView({ currentUserId: _currentUserId }: ContactsViewProp
     }
   }
 
-  async function handleRemoveFriend(userId: string) {
+  async function handleRemoveConfirmed() {
+    if (!confirmRemove) return;
+    const { userId } = confirmRemove;
     setActionBusy(userId);
+    setConfirmRemove(null);
     try {
       await removeFriend(userId);
       void fetchFriends();
@@ -237,7 +242,7 @@ export function ContactsView({ currentUserId: _currentUserId }: ContactsViewProp
                   <button
                     type="button"
                     className="btn btn--soft btn--xs"
-                    onClick={() => void handleRemoveFriend(f.userId)}
+                    onClick={() => setConfirmRemove({ userId: f.userId, username: f.username })}
                     disabled={actionBusy === f.userId}
                   >
                     {actionBusy === f.userId ? "…" : "Remove"}
@@ -270,7 +275,7 @@ export function ContactsView({ currentUserId: _currentUserId }: ContactsViewProp
             {bans.map((ban) => (
               <li key={ban.id} className="rooms-list__item">
                 <div className="rooms-list__info">
-                  <span className="rooms-list__name">{ban.banned_user_id}</span>
+                  <span className="rooms-list__name">{ban.banned_username}</span>
                 </div>
                 <div className="rooms-list__actions">
                   <button
@@ -295,6 +300,14 @@ export function ContactsView({ currentUserId: _currentUserId }: ContactsViewProp
           onConfirm={() => void handleBanConfirmed()}
           onCancel={() => setConfirmBan(null)}
           busy={actionBusy === confirmBan.userId}
+        />
+      )}
+      {confirmRemove && (
+        <RemoveFriendConfirmModal
+          targetUsername={confirmRemove.username}
+          onConfirm={() => void handleRemoveConfirmed()}
+          onCancel={() => setConfirmRemove(null)}
+          busy={actionBusy === confirmRemove.userId}
         />
       )}
     </div>

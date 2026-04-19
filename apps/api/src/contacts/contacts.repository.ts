@@ -20,6 +20,7 @@ import type {
   FriendRequest,
   Friendship,
   UserBan,
+  UserBanView,
   DmConversation,
   SendFriendRequestInput,
   CreateBanInput,
@@ -99,6 +100,27 @@ export class ContactsRepository {
     await executor.query(
       `UPDATE friend_requests SET status = $2, updated_at = NOW() WHERE id = $1`,
       [requestId, status],
+    );
+  }
+
+  /**
+   * Cancel all pending requests between two users in either direction.
+   * Used when a ban lands so stale pending requests stop surfacing immediately.
+   */
+  async cancelPendingRequestsBetween(
+    userAId: string,
+    userBId: string,
+    executor: SqlExecutor = this.db,
+  ): Promise<void> {
+    await executor.query(
+      `UPDATE friend_requests
+       SET status = 'cancelled', updated_at = NOW()
+       WHERE status = 'pending'
+         AND (
+           (requester_id = $1 AND target_id = $2)
+           OR (requester_id = $2 AND target_id = $1)
+         )`,
+      [userAId, userBId],
     );
   }
 
@@ -255,9 +277,17 @@ export class ContactsRepository {
   }
 
   /** List all bans created by a given user, most-recent first. */
-  async listBans(bannerUserId: string): Promise<UserBan[]> {
-    const result = await this.db.query<UserBan>(
-      `SELECT * FROM user_bans WHERE banner_user_id = $1 ORDER BY created_at DESC`,
+  async listBans(bannerUserId: string): Promise<UserBanView[]> {
+    const result = await this.db.query<UserBanView>(
+      `SELECT ub.id,
+              ub.banner_user_id,
+              ub.banned_user_id,
+              ub.created_at,
+              u.username AS banned_username
+       FROM user_bans ub
+       JOIN users u ON u.id = ub.banned_user_id
+       WHERE ub.banner_user_id = $1
+       ORDER BY ub.created_at DESC`,
       [bannerUserId],
     );
     return result.rows;

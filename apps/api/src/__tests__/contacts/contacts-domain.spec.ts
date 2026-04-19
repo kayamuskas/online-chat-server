@@ -18,6 +18,7 @@ import type {
   FriendRequest,
   Friendship,
   UserBan,
+  UserBanView,
   FriendRequestStatus,
 } from '../../contacts/contacts.types.js';
 
@@ -30,6 +31,7 @@ function makeContactsRepository(): ContactsRepository {
     findFriendRequest:     vi.fn(),
     findAnyFriendRequest:  vi.fn(),
     updateRequestStatus:   vi.fn(),
+    cancelPendingRequestsBetween: vi.fn(),
     listIncomingRequests:  vi.fn(),
     listOutgoingRequests:  vi.fn(),
     createFriendship:      vi.fn(),
@@ -96,6 +98,17 @@ describe('Contacts domain types', () => {
     };
     expect(ban.banner_user_id).toBe('user-a');
   });
+
+  it('UserBanView includes banned_username for management UI', () => {
+    const ban: UserBanView = {
+      id: 'ban-1',
+      banner_user_id: 'user-a',
+      banned_user_id: 'user-b',
+      banned_username: 'bob',
+      created_at: new Date(),
+    };
+    expect(ban.banned_username).toBe('bob');
+  });
 });
 
 // ── ContactsService real implementation ──────────────────────────────────────
@@ -157,6 +170,24 @@ describe('ContactsService real implementation', () => {
       .rejects.toThrow(/already friends/i);
   });
 
+  it('sendFriendRequest throws ForbiddenException when a ban exists in either direction', async () => {
+    vi.mocked(mockUserRepo.findByUsername).mockResolvedValue({
+      id: 'user-b', email: 'b@test.com', username: 'bob',
+      password_hash: 'x', created_at: new Date(), updated_at: new Date(),
+    });
+    vi.mocked(mockRepo.findFriendship).mockResolvedValue(null);
+    vi.mocked(mockRepo.findBanBetween).mockResolvedValue({
+      id: 'ban-1',
+      banner_user_id: 'user-b',
+      banned_user_id: 'user-a',
+      created_at: new Date(),
+    });
+
+    await expect(svc.sendFriendRequest('user-a', { targetUsername: 'bob' }))
+      .rejects.toThrow(/contact is restricted/i);
+    expect(mockRepo.createFriendRequest).not.toHaveBeenCalled();
+  });
+
   it('sendFriendRequest throws BadRequestException for self-request', async () => {
     vi.mocked(mockUserRepo.findByUsername).mockResolvedValue({
       id: 'user-a', email: 'a@test.com', username: 'alice',
@@ -180,5 +211,46 @@ describe('ContactsService real implementation', () => {
   // FRND-04: self-ban guard
   it('banUser throws BadRequestException for self-ban', async () => {
     await expect(svc.banUser('user-a', 'user-a')).rejects.toThrow();
+  });
+
+  it('banUser cancels pending requests between users before creating the ban', async () => {
+    const client = {
+      query: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    };
+    const db = {
+      getClient: vi.fn().mockResolvedValue(client),
+    } as any;
+    const { ContactsService } = await import('../../contacts/contacts.service.js');
+    const transactionalSvc = new ContactsService(mockRepo, mockUserRepo, db);
+
+    await transactionalSvc.banUser('user-a', 'user-b');
+
+    expect(mockRepo.deleteFriendship).toHaveBeenCalledWith('user-a', 'user-b', client);
+    expect(mockRepo.cancelPendingRequestsBetween).toHaveBeenCalledWith('user-a', 'user-b', client);
+    expect(mockRepo.createBan).toHaveBeenCalledWith(
+      { banner_user_id: 'user-a', banned_user_id: 'user-b' },
+      client,
+    );
+    expect(mockRepo.freezeDmConversation).toHaveBeenCalledWith('user-a', 'user-b', client);
+    expect(client.query).toHaveBeenNthCalledWith(1, 'BEGIN');
+    expect(client.query).toHaveBeenNthCalledWith(2, 'COMMIT');
+    expect(client.release).toHaveBeenCalled();
+  });
+
+  it('getMyBans returns enriched ban rows for blocked-users UI', async () => {
+    vi.mocked(mockRepo.listBans).mockResolvedValue([
+      {
+        id: 'ban-1',
+        banner_user_id: 'user-a',
+        banned_user_id: 'user-b',
+        banned_username: 'bob',
+        created_at: new Date(),
+      },
+    ]);
+
+    const result = await svc.getMyBans('user-a');
+    expect(result[0].banned_username).toBe('bob');
+    expect(mockRepo.listBans).toHaveBeenCalledWith('user-a');
   });
 });

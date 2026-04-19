@@ -480,6 +480,7 @@ export interface UserBan {
   id: string;
   banner_user_id: string;
   banned_user_id: string;
+  banned_username: string;
   created_at: string;
 }
 

@@ -14,6 +14,7 @@ interface FriendRequestDropdownProps {
   onDecline?: (requestId: string) => void;
   actionBusy?: string | null;
   onClose?: () => void;
+  onOpenContacts?: () => void;
 }
 
 export function FriendRequestDropdown({
@@ -22,6 +23,7 @@ export function FriendRequestDropdown({
   onDecline,
   actionBusy,
   onClose,
+  onOpenContacts,
 }: FriendRequestDropdownProps) {
   return (
     <div className="notif-dropdown" role="dialog" aria-label="Friend requests">
@@ -64,6 +66,15 @@ export function FriendRequestDropdown({
           </div>
         </div>
       ))}
+      <div style={{ marginTop: "0.75rem", display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          className="btn btn--soft btn--xs"
+          onClick={onOpenContacts}
+        >
+          Manage contacts
+        </button>
+      </div>
     </div>
   );
 }

@@ -259,6 +259,11 @@ function App() {
     }
   }
 
+  function openContactsTab() {
+    setRequestDropdownOpen(false);
+    setTab("contacts");
+  }
+
   async function handleLeavePrivateRoom(room: RoomCatalogRow) {
     setPrivateRoomsError(null);
     try {
@@ -342,6 +347,7 @@ function App() {
             onAccept={(id) => void handleAcceptRequest(id)}
             onDecline={(id) => void handleDeclineRequest(id)}
             actionBusy={requestActionBusy}
+            onOpenContacts={openContactsTab}
             onClose={() => setRequestDropdownOpen(false)}
           />
         )}
@@ -398,6 +404,13 @@ function App() {
 
           {/* Phase 5: CONTACTS section — D-15, D-18 */}
           <div className="app-account__nav-label" style={{ marginTop: "1rem" }}>CONTACTS</div>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "contacts" ? " app-account__nav-item--active" : ""}`}
+            onClick={openContactsTab}
+          >
+            Contacts
+          </button>
           <ContactsSidebar
             contacts={contacts.map((c): ContactRow => ({
               userId: c.userId,

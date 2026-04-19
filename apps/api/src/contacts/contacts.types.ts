@@ -64,6 +64,13 @@ export interface UserBan {
 }
 
 /**
+ * Ban row enriched with the blocked user's username for management UI display.
+ */
+export interface UserBanView extends UserBan {
+  banned_username: string;
+}
+
+/**
  * DM conversation stub.
  *
  * Exists in Phase 5 so the ban service can set frozen=TRUE before Phase 6
