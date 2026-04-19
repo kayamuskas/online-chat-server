@@ -42,7 +42,7 @@ import type { Server, Socket } from 'socket.io';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service.js';
 import { extractSessionToken } from '../ws/ws-auth.js';
-import type { Message } from './messages.types.js';
+import type { Message, MessageView } from './messages.types.js';
 
 // ── Join/leave payload shapes ─────────────────────────────────────────────────
 
@@ -194,7 +194,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
    *
    * Called by MessagesController after a successful message write (D-34).
    */
-  async broadcastMessageCreated(message: Message): Promise<void> {
+  async broadcastMessageCreated(message: MessageView): Promise<void> {
     const channel =
       message.conversation_type === 'room'
         ? roomChannel(message.conversation_id)
@@ -206,8 +206,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       message: {
         id: message.id,
         author_id: message.author_id,
+        author_username: message.author_username,
         content: message.content,
         reply_to_id: message.reply_to_id,
+        reply_preview: message.reply_preview,
         edited_at: message.edited_at,
         conversation_watermark: message.conversation_watermark,
         created_at: message.created_at,

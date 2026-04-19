@@ -37,6 +37,7 @@ import {
 } from './messages.helpers.js';
 import type {
   Message,
+  MessageView,
   SendMessageInput,
   EditMessageInput,
   MessageHistoryQuery,
@@ -112,7 +113,7 @@ export class MessagesService {
    *
    * Returns the persisted Message row with server-assigned watermark (D-28).
    */
-  async sendMessage(input: SendMessageInput): Promise<Message> {
+  async sendMessage(input: SendMessageInput): Promise<MessageView> {
     // 1. Access control
     if (input.conversation_type === 'room') {
       await this.assertRoomAccess(input.conversation_id, input.author_id);
@@ -140,7 +141,10 @@ export class MessagesService {
       }
     }
 
-    return this.repo.createMessage(input);
+    const created = await this.repo.createMessage(input);
+    const view = await this.repo.findMessageViewById(created.id);
+    if (!view) throw new NotFoundException(`Message '${created.id}' disappeared after insert`);
+    return view;
   }
 
   // ── List history ───────────────────────────────────────────────────────────

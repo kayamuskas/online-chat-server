@@ -270,6 +270,46 @@ export class MessagesRepository {
     return { messages: views, range };
   }
 
+  // ── Read: single enriched MessageView ────────────────────────────────────
+
+  /**
+   * Fetch a single fully-hydrated MessageView row by primary key.
+   *
+   * Uses the same JOIN query as listHistory but scoped to a single row.
+   * Called by sendMessage (via service) so the returned message carries
+   * author_username and reply_preview — matching what listHistory returns.
+   *
+   * Returns null if the message does not exist (should only happen in race
+   * conditions between insert and this read).
+   */
+  async findMessageViewById(id: string): Promise<MessageView | null> {
+    const result = await this.db.query<MessageViewRow>(
+      `SELECT
+         m.id,
+         m.conversation_type,
+         m.conversation_id,
+         m.author_id,
+         a.username          AS author_username,
+         m.content,
+         m.reply_to_id,
+         m.edited_at,
+         m.conversation_watermark,
+         m.created_at,
+         rm.author_id        AS reply_author_id,
+         ru.username         AS reply_author_username,
+         LEFT(rm.content, 200) AS reply_content_preview
+       FROM messages m
+       INNER JOIN users a ON a.id = m.author_id
+       LEFT  JOIN messages rm ON rm.id = m.reply_to_id
+       LEFT  JOIN users ru ON ru.id = rm.author_id
+       WHERE m.id = $1
+       LIMIT 1`,
+      [id],
+    );
+    if (result.rows.length === 0) return null;
+    return rowToMessageView(result.rows[0]);
+  }
+
   // ── Read: resolve reply target ────────────────────────────────────────────
 
   /**
