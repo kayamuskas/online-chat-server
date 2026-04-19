@@ -61,9 +61,20 @@ export class ContactsService {
     if (callerId === target.id) {
       throw new BadRequestException('Cannot send a friend request to yourself');
     }
-    const existing = await this.repo.findFriendRequest(callerId, target.id);
+    // Check friendship first — users already friends cannot send another request
+    const friendship = await this.repo.findFriendship(callerId, target.id);
+    if (friendship) {
+      throw new ConflictException('You are already friends with this user');
+    }
+    // Check any existing request (any status) to avoid DB constraint violation
+    const existing = await this.repo.findAnyFriendRequest(callerId, target.id);
     if (existing) {
-      throw new ConflictException('You already have a pending request to this user');
+      if (existing.status === 'pending') {
+        throw new ConflictException('You already have a pending request to this user');
+      }
+      // declined or cancelled — re-send by updating the existing row to pending
+      await this.repo.updateRequestStatus(existing.id, 'pending');
+      return this.repo.findRequestById(existing.id) as Promise<FriendRequest>;
     }
     return this.repo.createFriendRequest({
       requester_id: callerId,

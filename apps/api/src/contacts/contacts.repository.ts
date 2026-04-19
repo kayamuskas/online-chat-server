@@ -75,6 +75,21 @@ export class ContactsRepository {
     return result.rows[0] ?? null;
   }
 
+  /**
+   * Find any request (any status) between requester and target.
+   * Used to detect DB-constraint conflicts before INSERT.
+   */
+  async findAnyFriendRequest(requesterId: string, targetId: string): Promise<FriendRequest | null> {
+    const result = await this.db.query<FriendRequest>(
+      `SELECT * FROM friend_requests
+       WHERE requester_id = $1 AND target_id = $2
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [requesterId, targetId],
+    );
+    return result.rows[0] ?? null;
+  }
+
   /** Update the status of a friend request (accepted / declined / cancelled). */
   async updateRequestStatus(
     requestId: string,

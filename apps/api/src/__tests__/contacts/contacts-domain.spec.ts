@@ -28,6 +28,7 @@ function makeContactsRepository(): ContactsRepository {
     createFriendRequest:   vi.fn(),
     findRequestById:       vi.fn(),
     findFriendRequest:     vi.fn(),
+    findAnyFriendRequest:  vi.fn(),
     updateRequestStatus:   vi.fn(),
     listIncomingRequests:  vi.fn(),
     listOutgoingRequests:  vi.fn(),
@@ -116,7 +117,8 @@ describe('ContactsService real implementation', () => {
       id: 'user-b', email: 'b@test.com', username: 'bob',
       password_hash: 'x', created_at: new Date(), updated_at: new Date(),
     });
-    vi.mocked(mockRepo.findFriendRequest).mockResolvedValue(null);
+    vi.mocked(mockRepo.findFriendship).mockResolvedValue(null);
+    vi.mocked(mockRepo.findAnyFriendRequest).mockResolvedValue(null);
     vi.mocked(mockRepo.createFriendRequest).mockResolvedValue({
       id: 'req-1', requester_id: 'user-a', target_id: 'user-b',
       message: null, status: 'pending', created_at: new Date(), updated_at: new Date(),
@@ -132,13 +134,27 @@ describe('ContactsService real implementation', () => {
       id: 'user-b', email: 'b@test.com', username: 'bob',
       password_hash: 'x', created_at: new Date(), updated_at: new Date(),
     });
-    vi.mocked(mockRepo.findFriendRequest).mockResolvedValue({
+    vi.mocked(mockRepo.findFriendship).mockResolvedValue(null);
+    vi.mocked(mockRepo.findAnyFriendRequest).mockResolvedValue({
       id: 'req-1', requester_id: 'user-a', target_id: 'user-b',
       message: null, status: 'pending', created_at: new Date(), updated_at: new Date(),
     });
 
     await expect(svc.sendFriendRequest('user-a', { targetUsername: 'bob' }))
       .rejects.toThrow();
+  });
+
+  it('sendFriendRequest throws ConflictException when already friends', async () => {
+    vi.mocked(mockUserRepo.findByUsername).mockResolvedValue({
+      id: 'user-b', email: 'b@test.com', username: 'bob',
+      password_hash: 'x', created_at: new Date(), updated_at: new Date(),
+    });
+    vi.mocked(mockRepo.findFriendship).mockResolvedValue({
+      id: 'fr-1', user_a_id: 'user-a', user_b_id: 'user-b', created_at: new Date(),
+    });
+
+    await expect(svc.sendFriendRequest('user-a', { targetUsername: 'bob' }))
+      .rejects.toThrow(/already friends/i);
   });
 
   it('sendFriendRequest throws BadRequestException for self-request', async () => {
