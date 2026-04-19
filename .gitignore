@@ -40,5 +40,7 @@ requirements/
 # Local Docker volume data
 .volumes/
 
-# Temporarily disabled
-vendor/
+# Vendor cache: commit the offline pnpm store, ignore any other ad-hoc vendor files
+vendor/*
+!vendor/pnpm-store/
+!vendor/pnpm-store/**
