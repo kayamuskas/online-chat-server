@@ -145,6 +145,7 @@ export class ContactsRepository {
     const result = await executor.query<Friendship>(
       `INSERT INTO friendships (id, user_a_id, user_b_id, created_at)
        VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (user_a_id, user_b_id) DO UPDATE SET created_at = friendships.created_at
        RETURNING *`,
       [id, a, b],
     );

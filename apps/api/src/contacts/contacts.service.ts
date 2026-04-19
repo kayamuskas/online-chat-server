@@ -111,7 +111,8 @@ export class ContactsService {
     if (req.status !== 'pending') {
       throw new BadRequestException('Request is no longer pending');
     }
-    const friendship = await this.repo.createFriendship(callerId, req.requester_id);
+    const existingFriendship = await this.repo.findFriendship(callerId, req.requester_id);
+    const friendship = existingFriendship ?? await this.repo.createFriendship(callerId, req.requester_id);
     await this.repo.updateRequestStatus(requestId, 'accepted');
     return friendship;
   }
