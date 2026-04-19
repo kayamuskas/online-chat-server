@@ -109,8 +109,13 @@ export function DmChatView({
       } catch (e) {
         if (!cancelled) {
           const msg = e instanceof Error ? e.message : "Could not open conversation";
-          // 403 means ban_exists or not_friends; expose both cases gracefully
-          setInitError(msg);
+          // Translate known server reason codes to clean UI states.
+          if (msg.includes("not_friends")) {
+            setIneligibleReason("not_friends");
+          } else {
+            // Unknown error — show the raw message as a fallback.
+            setInitError(msg);
+          }
         }
       } finally {
         if (!cancelled) setInitLoading(false);
