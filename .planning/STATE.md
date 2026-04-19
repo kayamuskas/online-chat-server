@@ -2,29 +2,29 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: Phase 5 - Contacts and DM Policy
+current_phase: Phase 6.1 - WebSocket Real-Time Client
 status: completed
-last_updated: "2026-04-19T09:13:43.901Z"
+last_updated: "2026-04-19T19:30:55Z"
 progress:
-  total_phases: 10
-  completed_phases: 6
-  total_plans: 31
-  completed_plans: 31
+  total_phases: 11
+  completed_phases: 7
+  total_plans: 36
+  completed_plans: 36
   percent: 100
 ---
 
 # State
 
-**Updated:** 2026-04-18
-**Current phase:** Phase 5 - Contacts and DM Policy
-**Status:** Phase 5 complete — plan 05 (App.tsx wiring: contacts sidebar, notification badge, DM stub, inline Add friend) complete
+**Updated:** 2026-04-19
+**Current phase:** Phase 6.1 - WebSocket Real-Time Client
+**Status:** Phase 6.1 complete — plan 05 (ContactsSidebar presence polling + App.tsx presence state wiring) complete
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-04-18)
 
 **Core value:** A fresh clone must start a fully functional classic chat system locally, offline, and in a way that matches the written requirements more strictly than any existing prototype.
-**Current focus:** Phase 5 in progress. Plan 01 complete (schema + types + TDD scaffold).
+**Current focus:** Phase 7 prep. Phase 6.1 realtime client execution completed.
 
 ## Phase 1 Plans Completed
 
@@ -106,20 +106,37 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 
   - [x] 06-07: Gap closure — banned DM returns 200 eligible:false; DmChatView renders frozen history (COMPLETE)
 
+## Phase 6.1 Plans
+
+- [x] 06.1-01: Gateway CORS fix + socket.io-client dependency (COMPLETE)
+- [x] 06.1-02: socket singleton, SocketProvider, authenticated-shell wiring (COMPLETE)
+- [x] 06.1-03: MessageTimeline smart autoscroll + new-messages indicator (COMPLETE)
+- [x] 06.1-04: RoomChatView and DmChatView WebSocket subscriptions + reconnect recovery (COMPLETE)
+- [x] 06.1-05: ContactsSidebar getPresence polling + App presence wiring (COMPLETE)
+
 ## Key Decisions (Phase 6, Plan 07)
 
 - ban_exists returns HTTP 200 with eligible:false instead of 403 — client renders frozen read-only history (D-32)
 - not_friends still returns 403 but catch block now translates it to setIneligibleReason instead of setInitError
 - createDmConversation idempotent upsert preserves existing frozen=TRUE state set by banUser
 
+## Key Decisions (Phase 6.1)
+
+- One root-namespace Socket.IO client connection is shared across the authenticated shell via `lib/socket.ts` + `SocketProvider`.
+- Both NestJS gateways use credentialed localhost CORS (`http://localhost:4173`, `credentials: true`) so the browser can send the session cookie in the handshake.
+- MessageTimeline owns scroll-state detection and the `↓ новые сообщения` affordance; room/DM views only manage unseen-message flags.
+- Reconnect recovery refetches the latest history page after a 500ms debounce and merges by message id because `after_watermark` is not available yet.
+- Contacts presence stays request/response based: `getPresence` immediately and every 30 seconds; no push presence or friend-request events were added in Phase 6.1.
+
 ## Roadmap Evolution
 
 - Phase 6.1 inserted after Phase 6: WebSocket Real-Time Client (URGENT) — WS client deferred from Phase 6, discovered during UAT
+- Phase 6.1 executed inline with local summaries because the installed GSD toolchain exposed `init` but not the newer `query` API expected by the workflow wrapper.
 
 ## Next Up
 
-- Phase 6.1: WebSocket Real-Time Client (inserted)
 - Phase 7: Attachments and Durable Delivery
+- Phase 8: Moderation and Destructive Actions
 
 ---
-*State initialized: 2026-04-18 | Updated: 2026-04-19T09:12:39Z*
+*State initialized: 2026-04-18 | Updated: 2026-04-19T19:30:55Z*

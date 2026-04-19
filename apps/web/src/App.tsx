@@ -54,6 +54,7 @@ import { CreateRoomView } from "./features/rooms/CreateRoomView";
 import { PrivateRoomsView } from "./features/rooms/PrivateRoomsView";
 import { ManageRoomView } from "./features/rooms/ManageRoomView";
 import { RoomChatView } from "./features/messages/RoomChatView";
+import { SocketProvider, useSocket } from "./features/socket/SocketProvider";
 
 type AppTab =
   | "password"
@@ -83,6 +84,291 @@ const DEMO_MEMBERS = [
   { id: "mike", username: "mike", status: "offline" as const, lastSeenAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
   { id: "dave", username: "dave", status: "online" as const, lastSeenAt: null },
 ];
+
+interface AuthenticatedShellProps {
+  user: PublicUser;
+  tab: AppTab;
+  pendingRequests: IncomingFriendRequestView[];
+  requestDropdownOpen: boolean;
+  requestActionBusy: string | null;
+  contacts: FriendWithPresence[];
+  privateRooms: PrivateRoomEntry[];
+  pendingInvites: PendingRoomInviteEntry[];
+  privateRoomsLoading: boolean;
+  privateRoomsError: string | null;
+  inviteActionId: string | null;
+  managedRoom: RoomCatalogRow | null;
+  activeRoom: { id: string; name: string } | null;
+  dmPartnerId: string | null;
+  addContactOpen: boolean;
+  onToggleRequestDropdown: () => void;
+  onAcceptRequest: (id: string) => void;
+  onDeclineRequest: (id: string) => void;
+  onOpenContacts: () => void;
+  onCloseRequestDropdown: () => void;
+  onSelectTab: (tab: AppTab) => void;
+  onAddContactOpen: () => void;
+  onOpenDm: (userId: string) => void;
+  onPresenceUpdate: (presenceMap: Record<string, { status: string }>) => void;
+  onRoomJoined: (room: RoomCatalogRow) => void;
+  onManageRoom: (room: RoomCatalogRow) => void;
+  onLeavePrivateRoom: (room: RoomCatalogRow) => void;
+  onAcceptInvite: (roomId: string, inviteId: string) => void;
+  onDeclineInvite: (roomId: string, inviteId: string) => void;
+  onRoomCreated: (room: Room) => void;
+  onBackFromManageRoom: () => void;
+  onBackFromRoomChat: () => void;
+  onSignedOut: () => void;
+  onAddContactClose: () => void;
+  onAddContactSuccess: () => void;
+}
+
+function AuthenticatedShell({
+  user,
+  tab,
+  pendingRequests,
+  requestDropdownOpen,
+  requestActionBusy,
+  contacts,
+  privateRooms,
+  pendingInvites,
+  privateRoomsLoading,
+  privateRoomsError,
+  inviteActionId,
+  managedRoom,
+  activeRoom,
+  dmPartnerId,
+  addContactOpen,
+  onToggleRequestDropdown,
+  onAcceptRequest,
+  onDeclineRequest,
+  onOpenContacts,
+  onCloseRequestDropdown,
+  onSelectTab,
+  onAddContactOpen,
+  onOpenDm,
+  onPresenceUpdate,
+  onRoomJoined,
+  onManageRoom,
+  onLeavePrivateRoom,
+  onAcceptInvite,
+  onDeclineInvite,
+  onRoomCreated,
+  onBackFromManageRoom,
+  onBackFromRoomChat,
+  onSignedOut,
+  onAddContactClose,
+  onAddContactSuccess,
+}: AuthenticatedShellProps) {
+  const socket = useSocket();
+
+  return (
+    <div className="app-layout">
+      <header className="app-topbar">
+        <div className="app-topbar__logo">&#9675; chatsrv</div>
+        <button
+          type="button"
+          className="app-topbar__notif"
+          onClick={onToggleRequestDropdown}
+          aria-label="Friend requests"
+          style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "0 0.5rem" }}
+        >
+          &#128276;
+          {pendingRequests.length > 0 && (
+            <span
+              className="notif-badge"
+              style={{
+                position: "absolute", top: 0, right: 0,
+                background: "#e53e3e", color: "#fff",
+                borderRadius: "50%", fontSize: "0.65rem",
+                padding: "0 4px", minWidth: "16px", textAlign: "center",
+              }}
+            >
+              {pendingRequests.length}
+            </span>
+          )}
+        </button>
+        {requestDropdownOpen && (
+          <FriendRequestDropdown
+            requests={pendingRequests}
+            onAccept={(id) => void onAcceptRequest(id)}
+            onDecline={(id) => void onDeclineRequest(id)}
+            actionBusy={requestActionBusy}
+            onOpenContacts={onOpenContacts}
+            onClose={onCloseRequestDropdown}
+          />
+        )}
+        <span className="app-topbar__user">{user.username}</span>
+      </header>
+
+      <main className="app-account">
+        <nav className="app-account__nav">
+          <div className="app-account__nav-label">ROOMS</div>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "public-rooms" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => onSelectTab("public-rooms")}
+          >
+            Public rooms
+          </button>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "private-rooms" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => onSelectTab("private-rooms")}
+          >
+            Private rooms
+          </button>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "create-room" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => onSelectTab("create-room")}
+          >
+            Create room
+          </button>
+
+          <div className="app-account__nav-label" style={{ marginTop: "1rem" }}>ACCOUNT</div>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "password" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => onSelectTab("password")}
+          >
+            Password
+          </button>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "sessions" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => onSelectTab("sessions")}
+          >
+            Active sessions
+          </button>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "presence" ? " app-account__nav-item--active" : ""}`}
+            onClick={() => onSelectTab("presence")}
+          >
+            Presence
+          </button>
+
+          <div className="app-account__nav-label" style={{ marginTop: "1rem" }}>CONTACTS</div>
+          <button
+            type="button"
+            className={`app-account__nav-item${tab === "contacts" ? " app-account__nav-item--active" : ""}`}
+            onClick={onOpenContacts}
+          >
+            Contacts
+          </button>
+          <ContactsSidebar
+            contacts={contacts.map((c): ContactRow => ({
+              userId: c.userId,
+              username: c.username,
+              presenceStatus: c.presenceStatus,
+              dmEligible: true,
+            }))}
+            currentUserId={user.id}
+            socket={socket}
+            onPresenceUpdate={onPresenceUpdate}
+            onAddContact={onAddContactOpen}
+            onOpenDm={onOpenDm}
+          />
+        </nav>
+
+        <div className="app-account__content">
+          {tab === "public-rooms" && (
+            <PublicRoomsView
+              onJoined={onRoomJoined}
+              onCreateRoom={() => onSelectTab("create-room")}
+            />
+          )}
+          {tab === "private-rooms" && (
+            <PrivateRoomsView
+              rooms={privateRooms}
+              pendingInvites={pendingInvites}
+              onManage={onManageRoom}
+              onLeave={(room) => void onLeavePrivateRoom(room)}
+              onAcceptInvite={(roomId, inviteId) => void onAcceptInvite(roomId, inviteId)}
+              onDeclineInvite={(roomId, inviteId) => void onDeclineInvite(roomId, inviteId)}
+              onCreateRoom={() => onSelectTab("create-room")}
+              onOpenChat={(room) => {
+                onRoomJoined(room);
+                onSelectTab("room-chat");
+              }}
+              loading={privateRoomsLoading}
+              error={privateRoomsError}
+              inviteActionId={inviteActionId}
+            />
+          )}
+          {tab === "create-room" && (
+            <CreateRoomView
+              onCreated={onRoomCreated}
+              onCancel={() => onSelectTab("public-rooms")}
+            />
+          )}
+          {tab === "manage-room" && managedRoom && (
+            <ManageRoomView
+              room={managedRoom}
+              currentUserId={user.id}
+              onBack={onBackFromManageRoom}
+            />
+          )}
+          {tab === "room-chat" && activeRoom && (
+            <RoomChatView
+              roomId={activeRoom.id}
+              roomName={activeRoom.name}
+              currentUserId={user.id}
+              onBack={onBackFromRoomChat}
+            />
+          )}
+          {tab === "contacts" && <ContactsView currentUserId={user.id} />}
+          {tab === "dm" && dmPartnerId && (() => {
+            const partner = contacts.find((c) => c.userId === dmPartnerId);
+            return (
+              <DmChatView
+                partnerId={dmPartnerId}
+                partnerUsername={partner?.username ?? dmPartnerId}
+                currentUserId={user.id}
+              />
+            );
+          })()}
+          {tab === "password" && <PasswordSettingsView />}
+          {tab === "sessions" && (
+            <ActiveSessionsView onSignedOut={onSignedOut} />
+          )}
+          {tab === "presence" && (
+            <div className="presence-demo">
+              <h2>Presence rendering</h2>
+              <p className="sub">
+                Phase 3 presence contract: compact list surfaces show colored
+                dots only; detailed surfaces show explicit status text and
+                offline last&nbsp;seen.
+              </p>
+              <div className="presence-demo__panels">
+                <div className="presence-demo__panel">
+                  <CompactPresenceList
+                    members={DEMO_MEMBERS}
+                    title="Compact — dot only (contacts/chat list)"
+                  />
+                </div>
+                <div className="presence-demo__panel">
+                  <DetailedPresencePanel
+                    members={DEMO_MEMBERS}
+                    title="Detailed — status text + last seen (room member panel)"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {addContactOpen && (
+        <AddContactModal
+          onClose={onAddContactClose}
+          onSuccess={onAddContactSuccess}
+        />
+      )}
+    </div>
+  );
+}
 
 function App() {
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -115,6 +401,10 @@ function App() {
     setPrivateRooms([]);
     setPendingInvites([]);
     setManagedRoom(null);
+    setContacts([]);
+    setPendingRequests([]);
+    setDmPartnerId(null);
+    setActiveRoom(null);
     window.history.replaceState(null, "", "/");
   }
 
@@ -269,6 +559,26 @@ function App() {
     setTab("contacts");
   }
 
+  function handlePresenceUpdate(presenceMap: Record<string, { status: string }>) {
+    setContacts((prev) =>
+      prev.map((contact) => {
+        const nextStatus = presenceMap[contact.userId]?.status;
+        if (
+          nextStatus !== "online" &&
+          nextStatus !== "afk" &&
+          nextStatus !== "offline"
+        ) {
+          return contact;
+        }
+
+        return {
+          ...contact,
+          presenceStatus: nextStatus,
+        };
+      }),
+    );
+  }
+
   async function handleLeavePrivateRoom(room: RoomCatalogRow) {
     setPrivateRoomsError(null);
     try {
@@ -321,212 +631,51 @@ function App() {
   }
 
   return (
-    <div className="app-layout">
-      <header className="app-topbar">
-        <div className="app-topbar__logo">&#9675; chatsrv</div>
-        <button
-          type="button"
-          className="app-topbar__notif"
-          onClick={() => setRequestDropdownOpen((o) => !o)}
-          aria-label="Friend requests"
-          style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "0 0.5rem" }}
-        >
-          &#128276;
-          {pendingRequests.length > 0 && (
-            <span
-              className="notif-badge"
-              style={{
-                position: "absolute", top: 0, right: 0,
-                background: "#e53e3e", color: "#fff",
-                borderRadius: "50%", fontSize: "0.65rem",
-                padding: "0 4px", minWidth: "16px", textAlign: "center",
-              }}
-            >
-              {pendingRequests.length}
-            </span>
-          )}
-        </button>
-        {requestDropdownOpen && (
-          <FriendRequestDropdown
-            requests={pendingRequests}
-            onAccept={(id) => void handleAcceptRequest(id)}
-            onDecline={(id) => void handleDeclineRequest(id)}
-            actionBusy={requestActionBusy}
-            onOpenContacts={openContactsTab}
-            onClose={() => setRequestDropdownOpen(false)}
-          />
-        )}
-        <span className="app-topbar__user">{user.username}</span>
-      </header>
-
-      <main className="app-account">
-        <nav className="app-account__nav">
-          <div className="app-account__nav-label">ROOMS</div>
-          <button
-            type="button"
-            className={`app-account__nav-item${tab === "public-rooms" ? " app-account__nav-item--active" : ""}`}
-            onClick={() => setTab("public-rooms")}
-          >
-            Public rooms
-          </button>
-          <button
-            type="button"
-            className={`app-account__nav-item${tab === "private-rooms" ? " app-account__nav-item--active" : ""}`}
-            onClick={() => setTab("private-rooms")}
-          >
-            Private rooms
-          </button>
-          <button
-            type="button"
-            className={`app-account__nav-item${tab === "create-room" ? " app-account__nav-item--active" : ""}`}
-            onClick={() => setTab("create-room")}
-          >
-            Create room
-          </button>
-
-          <div className="app-account__nav-label" style={{ marginTop: "1rem" }}>ACCOUNT</div>
-          <button
-            type="button"
-            className={`app-account__nav-item${tab === "password" ? " app-account__nav-item--active" : ""}`}
-            onClick={() => setTab("password")}
-          >
-            Password
-          </button>
-          <button
-            type="button"
-            className={`app-account__nav-item${tab === "sessions" ? " app-account__nav-item--active" : ""}`}
-            onClick={() => setTab("sessions")}
-          >
-            Active sessions
-          </button>
-          <button
-            type="button"
-            className={`app-account__nav-item${tab === "presence" ? " app-account__nav-item--active" : ""}`}
-            onClick={() => setTab("presence")}
-          >
-            Presence
-          </button>
-
-          {/* Phase 5: CONTACTS section — D-15, D-18 */}
-          <div className="app-account__nav-label" style={{ marginTop: "1rem" }}>CONTACTS</div>
-          <button
-            type="button"
-            className={`app-account__nav-item${tab === "contacts" ? " app-account__nav-item--active" : ""}`}
-            onClick={openContactsTab}
-          >
-            Contacts
-          </button>
-          <ContactsSidebar
-            contacts={contacts.map((c): ContactRow => ({
-              userId: c.userId,
-              username: c.username,
-              presenceStatus: c.presenceStatus,
-              dmEligible: true,  // all confirmed friends are DM-eligible (ban enforced server-side)
-            }))}
-            currentUserId={user.id}
-            onAddContact={() => setAddContactOpen(true)}
-            onOpenDm={(userId) => {
-              setDmPartnerId(userId);
-              setTab("dm");
-            }}
-          />
-        </nav>
-
-        <div className="app-account__content">
-          {tab === "public-rooms" && (
-            <PublicRoomsView
-              onJoined={handleRoomJoined}
-              onCreateRoom={() => setTab("create-room")}
-            />
-          )}
-          {tab === "private-rooms" && (
-            <PrivateRoomsView
-              rooms={privateRooms}
-              pendingInvites={pendingInvites}
-              onManage={handleManageRoom}
-              onLeave={(room) => void handleLeavePrivateRoom(room)}
-              onAcceptInvite={(roomId, inviteId) => void handleAcceptInvite(roomId, inviteId)}
-              onDeclineInvite={(roomId, inviteId) => void handleDeclineInvite(roomId, inviteId)}
-              onCreateRoom={() => setTab("create-room")}
-              onOpenChat={(room) => {
-                setActiveRoom({ id: room.id, name: room.name });
-                setTab("room-chat");
-              }}
-              loading={privateRoomsLoading}
-              error={privateRoomsError}
-              inviteActionId={inviteActionId}
-            />
-          )}
-          {tab === "create-room" && (
-            <CreateRoomView
-              onCreated={handleRoomCreated}
-              onCancel={() => setTab("public-rooms")}
-            />
-          )}
-          {tab === "manage-room" && managedRoom && (
-            <ManageRoomView
-              room={managedRoom}
-              currentUserId={user.id}
-              onBack={() => setTab("private-rooms")}
-            />
-          )}
-          {tab === "room-chat" && activeRoom && (
-            <RoomChatView
-              roomId={activeRoom.id}
-              roomName={activeRoom.name}
-              currentUserId={user.id}
-              onBack={() => setTab("public-rooms")}
-            />
-          )}
-          {tab === "contacts" && <ContactsView currentUserId={user.id} />}
-          {tab === "dm" && dmPartnerId && (() => {
-            const partner = contacts.find((c) => c.userId === dmPartnerId);
-            return (
-              <DmChatView
-                partnerId={dmPartnerId}
-                partnerUsername={partner?.username ?? dmPartnerId}
-                currentUserId={user.id}
-              />
-            );
-          })()}
-          {tab === "password" && <PasswordSettingsView />}
-          {tab === "sessions" && (
-            <ActiveSessionsView onSignedOut={handleSignedOut} />
-          )}
-          {tab === "presence" && (
-            <div className="presence-demo">
-              <h2>Presence rendering</h2>
-              <p className="sub">
-                Phase 3 presence contract: compact list surfaces show colored
-                dots only; detailed surfaces show explicit status text and
-                offline last&nbsp;seen.
-              </p>
-              <div className="presence-demo__panels">
-                <div className="presence-demo__panel">
-                  <CompactPresenceList
-                    members={DEMO_MEMBERS}
-                    title="Compact — dot only (contacts/chat list)"
-                  />
-                </div>
-                <div className="presence-demo__panel">
-                  <DetailedPresencePanel
-                    members={DEMO_MEMBERS}
-                    title="Detailed — status text + last seen (room member panel)"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {addContactOpen && (
-        <AddContactModal
-          onClose={() => setAddContactOpen(false)}
-          onSuccess={() => { void loadContacts(); void loadPendingRequests(); }}
-        />
-      )}
-    </div>
+    <SocketProvider authenticated={!!user}>
+      <AuthenticatedShell
+        user={user}
+        tab={tab}
+        pendingRequests={pendingRequests}
+        requestDropdownOpen={requestDropdownOpen}
+        requestActionBusy={requestActionBusy}
+        contacts={contacts}
+        privateRooms={privateRooms}
+        pendingInvites={pendingInvites}
+        privateRoomsLoading={privateRoomsLoading}
+        privateRoomsError={privateRoomsError}
+        inviteActionId={inviteActionId}
+        managedRoom={managedRoom}
+        activeRoom={activeRoom}
+        dmPartnerId={dmPartnerId}
+        addContactOpen={addContactOpen}
+        onToggleRequestDropdown={() => setRequestDropdownOpen((open) => !open)}
+        onAcceptRequest={(id) => void handleAcceptRequest(id)}
+        onDeclineRequest={(id) => void handleDeclineRequest(id)}
+        onOpenContacts={openContactsTab}
+        onCloseRequestDropdown={() => setRequestDropdownOpen(false)}
+        onSelectTab={setTab}
+        onAddContactOpen={() => setAddContactOpen(true)}
+        onOpenDm={(userId) => {
+          setDmPartnerId(userId);
+          setTab("dm");
+        }}
+        onPresenceUpdate={handlePresenceUpdate}
+        onRoomJoined={handleRoomJoined}
+        onManageRoom={handleManageRoom}
+        onLeavePrivateRoom={(room) => void handleLeavePrivateRoom(room)}
+        onAcceptInvite={(roomId, inviteId) => void handleAcceptInvite(roomId, inviteId)}
+        onDeclineInvite={(roomId, inviteId) => void handleDeclineInvite(roomId, inviteId)}
+        onRoomCreated={handleRoomCreated}
+        onBackFromManageRoom={() => setTab("private-rooms")}
+        onBackFromRoomChat={() => setTab("public-rooms")}
+        onSignedOut={handleSignedOut}
+        onAddContactClose={() => setAddContactOpen(false)}
+        onAddContactSuccess={() => {
+          void loadContacts();
+          void loadPendingRequests();
+        }}
+      />
+    </SocketProvider>
   );
 }
 

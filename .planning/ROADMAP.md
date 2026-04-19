@@ -151,11 +151,11 @@ Requirements: `MSG-01`, `MSG-03`, `MSG-07`
 
 Plans: 5 plans
 
-- [ ] `06.1-01-PLAN.md` — CORS fix on both gateways + install socket.io-client@4.8.3 (Wave 0 blocker).
-- [ ] `06.1-02-PLAN.md` — socket.ts singleton + SocketProvider + useSocket hook + App.tsx wiring.
-- [ ] `06.1-03-PLAN.md` — MessageTimeline smart autoscroll + ↓ новые сообщения indicator (D-05, MSG-07).
-- [ ] `06.1-04-PLAN.md` — RoomChatView + DmChatView WS subscriptions, reconnect recovery (D-04, D-06).
-- [ ] `06.1-05-PLAN.md` — ContactsSidebar getPresence polling + App.tsx presence state wiring (D-03).
+- [x] `06.1-01-PLAN.md` — CORS fix on both gateways + install socket.io-client@4.8.3 (Wave 0 blocker). *(complete 2026-04-19)*
+- [x] `06.1-02-PLAN.md` — socket.ts singleton + SocketProvider + useSocket hook + App.tsx wiring. *(complete 2026-04-19)*
+- [x] `06.1-03-PLAN.md` — MessageTimeline smart autoscroll + ↓ новые сообщения indicator (D-05, MSG-07). *(complete 2026-04-19)*
+- [x] `06.1-04-PLAN.md` — RoomChatView + DmChatView WS subscriptions, reconnect recovery (D-04, D-06). *(complete 2026-04-19)*
+- [x] `06.1-05-PLAN.md` — ContactsSidebar getPresence polling + App.tsx presence state wiring (D-03). *(complete 2026-04-19)*
 
 Success criteria:
 1. Sending a message in a room or DM appears in the timeline immediately via WebSocket push — no reload required.

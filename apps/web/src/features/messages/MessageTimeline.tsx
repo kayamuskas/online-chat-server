@@ -13,6 +13,7 @@
  *   - No infinite scroll polish — Phase 9 will build on top of this contract
  */
 
+import { useEffect, useRef, useState } from "react";
 import type { MessageView, MessageHistoryRange } from "../../lib/api";
 import { MessageEditor } from "./MessageEditor";
 
@@ -39,6 +40,10 @@ interface MessageTimelineProps {
   onLoadOlder?: () => void;
   /** True while older messages are being fetched. */
   loadingOlder?: boolean;
+  /** True when unseen realtime messages arrived while user was scrolled up. */
+  hasNewMessages?: boolean;
+  /** Clears parent unseen-message state once the user reaches the bottom again. */
+  onScrollToBottom?: () => void;
 }
 
 /**
@@ -72,11 +77,71 @@ export function MessageTimeline({
   onCancelEdit,
   onLoadOlder,
   loadingOlder = false,
+  hasNewMessages = false,
+  onScrollToBottom,
 }: MessageTimelineProps) {
   const hasMoreBefore = range?.hasMoreBefore ?? false;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const previousMessageCountRef = useRef(messages.length);
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
+
+  useEffect(() => {
+    const nextCount = messages.length;
+    const previousCount = previousMessageCountRef.current;
+
+    if (nextCount > previousCount) {
+      if (!isScrolledUp) {
+        scrollRef.current?.scrollTo({
+          top: scrollRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+        onScrollToBottom?.();
+      }
+    }
+
+    previousMessageCountRef.current = nextCount;
+  }, [isScrolledUp, messages.length, onScrollToBottom]);
+
+  function handleScroll() {
+    const node = scrollRef.current;
+    if (!node) {
+      return;
+    }
+
+    const nextIsScrolledUp =
+      node.scrollHeight - node.scrollTop - node.clientHeight > 100;
+
+    setIsScrolledUp(nextIsScrolledUp);
+
+    if (!nextIsScrolledUp && hasNewMessages) {
+      onScrollToBottom?.();
+    }
+  }
+
+  function handleScrollToBottom() {
+    const node = scrollRef.current;
+    if (!node) {
+      return;
+    }
+
+    node.scrollTo({
+      top: node.scrollHeight,
+      behavior: "smooth",
+    });
+    setIsScrolledUp(false);
+    onScrollToBottom?.();
+  }
 
   return (
-    <div className="msg-timeline" role="log" aria-live="polite" aria-label="Message history">
+    <div
+      ref={scrollRef}
+      className="msg-timeline"
+      role="log"
+      aria-live="polite"
+      aria-label="Message history"
+      onScroll={handleScroll}
+      style={{ position: "relative", overflowY: "auto", height: "100%" }}
+    >
       {/* Load older messages affordance (MSG-08, D-29) */}
       {hasMoreBefore && (
         <div className="msg-timeline__load-older">
@@ -179,6 +244,35 @@ export function MessageTimeline({
           );
         })}
       </ul>
+
+      {isScrolledUp && hasNewMessages && (
+        <div
+          style={{
+            position: "sticky",
+            bottom: "1rem",
+            display: "flex",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <button
+            type="button"
+            className="msg-timeline__new-messages-btn"
+            onClick={handleScrollToBottom}
+            style={{
+              pointerEvents: "auto",
+              border: "1px solid rgba(255,255,255,0.18)",
+              borderRadius: "999px",
+              padding: "0.55rem 0.9rem",
+              background: "rgba(17,24,39,0.92)",
+              color: "#f9fafb",
+              boxShadow: "0 10px 30px rgba(15,23,42,0.28)",
+            }}
+          >
+            &#8595; новые сообщения
+          </button>
+        </div>
+      )}
     </div>
   );
 }

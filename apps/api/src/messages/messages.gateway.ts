@@ -75,7 +75,7 @@ function dmChannel(conversationId: string): string {
 // ── Gateway ───────────────────────────────────────────────────────────────────
 
 @Injectable()
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({ cors: { origin: 'http://localhost:4173', credentials: true } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private readonly server!: Server;

@@ -35,7 +35,7 @@ interface GetPresencePayload {
 
 const MAX_PRESENCE_USER_IDS = 500;
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({ cors: { origin: 'http://localhost:4173', credentials: true } })
 export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /**
    * Socket-ID → userId map for authenticated connections.

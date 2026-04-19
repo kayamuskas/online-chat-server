@@ -31,6 +31,61 @@ import {
 } from "../../lib/api";
 import { MessageTimeline } from "./MessageTimeline";
 import { MessageComposer } from "./MessageComposer";
+import { useSocket } from "../socket/SocketProvider";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapWsMessage(raw: any): MessageView {
+  const msg = raw.message ?? raw;
+  const rp = msg.reply_preview ?? msg.replyPreview;
+
+  return {
+    id: msg.id,
+    conversationType: raw.conversation_type ?? msg.conversation_type ?? msg.conversationType,
+    conversationId: raw.conversation_id ?? msg.conversation_id ?? msg.conversationId,
+    authorId: msg.author_id ?? msg.authorId,
+    authorUsername: msg.author_username ?? msg.authorUsername ?? "",
+    content: msg.content,
+    replyToId: msg.reply_to_id ?? msg.replyToId ?? null,
+    replyPreview: rp
+      ? {
+          id: rp.id,
+          authorUsername: rp.author_username ?? rp.authorUsername,
+          contentSnippet: rp.content_preview ?? rp.contentSnippet,
+        }
+      : null,
+    editedAt: msg.edited_at ?? msg.editedAt ?? null,
+    createdAt: msg.created_at ?? msg.createdAt,
+    conversationWatermark: Number(
+      msg.conversation_watermark ?? msg.conversationWatermark,
+    ),
+  };
+}
+
+function mergeMessages(
+  current: MessageView[],
+  incoming: MessageView[],
+): MessageView[] {
+  const byId = new Map(current.map((message) => [message.id, message]));
+
+  for (const message of incoming) {
+    const existing = byId.get(message.id);
+    byId.set(
+      message.id,
+      existing
+        ? {
+            ...existing,
+            ...message,
+            authorUsername: message.authorUsername || existing.authorUsername,
+            replyPreview: message.replyPreview ?? existing.replyPreview,
+          }
+        : message,
+    );
+  }
+
+  return Array.from(byId.values()).sort(
+    (a, b) => a.conversationWatermark - b.conversationWatermark,
+  );
+}
 
 interface DmChatViewProps {
   /** ID of the other participant. */
@@ -71,9 +126,9 @@ export function DmChatView({
   const [replyTo, setReplyTo] = useState<ReplyPreview | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
-
-  // Scroll-to-bottom ref
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const socket = useSocket();
 
   // ── Step 1: open / retrieve the dm_conversations row ──────────────────────
   useEffect(() => {
@@ -155,13 +210,117 @@ export function DmChatView({
     if (!conversationId) return;
     setMessages([]);
     setRange(null);
+    setHasNewMessages(false);
     void loadHistory();
   }, [conversationId, loadHistory]);
 
-  // Scroll to bottom on new messages
+  const scheduleReconnectRefetch = useCallback(() => {
+    if (!conversationId) {
+      return;
+    }
+
+    if (reconnectTimerRef.current) {
+      window.clearTimeout(reconnectTimerRef.current);
+    }
+
+    reconnectTimerRef.current = window.setTimeout(async () => {
+      try {
+        const result = await getDmHistory(conversationId);
+        setRange(result.range);
+        setMessages((prev) => {
+          const merged = mergeMessages(prev, result.messages);
+          if (merged.length > prev.length) {
+            setHasNewMessages(true);
+          }
+          return merged;
+        });
+      } catch {
+        // silent reconnect recovery per phase plan
+      }
+    }, 500);
+  }, [conversationId]);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+    if (!socket || !conversationId) {
+      return;
+    }
+
+    function onMessageCreated(payload: unknown) {
+      const nextMessage = mapWsMessage(payload);
+      if (
+        nextMessage.conversationType !== "dm" ||
+        nextMessage.conversationId !== conversationId
+      ) {
+        return;
+      }
+
+      setMessages((prev) => {
+        const merged = mergeMessages(prev, [nextMessage]);
+        if (merged.length > prev.length) {
+          setHasNewMessages(true);
+        }
+        return merged;
+      });
+      setRange((prev) =>
+        prev
+          ? {
+              ...prev,
+              lastWatermark: Math.max(
+                prev.lastWatermark,
+                nextMessage.conversationWatermark,
+              ),
+              totalCount: prev.totalCount + 1,
+            }
+          : prev,
+      );
+    }
+
+    function onMessageEdited(payload: unknown) {
+      const nextMessage = mapWsMessage(payload);
+      if (
+        nextMessage.conversationType !== "dm" ||
+        nextMessage.conversationId !== conversationId
+      ) {
+        return;
+      }
+
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === nextMessage.id
+            ? {
+                ...message,
+                content: nextMessage.content,
+                replyToId: nextMessage.replyToId,
+                editedAt: nextMessage.editedAt,
+                createdAt: nextMessage.createdAt,
+                conversationWatermark: nextMessage.conversationWatermark,
+              }
+            : message,
+        ),
+      );
+    }
+
+    function onReconnect() {
+      socket.emit("joinDm", { conversationId });
+      scheduleReconnectRefetch();
+    }
+
+    socket.emit("joinDm", { conversationId });
+    socket.on("message-created", onMessageCreated);
+    socket.on("message-edited", onMessageEdited);
+    socket.io.on("reconnect", onReconnect);
+
+    return () => {
+      socket.emit("leaveDm", { conversationId });
+      socket.off("message-created", onMessageCreated);
+      socket.off("message-edited", onMessageEdited);
+      socket.io.off("reconnect", onReconnect);
+      if (reconnectTimerRef.current) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+    };
+  }, [conversationId, scheduleReconnectRefetch, socket]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -171,13 +330,14 @@ export function DmChatView({
       content,
       ...(replyToId ? { replyToId } : {}),
     });
-    setMessages((prev) => [...prev, result.message]);
+    setMessages((prev) => mergeMessages(prev, [result.message]));
     setRange((prev) =>
       prev
         ? { ...prev, lastWatermark: result.message.conversationWatermark }
         : null,
     );
     setReplyTo(null);
+    setHasNewMessages(false);
   }
 
   function handleReply(msg: MessageView) {
@@ -302,8 +462,9 @@ export function DmChatView({
           onCancelEdit={() => setEditingMessageId(null)}
           onLoadOlder={handleLoadOlder}
           loadingOlder={loadingOlder}
+          hasNewMessages={hasNewMessages}
+          onScrollToBottom={() => setHasNewMessages(false)}
         />
-        <div ref={bottomRef} />
       </div>
 
       <div className="rooms-view__composer">

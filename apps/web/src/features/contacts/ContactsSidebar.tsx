@@ -7,6 +7,8 @@
  * Bottom of the list has "+ Add contact" button.
  */
 
+import { useEffect } from "react";
+import type { Socket } from "socket.io-client";
 import { PresenceDot, type PresenceStatus } from "../presence/PresenceDot";
 
 export interface ContactRow {
@@ -21,6 +23,8 @@ interface ContactsSidebarProps {
   currentUserId: string;
   onAddContact?: () => void;
   onOpenDm?: (userId: string) => void;
+  socket?: Socket | null;
+  onPresenceUpdate?: (presenceMap: Record<string, { status: string }>) => void;
 }
 
 export function ContactsSidebar({
@@ -28,7 +32,34 @@ export function ContactsSidebar({
   currentUserId,
   onAddContact,
   onOpenDm,
+  socket = null,
+  onPresenceUpdate,
 }: ContactsSidebarProps) {
+  useEffect(() => {
+    if (!socket || contacts.length === 0) {
+      return;
+    }
+
+    const userIds = contacts.map((contact) => contact.userId);
+
+    function requestPresence() {
+      socket.emit("getPresence", { userIds });
+    }
+
+    function onPresence(presenceMap: Record<string, { status: string }>) {
+      onPresenceUpdate?.(presenceMap);
+    }
+
+    requestPresence();
+    const intervalId = window.setInterval(requestPresence, 30_000);
+    socket.on("presence", onPresence);
+
+    return () => {
+      window.clearInterval(intervalId);
+      socket.off("presence", onPresence);
+    };
+  }, [contacts, onPresenceUpdate, socket]);
+
   return (
     <div>
       {contacts.length === 0 && (
