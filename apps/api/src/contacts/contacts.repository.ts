@@ -344,4 +344,19 @@ export class ContactsRepository {
     );
     return result.rows[0] ?? null;
   }
+
+  /**
+   * Find a DM conversation by its primary key UUID.
+   *
+   * Used by MessagesService to resolve conversation participants and frozen state
+   * from a conversation_id stored on a message row (D-31, D-32).
+   */
+  async findDmConversationById(conversationId: string): Promise<DmConversation | null> {
+    const result = await this.db.query<DmConversation>(
+      `SELECT id, user_a_id, user_b_id, frozen, created_at
+       FROM dm_conversations WHERE id = $1 LIMIT 1`,
+      [conversationId],
+    );
+    return result.rows[0] ?? null;
+  }
 }
