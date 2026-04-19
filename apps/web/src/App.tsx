@@ -53,6 +53,7 @@ import { PublicRoomsView } from "./features/rooms/PublicRoomsView";
 import { CreateRoomView } from "./features/rooms/CreateRoomView";
 import { PrivateRoomsView } from "./features/rooms/PrivateRoomsView";
 import { ManageRoomView } from "./features/rooms/ManageRoomView";
+import { RoomChatView } from "./features/messages/RoomChatView";
 
 type AppTab =
   | "password"
@@ -63,7 +64,8 @@ type AppTab =
   | "create-room"
   | "manage-room"
   | "contacts"    // Phase 5: full contacts page
-  | "dm";         // Phase 5: DM stub screen
+  | "dm"          // Phase 6: real DM conversation
+  | "room-chat";  // Phase 6: real room conversation
 
 function isAccountRoute() {
   return window.location.pathname === "/account";
@@ -100,6 +102,8 @@ function App() {
   const [addContactOpen, setAddContactOpen] = useState(false);
   const [dmPartnerId, setDmPartnerId] = useState<string | null>(null);
   const [requestActionBusy, setRequestActionBusy] = useState<string | null>(null);
+  // Phase 6: active room for room-chat tab
+  const [activeRoom, setActiveRoom] = useState<{ id: string; name: string } | null>(null);
 
   function handleAuthenticated(nextUser: PublicUser) {
     setUser(nextUser);
@@ -200,8 +204,9 @@ function App() {
     }
   }
 
-  function handleRoomJoined(_room: RoomCatalogRow) {
-    setTab("public-rooms");
+  function handleRoomJoined(room: RoomCatalogRow) {
+    setActiveRoom({ id: room.id, name: room.name });
+    setTab("room-chat");
   }
 
   async function handleAcceptInvite(roomId: string, inviteId: string) {
@@ -443,6 +448,10 @@ function App() {
               onAcceptInvite={(roomId, inviteId) => void handleAcceptInvite(roomId, inviteId)}
               onDeclineInvite={(roomId, inviteId) => void handleDeclineInvite(roomId, inviteId)}
               onCreateRoom={() => setTab("create-room")}
+              onOpenChat={(room) => {
+                setActiveRoom({ id: room.id, name: room.name });
+                setTab("room-chat");
+              }}
               loading={privateRoomsLoading}
               error={privateRoomsError}
               inviteActionId={inviteActionId}
@@ -459,6 +468,14 @@ function App() {
               room={managedRoom}
               currentUserId={user.id}
               onBack={() => setTab("private-rooms")}
+            />
+          )}
+          {tab === "room-chat" && activeRoom && (
+            <RoomChatView
+              roomId={activeRoom.id}
+              roomName={activeRoom.name}
+              currentUserId={user.id}
+              onBack={() => setTab("public-rooms")}
             />
           )}
           {tab === "contacts" && <ContactsView currentUserId={user.id} />}
