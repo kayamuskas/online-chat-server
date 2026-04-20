@@ -9,8 +9,16 @@
   },
   "pnpm": {
     "supportedArchitectures": {
-      "os": ["linux", "darwin", "current"],
-      "cpu": ["arm64", "x64", "current"]
+      "os": [
+        "linux",
+        "darwin",
+        "current"
+      ],
+      "cpu": [
+        "arm64",
+        "x64",
+        "current"
+      ]
     }
   },
   "scripts": {
@@ -23,5 +31,8 @@
     "test": "pnpm -r test",
     "compose:smoke": "docker compose -f infra/compose/compose.yaml up --build --wait",
     "compose:down": "docker compose -f infra/compose/compose.yaml down -v"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6"
   }
 }

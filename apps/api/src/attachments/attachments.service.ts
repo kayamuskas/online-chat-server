@@ -29,7 +29,6 @@ import type { Attachment, AttachmentView } from './attachments.types.js';
 
 const IMAGE_MIMES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 const IMAGE_MAX_BYTES = 3 * 1024 * 1024;   // 3 MB (D-47 / FILE-06)
-const FILE_MAX_BYTES  = 20 * 1024 * 1024;  // 20 MB (D-47 / FILE-06)
 const ORPHAN_MAX_AGE_MS = 3600_000;         // 1 hour
 
 @Injectable()

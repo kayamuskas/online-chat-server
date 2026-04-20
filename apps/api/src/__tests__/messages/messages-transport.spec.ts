@@ -194,7 +194,7 @@ describe('MessagesController', () => {
 
   describe('sendRoomMessage', () => {
     it('sends message, broadcasts, and returns 201 payload', async () => {
-      const msg = makeMessage();
+      const msg = makeMessageView();
       vi.mocked(service.sendMessage).mockResolvedValue(msg);
 
       const response = await controller.sendRoomMessage(
@@ -215,7 +215,7 @@ describe('MessagesController', () => {
     });
 
     it('includes reply_to_id when provided', async () => {
-      const msg = makeMessage({ reply_to_id: 'parent-uuid' });
+      const msg = makeMessageView({ reply_to_id: 'parent-uuid' });
       vi.mocked(service.sendMessage).mockResolvedValue(msg);
 
       await controller.sendRoomMessage(
@@ -333,7 +333,7 @@ describe('MessagesController', () => {
 
   describe('sendDmMessage', () => {
     it('sends DM message, broadcasts to DM channel, returns 201', async () => {
-      const msg = makeMessage({ conversation_type: 'dm', conversation_id: 'dm-uuid-1' });
+      const msg = makeMessageView({ conversation_type: 'dm', conversation_id: 'dm-uuid-1' });
       vi.mocked(service.sendMessage).mockResolvedValue(msg);
 
       const response = await controller.sendDmMessage(
@@ -556,17 +556,14 @@ describe('MessagesGateway', () => {
 
   describe('broadcastMessageCreated', () => {
     it('emits message-created to correct room channel (D-34)', async () => {
-      const msg = {
+      const msg = makeMessageView({
         id: 'msg-1',
-        conversation_type: 'room' as const,
+        conversation_type: 'room',
         conversation_id: 'room-uuid-1',
         author_id: 'user-uuid-1',
         content: 'Hello',
-        reply_to_id: null,
-        edited_at: null,
         conversation_watermark: 5,
-        created_at: new Date(),
-      };
+      });
 
       await gateway.broadcastMessageCreated(msg);
 
@@ -586,17 +583,14 @@ describe('MessagesGateway', () => {
     });
 
     it('emits message-created to correct DM channel (D-34)', async () => {
-      const msg = {
+      const msg = makeMessageView({
         id: 'msg-2',
-        conversation_type: 'dm' as const,
+        conversation_type: 'dm',
         conversation_id: 'dm-uuid-1',
         author_id: 'user-uuid-2',
         content: 'Hey!',
-        reply_to_id: null,
-        edited_at: null,
         conversation_watermark: 3,
-        created_at: new Date(),
-      };
+      });
 
       await gateway.broadcastMessageCreated(msg);
 
