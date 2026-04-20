@@ -11,6 +11,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Run single: pnpm exec playwright test e2e/realtime/ws-auth.spec.ts
  */
 export default defineConfig({
+  globalSetup: './e2e/global-setup.ts',
   testDir: './e2e',
   fullyParallel: false, // WS realtime tests share a running server
   forbidOnly: !!process.env['CI'],

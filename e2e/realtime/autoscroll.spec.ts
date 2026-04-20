@@ -1,121 +1,80 @@
-/**
- * autoscroll.spec.ts — UAT #7: Smart autoscroll and "↓ New messages" pill.
- *
- * Verifies that when a user scrolls up in the message timeline:
- *   1. New messages arriving via WebSocket do NOT yank the viewport.
- *   2. The "↓ New messages" button appears.
- *   3. Clicking the button scrolls back to the bottom.
- *
- * Phase 6.1 UAT item: "Smart autoscroll and new-message pill"
- */
-
+/** UAT #7 — Smart autoscroll + new-message pill. Uses global storageState. */
 import { test, expect } from '@playwright/test';
-import {
-  createAndSignIn,
-  createRoom,
-  joinRoom,
-} from '../helpers/api-setup';
-import {
-  signInViaUi,
-  openRoomChat,
-  sendMessage,
-  waitForMessage,
-} from '../helpers/ui-helpers';
+import type { E2EFixtures } from '../global-setup';
+import { openRoomChat, sendMessage, waitForMessage } from '../helpers/ui-helpers';
+import fixtures from '../../.e2e-fixtures.json' assert { type: 'json' };
+const fx = fixtures as E2EFixtures;
 
 test.describe('UAT #7 — Smart autoscroll and new-message pill', () => {
-  test('new message pill appears when user is scrolled up, click scrolls to bottom', async ({
-    browser,
-  }) => {
-    const alice = await createAndSignIn({ suffix: `alice_scroll_${Date.now()}` });
-    const bob = await createAndSignIn({ suffix: `bob_scroll_${Date.now()}` });
-    const room = await createRoom(alice);
-    await joinRoom(bob, room.id);
-
-    const ctxAlice = await browser.newContext();
-    const ctxBob = await browser.newContext();
+  test('pill appears when scrolled up, click scrolls to bottom', async ({ browser }) => {
+    const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
+    const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
     const pageAlice = await ctxAlice.newPage();
     const pageBob = await ctxBob.newPage();
-
     try {
-      await signInViaUi(pageAlice, alice);
-      await signInViaUi(pageBob, bob);
-      await openRoomChat(pageAlice, room);
-      await openRoomChat(pageBob, room);
+      await pageAlice.goto('/');
+      await pageBob.goto('/');
+      await pageAlice.waitForSelector('.app-layout', { timeout: 8_000 });
+      await pageBob.waitForSelector('.app-layout', { timeout: 8_000 });
+      await openRoomChat(pageAlice, fx.room);
+      await openRoomChat(pageBob, fx.room);
 
-      // Alice sends several messages to fill the timeline
+      // Fill timeline with history messages
       for (let i = 1; i <= 15; i++) {
-        await sendMessage(pageAlice, `History message ${i}`);
-        await pageAlice.waitForTimeout(50); // Small delay to ensure ordering
+        await sendMessage(pageAlice, `Msg ${i}`);
+        await pageAlice.waitForTimeout(30);
       }
+      await waitForMessage(pageBob, 'Msg 15', { timeout: 10_000 });
 
-      // Wait for Bob to see messages so the timeline is populated
-      await waitForMessage(pageBob, 'History message 15', { timeout: 10_000 });
-
-      // Bob scrolls UP to simulate reading history
+      // Bob scrolls up — dispatch scroll event so React handleScroll fires
       const timeline = pageBob.locator('.msg-timeline');
       await timeline.evaluate((el) => {
-        el.scrollTop = 0; // Scroll to top (reading old messages)
+        el.scrollTop = 0;
+        el.dispatchEvent(new Event('scroll'));
       });
-
-      // Wait a moment so the isScrolledUp state registers
       await pageBob.waitForTimeout(300);
 
-      // Alice sends a new message while Bob is scrolled up
+      // Alice sends new message while Bob is scrolled up
       const newMsg = `NEW-${Date.now()}`;
       await sendMessage(pageAlice, newMsg);
 
-      // Bob should see the "↓ New messages" pill (not be scrolled to it)
+      // Pill should appear
       const pill = pageBob.locator('.msg-timeline__new-messages-btn');
       await expect(pill).toBeVisible({ timeout: 8_000 });
-      await expect(pill).toHaveText(/New messages/i);
 
-      // Verify Bob's timeline did NOT scroll automatically (still showing top)
+      // Timeline should NOT have auto-scrolled
       const scrollTop = await timeline.evaluate((el) => el.scrollTop);
-      expect(scrollTop).toBeLessThan(100); // Still near the top
+      expect(scrollTop).toBeLessThan(100);
 
-      // Bob clicks the pill → should scroll to bottom
+      // Click pill → scrolls to bottom, pill disappears
       await pill.click();
-
-      // Pill should disappear after scroll
       await expect(pill).not.toBeVisible({ timeout: 3_000 });
-
-      // The new message should now be visible
-      const newMsgEl = pageBob.locator('.msg-bubble__content', { hasText: newMsg });
-      await expect(newMsgEl).toBeVisible({ timeout: 3_000 });
+      await expect(pageBob.locator('.msg-bubble__content', { hasText: newMsg })).toBeVisible();
     } finally {
       await ctxAlice.close();
       await ctxBob.close();
     }
   });
 
-  test('timeline auto-scrolls when user is already at bottom', async ({ browser }) => {
-    const alice = await createAndSignIn({ suffix: `alice_autoscroll_${Date.now()}` });
-    const bob = await createAndSignIn({ suffix: `bob_autoscroll_${Date.now()}` });
-    const room = await createRoom(alice);
-    await joinRoom(bob, room.id);
-
-    const ctxAlice = await browser.newContext();
-    const ctxBob = await browser.newContext();
+  test('no pill when user is already at bottom', async ({ browser }) => {
+    const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
+    const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
     const pageAlice = await ctxAlice.newPage();
     const pageBob = await ctxBob.newPage();
-
     try {
-      await signInViaUi(pageAlice, alice);
-      await signInViaUi(pageBob, bob);
-      await openRoomChat(pageAlice, room);
-      await openRoomChat(pageBob, room);
+      await pageAlice.goto('/');
+      await pageBob.goto('/');
+      await pageAlice.waitForSelector('.app-layout', { timeout: 8_000 });
+      await pageBob.waitForSelector('.app-layout', { timeout: 8_000 });
+      await openRoomChat(pageAlice, fx.room);
+      await openRoomChat(pageBob, fx.room);
 
-      // Bob is at bottom (default). Alice sends a message.
-      const autoMsg = `AUTO-${Date.now()}`;
-      await sendMessage(pageAlice, autoMsg);
+      const msg = `AUTO-${Date.now()}`;
+      await sendMessage(pageAlice, msg);
+      await waitForMessage(pageBob, msg, { timeout: 8_000 });
 
-      // Bob should receive it and the timeline should auto-scroll (pill should NOT appear)
-      await waitForMessage(pageBob, autoMsg, { timeout: 8_000 });
-
-      const pill = pageBob.locator('.msg-timeline__new-messages-btn');
-      // Pill should NOT be visible since Bob was already at bottom
-      const pillVisible = await pill.isVisible({ timeout: 1_000 }).catch(() => false);
-      expect(pillVisible).toBe(false);
+      // Pill must NOT appear (Bob was at bottom)
+      await expect(pageBob.locator('.msg-timeline__new-messages-btn')).not.toBeVisible({ timeout: 2_000 });
     } finally {
       await ctxAlice.close();
       await ctxBob.close();

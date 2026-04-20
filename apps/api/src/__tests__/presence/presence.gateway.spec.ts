@@ -16,6 +16,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppGateway } from '../../ws/app.gateway.js';
 import type { PresenceService } from '../../presence/presence.service.js';
 import type { AuthService } from '../../auth/auth.service.js';
+import { SESSION_COOKIE_NAME } from '../../auth/session-cookie.js';
 
 // ── stubs ─────────────────────────────────────────────────────────────────────
 
@@ -77,21 +78,21 @@ describe('AppGateway presence', () => {
     });
 
     it('disconnects sockets with an invalid session token', async () => {
-      const socket = makeSocket('session=bad');
+      const socket = makeSocket(`${SESSION_COOKIE_NAME}=bad`);
       await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
       expect(socket.disconnect).toHaveBeenCalledWith(true);
       expect(presenceService.tabConnected).not.toHaveBeenCalled();
     });
 
     it('registers tabConnected for authenticated connections', async () => {
-      const socket = makeSocket('session=valid-token');
+      const socket = makeSocket(`${SESSION_COOKIE_NAME}=valid-token`);
       await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
       expect(socket.disconnect).not.toHaveBeenCalled();
       expect(presenceService.tabConnected).toHaveBeenCalledWith('user-123', 'socket-xyz');
     });
 
     it('emits ready event on successful authentication', async () => {
-      const socket = makeSocket('session=valid-token');
+      const socket = makeSocket(`${SESSION_COOKIE_NAME}=valid-token`);
       await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
       expect(socket.emit).toHaveBeenCalledWith('ready', expect.objectContaining({ status: 'connected' }));
     });
@@ -101,7 +102,7 @@ describe('AppGateway presence', () => {
 
   describe('handleDisconnect', () => {
     it('calls tabDisconnected for previously authenticated sockets', async () => {
-      const socket = makeSocket('session=valid-token');
+      const socket = makeSocket(`${SESSION_COOKIE_NAME}=valid-token`);
       await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
       gateway.handleDisconnect(socket as unknown as import('socket.io').Socket);
       expect(presenceService.tabDisconnected).toHaveBeenCalledWith('user-123', 'socket-xyz');
@@ -118,7 +119,7 @@ describe('AppGateway presence', () => {
 
   describe('handleActivity', () => {
     it('calls tabActivity for authenticated sockets', async () => {
-      const socket = makeSocket('session=valid-token');
+      const socket = makeSocket(`${SESSION_COOKIE_NAME}=valid-token`);
       await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
       gateway.handleActivity(socket as unknown as import('socket.io').Socket);
       expect(presenceService.tabActivity).toHaveBeenCalledWith('user-123', 'socket-xyz');
@@ -136,7 +137,7 @@ describe('AppGateway presence', () => {
 
   describe('handleGetPresence', () => {
     it('emits presence event with current status for requested users', async () => {
-      const socket = makeSocket('session=valid-token');
+      const socket = makeSocket(`${SESSION_COOKIE_NAME}=valid-token`);
       await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
       vi.mocked(presenceService.getUsersPresence).mockReturnValue({ 'user-1': 'online', 'user-2': 'afk' });
 

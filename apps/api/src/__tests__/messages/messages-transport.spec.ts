@@ -47,6 +47,7 @@ import type { MessagesService } from '../../messages/messages.service.js';
 import type { MessageHistoryResult } from '../../messages/messages.repository.js';
 import type { Message, MessageView } from '../../messages/messages.types.js';
 import type { AuthContext } from '../../auth/current-user.guard.js';
+import { SESSION_COOKIE_NAME } from '../../auth/session-cookie.js';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -444,14 +445,14 @@ describe('MessagesGateway', () => {
     });
 
     it('disconnects socket with invalid session token', async () => {
-      const client = makeSocket('s2', 'session=bad-token');
+      const client = makeSocket('s2', `${SESSION_COOKIE_NAME}=bad-token`);
       authService.getCurrentUser.mockResolvedValue(null);
       await gateway.handleConnection(client as never);
       expect(client.disconnect).toHaveBeenCalledWith(true);
     });
 
     it('registers authenticated socket in socketUserMap', async () => {
-      const client = makeSocket('s3', 'session=valid-token');
+      const client = makeSocket('s3', `${SESSION_COOKIE_NAME}=valid-token`);
       authService.getCurrentUser.mockResolvedValue({
         user: { id: 'user-uuid-1', username: 'alice' },
         session: {},
@@ -466,7 +467,7 @@ describe('MessagesGateway', () => {
 
   describe('handleDisconnect', () => {
     it('removes socket from socketUserMap on disconnect', async () => {
-      const client = makeSocket('s4', 'session=tok');
+      const client = makeSocket('s4', `${SESSION_COOKIE_NAME}=tok`);
       authService.getCurrentUser.mockResolvedValue({
         user: { id: 'user-uuid-2', username: 'bob' },
         session: {},
@@ -483,7 +484,7 @@ describe('MessagesGateway', () => {
 
   describe('handleJoinRoom', () => {
     it('subscribes authenticated socket to room channel', async () => {
-      const client = makeSocket('s5', 'session=tok');
+      const client = makeSocket('s5', `${SESSION_COOKIE_NAME}=tok`);
       authService.getCurrentUser.mockResolvedValue({
         user: { id: 'user-uuid-1', username: 'alice' },
         session: {},
@@ -502,7 +503,7 @@ describe('MessagesGateway', () => {
     });
 
     it('ignores joinRoom with empty roomId', async () => {
-      const client = makeSocket('s7', 'session=tok');
+      const client = makeSocket('s7', `${SESSION_COOKIE_NAME}=tok`);
       authService.getCurrentUser.mockResolvedValue({
         user: { id: 'u1', username: 'a' },
         session: {},
@@ -525,7 +526,7 @@ describe('MessagesGateway', () => {
 
   describe('handleJoinDm', () => {
     it('subscribes authenticated socket to DM channel', async () => {
-      const client = makeSocket('s9', 'session=tok');
+      const client = makeSocket('s9', `${SESSION_COOKIE_NAME}=tok`);
       authService.getCurrentUser.mockResolvedValue({
         user: { id: 'user-uuid-1', username: 'alice' },
         session: {},

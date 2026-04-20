@@ -8,12 +8,12 @@
  * auth/session boundary. This helper enforces that by extracting the same
  * session cookie the HTTP guards rely on.
  *
- * Cookie name: 'session' (matches the cookie set by auth.controller.ts)
+ * Cookie name is imported from the canonical HTTP auth cookie policy so
+ * websocket auth cannot silently drift from the browser session contract.
  */
 
 import type { Socket } from 'socket.io';
-
-const SESSION_COOKIE_NAME = 'session';
+import { SESSION_COOKIE_NAME } from '../auth/session-cookie.js';
 
 /**
  * Parse a raw cookie header string and extract the named cookie value.

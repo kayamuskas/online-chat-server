@@ -40,3 +40,6 @@ requirements/
 
 # Vendor cache
 vendor/*
+.e2e-fixtures.json
+.alice-session.json
+.bob-session.json
