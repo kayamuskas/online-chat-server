@@ -13,16 +13,20 @@
  *   - No infinite scroll polish — Phase 9 will build on top of this contract
  */
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { Fragment, forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { MessageView, MessageHistoryRange } from "../../lib/api";
 import { attachmentDownloadUrl } from "../../lib/api";
 import { MessageEditor } from "./MessageEditor";
 
 interface MessageTimelineProps {
+  /** Stable identifier for resetting per-conversation scroll anchoring state. */
+  conversationKey: string;
   /** Messages to display in chronological order (ascending watermark). */
   messages: MessageView[];
   /** Watermark range metadata from the last history response. */
   range: MessageHistoryRange | null;
+  /** Unread count snapshot captured when the conversation was opened. */
+  initialUnreadCount?: number;
   /** Currently authenticated user's ID (used to show Edit button only for own messages). */
   currentUserId: string;
   /** ID of the message currently being edited (controlled from parent). */
@@ -75,8 +79,10 @@ export interface MessageTimelineHandle {
 }
 
 export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimelineProps>(function MessageTimeline({
+  conversationKey,
   messages,
   range,
+  initialUnreadCount = 0,
   currentUserId,
   editingMessageId = null,
   editSaving = false,
@@ -95,8 +101,29 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
   const scrollRef = useRef<HTMLDivElement>(null);
   const previousMessageCountRef = useRef(messages.length);
   const jumpToTopAfterOlderRef = useRef(false);
+  const initialAnchorAppliedRef = useRef(false);
+  const unreadDividerRef = useRef<HTMLLIElement>(null);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
+  const [initialUnreadMessageId, setInitialUnreadMessageId] = useState<string | null>(null);
   const handleScrollRef = useRef<() => void>(null!);
+
+  useEffect(() => {
+    previousMessageCountRef.current = 0;
+    jumpToTopAfterOlderRef.current = false;
+    initialAnchorAppliedRef.current = false;
+    setIsScrolledUp(false);
+    setInitialUnreadMessageId(null);
+  }, [conversationKey]);
+
+  useEffect(() => {
+    if (initialUnreadMessageId || initialUnreadCount <= 0 || messages.length === 0) {
+      return;
+    }
+
+    const clampedUnreadCount = Math.min(initialUnreadCount, messages.length);
+    const firstUnreadIndex = Math.max(0, messages.length - clampedUnreadCount);
+    setInitialUnreadMessageId(messages[firstUnreadIndex]?.id ?? null);
+  }, [initialUnreadCount, initialUnreadMessageId, messages]);
 
   // Attach a native scroll listener once on mount so wheel events reliably
   // update isScrolledUp regardless of React's synthetic event batching.
@@ -113,7 +140,37 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
     const nextCount = messages.length;
     const previousCount = previousMessageCountRef.current;
 
-    if (jumpToTopAfterOlderRef.current && node && nextCount > previousCount) {
+    if (!node || nextCount === 0) {
+      previousMessageCountRef.current = nextCount;
+      return;
+    }
+
+    if (!initialAnchorAppliedRef.current) {
+      // Wait until unread anchor id is resolved so we don't jump to bottom first.
+      if (initialUnreadCount > 0 && !initialUnreadMessageId) {
+        previousMessageCountRef.current = nextCount;
+        return;
+      }
+
+      if (initialUnreadMessageId) {
+        unreadDividerRef.current?.scrollIntoView({
+          block: "start",
+          behavior: "instant",
+        });
+        setIsScrolledUp(true);
+      } else {
+        node.scrollTo({
+          top: node.scrollHeight,
+          behavior: "instant",
+        });
+        onScrollToBottom?.();
+      }
+      initialAnchorAppliedRef.current = true;
+      previousMessageCountRef.current = nextCount;
+      return;
+    }
+
+    if (jumpToTopAfterOlderRef.current && nextCount > previousCount) {
       node.scrollTop = 0;
       // A second write on the next frame avoids browser scroll anchoring
       // snapping us back near the old viewport after prepend.
@@ -135,7 +192,7 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
     }
 
     previousMessageCountRef.current = nextCount;
-  }, [isScrolledUp, messages.length, onScrollToBottom]);
+  }, [initialUnreadMessageId, isScrolledUp, messages.length, onScrollToBottom]);
 
   useEffect(() => {
     if (!loadingOlder) {
@@ -217,13 +274,23 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
         {messages.map((msg) => {
           const isOwn = msg.authorId === currentUserId;
           const isEditing = editingMessageId === msg.id;
+          const showUnreadDivider = initialUnreadMessageId === msg.id;
 
           return (
-            <li
-              key={msg.id}
-              className={`msg-bubble${isOwn ? " msg-bubble--own" : ""}`}
-              data-watermark={msg.conversationWatermark}
-            >
+            <Fragment key={msg.id}>
+              {showUnreadDivider && (
+                <li
+                  ref={unreadDividerRef}
+                  className="msg-timeline__divider"
+                  aria-label="Start of new messages"
+                >
+                  <span>new &#8595;</span>
+                </li>
+              )}
+              <li
+                className={`msg-bubble${isOwn ? " msg-bubble--own" : ""}`}
+                data-watermark={msg.conversationWatermark}
+              >
               {/* Reply chip */}
               {msg.replyPreview && (
                 <div className="msg-bubble__reply-chip" aria-label="Replying to">
@@ -321,7 +388,8 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
                   )}
                 </div>
               )}
-            </li>
+              </li>
+            </Fragment>
           );
         })}
       </ul>

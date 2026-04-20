@@ -83,6 +83,32 @@ function isAccountRoute() {
   return window.location.pathname === "/account";
 }
 
+function unreadStorageKey(userId: string): string {
+  return `chat-unread:${userId}`;
+}
+
+function loadUnreadSnapshot(userId: string): {
+  roomUnread: Record<string, number>;
+  dmUnread: Record<string, number>;
+} {
+  try {
+    const raw = window.localStorage.getItem(unreadStorageKey(userId));
+    if (!raw) {
+      return { roomUnread: {}, dmUnread: {} };
+    }
+    const parsed = JSON.parse(raw) as {
+      roomUnread?: Record<string, number>;
+      dmUnread?: Record<string, number>;
+    };
+    return {
+      roomUnread: parsed.roomUnread ?? {},
+      dmUnread: parsed.dmUnread ?? {},
+    };
+  } catch {
+    return { roomUnread: {}, dmUnread: {} };
+  }
+}
+
 /**
  * Representative members used to prove the compact and detailed presence
  * rendering contracts (D-10, D-11, D-13). These match the wireframe and
@@ -112,6 +138,8 @@ interface AuthenticatedShellProps {
   managedRoom: RoomCatalogRow | null;
   activeRoom: ShellRoomLink | null;
   dmPartnerId: string | null;
+  activeRoomUnreadCount: number;
+  activeDmUnreadCount: number;
   roomUnread: Record<string, number>;
   dmUnread: Record<string, number>;
   knownDmConversationIds: Record<string, string>;
@@ -160,6 +188,8 @@ function AuthenticatedShell({
   managedRoom,
   activeRoom,
   dmPartnerId,
+  activeRoomUnreadCount,
+  activeDmUnreadCount,
   roomUnread,
   dmUnread,
   knownDmConversationIds,
@@ -444,6 +474,7 @@ function AuthenticatedShell({
           roomId={activeRoom.id}
           roomName={activeRoom.name}
           currentUserId={user.id}
+          initialUnreadCount={activeRoomUnreadCount}
           isAdminOrOwner={activeRoom.role === "owner" || activeRoom.role === "admin"}
           onBack={onBackFromRoomChat}
         />
@@ -460,6 +491,7 @@ function AuthenticatedShell({
           partnerId={dmPartnerId}
           partnerUsername={partner?.username ?? dmPartnerId}
           currentUserId={user.id}
+          initialUnreadCount={activeDmUnreadCount}
           onConversationReady={(conversationId) => onTrackDmConversation(dmPartnerId, conversationId)}
         />
       );
@@ -743,8 +775,8 @@ function AuthenticatedShell({
                     <span className="app-shell__thread-icon">{icon}</span>
                     <span className="app-shell__thread-name">{room.name}</span>
                     {unreadCount > 0 && (
-                      <span className="app-shell__thread-badge" aria-label={`${unreadCount} unread messages`}>
-                        {unreadCount > 9 ? "9+" : unreadCount}
+                    <span className="app-shell__thread-badge" aria-label={`${unreadCount} unread messages`}>
+                        {unreadCount}
                       </span>
                     )}
                   </button>
@@ -908,6 +940,8 @@ function App() {
   const [requestActionBusy, setRequestActionBusy] = useState<string | null>(null);
   // Phase 6: active room for room-chat tab
   const [activeRoom, setActiveRoom] = useState<ShellRoomLink | null>(null);
+  const [activeRoomUnreadCount, setActiveRoomUnreadCount] = useState(0);
+  const [activeDmUnreadCount, setActiveDmUnreadCount] = useState(0);
   const [roomUnread, setRoomUnread] = useState<Record<string, number>>({});
   const [dmUnread, setDmUnread] = useState<Record<string, number>>({});
   const [knownDmConversationIds, setKnownDmConversationIds] = useState<Record<string, string>>({});
@@ -927,6 +961,8 @@ function App() {
     setPendingRequests([]);
     setDmPartnerId(null);
     setActiveRoom(null);
+    setActiveRoomUnreadCount(0);
+    setActiveDmUnreadCount(0);
     setRoomUnread({});
     setDmUnread({});
     setKnownDmConversationIds({});
@@ -1056,6 +1092,7 @@ function App() {
       }
       return [...prev, roomLink];
     });
+    setActiveRoomUnreadCount(roomUnread[room.id] ?? 0);
     setRoomUnread((prev) => {
       if (!(room.id in prev)) {
         return prev;
@@ -1069,6 +1106,7 @@ function App() {
   }
 
   function handleOpenTrackedRoom(room: ShellRoomLink) {
+    setActiveRoomUnreadCount(roomUnread[room.id] ?? 0);
     setRoomUnread((prev) => {
       if (!(room.id in prev)) {
         return prev;
@@ -1142,6 +1180,7 @@ function App() {
   }
 
   function handleOpenDm(userId: string) {
+    setActiveDmUnreadCount(dmUnread[userId] ?? 0);
     setDmUnread((prev) => {
       if (!(userId in prev)) {
         return prev;
@@ -1183,6 +1222,7 @@ function App() {
       }
       if (activeRoom?.id === room.id) {
         setActiveRoom(null);
+        setActiveRoomUnreadCount(0);
         setTab("private-rooms");
       }
       setTrackedRooms((prev) => prev.filter((entry) => entry.id !== room.id));
@@ -1216,10 +1256,26 @@ function App() {
       return;
     }
 
+    const unread = loadUnreadSnapshot(user.id);
+    setRoomUnread(unread.roomUnread);
+    setDmUnread(unread.dmUnread);
+
     void loadPrivateRoomData();
     void loadContacts();
     void loadPendingRequests();
   }, [user, loadContacts, loadPendingRequests]);
+
+  useEffect(() => {
+    if (!user) return;
+    try {
+      window.localStorage.setItem(
+        unreadStorageKey(user.id),
+        JSON.stringify({ roomUnread, dmUnread }),
+      );
+    } catch {
+      // Best-effort persistence only.
+    }
+  }, [user, roomUnread, dmUnread]);
 
   if (checkingSession) {
     return (
@@ -1260,6 +1316,8 @@ function App() {
         managedRoom={managedRoom}
         activeRoom={activeRoom}
         dmPartnerId={dmPartnerId}
+        activeRoomUnreadCount={activeRoomUnreadCount}
+        activeDmUnreadCount={activeDmUnreadCount}
         roomUnread={roomUnread}
         dmUnread={dmUnread}
         knownDmConversationIds={knownDmConversationIds}

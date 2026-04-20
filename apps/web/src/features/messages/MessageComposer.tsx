@@ -53,6 +53,13 @@ export function MessageComposer({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  function restoreComposerFocus() {
+    // Defer focus until parent state updates and scroll adjustments settle.
+    window.requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+    });
+  }
+
   const byteLen = utf8ByteLength(content);
   const overLimit = byteLen > MAX_BYTES;
   const canSend = !readOnly && !sending && !uploading
@@ -93,7 +100,7 @@ export function MessageComposer({
       );
       setContent("");
       setPendingAttachments([]);
-      textareaRef.current?.focus();
+      restoreComposerFocus();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send message");
     } finally {

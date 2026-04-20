@@ -105,6 +105,8 @@ interface DmChatViewProps {
   partnerUsername: string;
   /** Current user's ID (needed for edit visibility). */
   currentUserId: string;
+  /** Unread count snapshot captured when the DM was opened. */
+  initialUnreadCount?: number;
   /**
    * If already known from Phase 5 DmConversation record, pass it here to avoid
    * an extra POST to initiateDm. DmChatView will call initiateDm itself if null.
@@ -117,6 +119,7 @@ export function DmChatView({
   partnerId,
   partnerUsername,
   currentUserId,
+  initialUnreadCount = 0,
   conversationId: initialConversationId = null,
   onConversationReady,
 }: DmChatViewProps) {
@@ -503,10 +506,12 @@ export function DmChatView({
         )}
 
         <MessageTimeline
+          conversationKey={conversationId ?? partnerId}
           ref={timelineRef}
           messages={messages}
           range={range}
           currentUserId={currentUserId}
+          initialUnreadCount={initialUnreadCount}
           editingMessageId={editingMessageId}
           editSaving={editSaving}
           onReply={frozen ? undefined : handleReply}

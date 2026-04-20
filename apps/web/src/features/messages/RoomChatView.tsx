@@ -99,6 +99,8 @@ interface RoomChatViewProps {
   roomName: string;
   /** Current user's ID (needed for edit-button visibility). */
   currentUserId: string;
+  /** Unread count snapshot captured when the room was opened. */
+  initialUnreadCount?: number;
   /** True if the current user is an admin or owner of this room (D-02). */
   isAdminOrOwner?: boolean;
   /** Called when user wants to go back to the room list. */
@@ -109,6 +111,7 @@ export function RoomChatView({
   roomId,
   roomName,
   currentUserId,
+  initialUnreadCount = 0,
   isAdminOrOwner = false,
   onBack,
 }: RoomChatViewProps) {
@@ -380,10 +383,12 @@ export function RoomChatView({
         )}
 
         <MessageTimeline
+          conversationKey={roomId}
           ref={timelineRef}
           messages={messages}
           range={range}
           currentUserId={currentUserId}
+          initialUnreadCount={initialUnreadCount}
           editingMessageId={editingMessageId}
           editSaving={editSaving}
           onReply={handleReply}

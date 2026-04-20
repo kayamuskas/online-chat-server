@@ -89,7 +89,7 @@ export function ContactsSidebar({
             <span className="contacts-sidebar__name">{c.username}</span>
             {!!c.unreadCount && c.unreadCount > 0 && (
               <span className="app-shell__thread-badge" aria-label={`${c.unreadCount} unread messages`}>
-                {c.unreadCount > 9 ? "9+" : c.unreadCount}
+                {c.unreadCount}
               </span>
             )}
           </div>
