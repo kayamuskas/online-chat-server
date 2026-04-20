@@ -24,6 +24,7 @@ import {
   getDmHistory,
   sendDmMessage,
   editDmMessage,
+  deleteDmMessage,
   initiateDm,
   type MessageView,
   type MessageHistoryRange,
@@ -320,6 +321,13 @@ export function DmChatView({
       );
     }
 
+    function onMessageDeleted(payload: unknown) {
+      const data = payload as { message_id?: string; conversation_id?: string };
+      if (data.conversation_id !== conversationId) return;
+      if (!data.message_id) return;
+      setMessages((prev) => prev.filter((m) => m.id !== data.message_id));
+    }
+
     function onReconnect() {
       socket.emit("joinDm", { conversationId });
       scheduleReconnectRefetch();
@@ -328,12 +336,14 @@ export function DmChatView({
     socket.emit("joinDm", { conversationId });
     socket.on("message-created", onMessageCreated);
     socket.on("message-edited", onMessageEdited);
+    socket.on("message-deleted", onMessageDeleted);
     socket.io.on("reconnect", onReconnect);
 
     return () => {
       socket.emit("leaveDm", { conversationId });
       socket.off("message-created", onMessageCreated);
       socket.off("message-edited", onMessageEdited);
+      socket.off("message-deleted", onMessageDeleted);
       socket.io.off("reconnect", onReconnect);
       if (reconnectTimerRef.current) {
         window.clearTimeout(reconnectTimerRef.current);
@@ -390,6 +400,16 @@ export function DmChatView({
       setEditingMessageId(null);
     } finally {
       setEditSaving(false);
+    }
+  }
+
+  async function handleDeleteMessage(msg: MessageView) {
+    if (!conversationId) return;
+    try {
+      await deleteDmMessage(conversationId, msg.id);
+      setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    } catch {
+      // Silent failure acceptable
     }
   }
 
@@ -493,6 +513,7 @@ export function DmChatView({
           onStartEdit={frozen ? undefined : handleStartEdit}
           onSaveEdit={handleSaveEdit}
           onCancelEdit={() => setEditingMessageId(null)}
+          onDelete={frozen ? undefined : handleDeleteMessage}
           onLoadOlder={handleLoadOlder}
           loadingOlder={loadingOlder}
           hasNewMessages={hasNewMessages}

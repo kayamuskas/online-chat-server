@@ -19,6 +19,7 @@ import {
   getRoomHistory,
   sendRoomMessage,
   editRoomMessage,
+  deleteRoomMessage,
   attachmentDownloadUrl,
   type MessageView,
   type MessageHistoryRange,
@@ -98,6 +99,8 @@ interface RoomChatViewProps {
   roomName: string;
   /** Current user's ID (needed for edit-button visibility). */
   currentUserId: string;
+  /** True if the current user is an admin or owner of this room (D-02). */
+  isAdminOrOwner?: boolean;
   /** Called when user wants to go back to the room list. */
   onBack?: () => void;
 }
@@ -106,6 +109,7 @@ export function RoomChatView({
   roomId,
   roomName,
   currentUserId,
+  isAdminOrOwner = false,
   onBack,
 }: RoomChatViewProps) {
   const [messages, setMessages] = useState<MessageView[]>([]);
@@ -235,6 +239,13 @@ export function RoomChatView({
       );
     }
 
+    function onMessageDeleted(payload: unknown) {
+      const data = payload as { message_id?: string; conversation_id?: string };
+      if (data.conversation_id !== roomId) return;
+      if (!data.message_id) return;
+      setMessages((prev) => prev.filter((m) => m.id !== data.message_id));
+    }
+
     function onReconnect() {
       socket.emit("joinRoom", { roomId });
       scheduleReconnectRefetch();
@@ -243,11 +254,13 @@ export function RoomChatView({
     socket.emit("joinRoom", { roomId });
     socket.on("message-created", onMessageCreated);
     socket.on("message-edited", onMessageEdited);
+    socket.on("message-deleted", onMessageDeleted);
     socket.io.on("reconnect", onReconnect);
 
     return () => {
       socket.off("message-created", onMessageCreated);
       socket.off("message-edited", onMessageEdited);
+      socket.off("message-deleted", onMessageDeleted);
       socket.io.off("reconnect", onReconnect);
       if (reconnectTimerRef.current) {
         window.clearTimeout(reconnectTimerRef.current);
@@ -305,6 +318,16 @@ export function RoomChatView({
     }
   }
 
+  async function handleDeleteMessage(msg: MessageView) {
+    try {
+      await deleteRoomMessage(roomId, msg.id);
+      // Optimistic removal from local state (WS fanout will also remove for other clients)
+      setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    } catch {
+      // Silent failure acceptable per UI-SPEC interaction contract
+    }
+  }
+
   async function handleLoadOlder() {
     if (!range?.hasMoreBefore) return;
     const beforeWatermark = range.firstWatermark;
@@ -359,6 +382,8 @@ export function RoomChatView({
           onStartEdit={handleStartEdit}
           onSaveEdit={handleSaveEdit}
           onCancelEdit={() => setEditingMessageId(null)}
+          onDelete={handleDeleteMessage}
+          canDeleteAny={isAdminOrOwner}
           onLoadOlder={handleLoadOlder}
           loadingOlder={loadingOlder}
           hasNewMessages={hasNewMessages}

@@ -75,6 +75,8 @@ interface ShellRoomLink {
   id: string;
   name: string;
   visibility: "public" | "private";
+  /** Role of the current user in this room — used for delete-any permission (D-02). */
+  role?: "owner" | "admin" | "member";
 }
 
 function isAccountRoute() {
@@ -108,7 +110,7 @@ interface AuthenticatedShellProps {
   privateRoomsError: string | null;
   inviteActionId: string | null;
   managedRoom: RoomCatalogRow | null;
-  activeRoom: { id: string; name: string } | null;
+  activeRoom: ShellRoomLink | null;
   dmPartnerId: string | null;
   roomUnread: Record<string, number>;
   dmUnread: Record<string, number>;
@@ -442,6 +444,7 @@ function AuthenticatedShell({
           roomId={activeRoom.id}
           roomName={activeRoom.name}
           currentUserId={user.id}
+          isAdminOrOwner={activeRoom.role === "owner" || activeRoom.role === "admin"}
           onBack={onBackFromRoomChat}
         />
       );
@@ -904,7 +907,7 @@ function App() {
   const [dmPartnerId, setDmPartnerId] = useState<string | null>(null);
   const [requestActionBusy, setRequestActionBusy] = useState<string | null>(null);
   // Phase 6: active room for room-chat tab
-  const [activeRoom, setActiveRoom] = useState<{ id: string; name: string } | null>(null);
+  const [activeRoom, setActiveRoom] = useState<ShellRoomLink | null>(null);
   const [roomUnread, setRoomUnread] = useState<Record<string, number>>({});
   const [dmUnread, setDmUnread] = useState<Record<string, number>>({});
   const [knownDmConversationIds, setKnownDmConversationIds] = useState<Record<string, string>>({});
@@ -1015,8 +1018,13 @@ function App() {
       setPendingInvites(invitesResult.invites);
       setTrackedRooms((prev) => {
         const next = new Map(prev.map((room) => [room.id, room]));
-        allRoomsResult.rooms.forEach(({ room }) => {
-          next.set(room.id, { id: room.id, name: room.name, visibility: room.visibility as "public" | "private" });
+        allRoomsResult.rooms.forEach(({ room, membership }) => {
+          next.set(room.id, {
+            id: room.id,
+            name: room.name,
+            visibility: room.visibility as "public" | "private",
+            role: membership.role as "owner" | "admin" | "member",
+          });
         });
         return Array.from(next.values());
       });
@@ -1040,11 +1048,13 @@ function App() {
   }
 
   function handleRoomJoined(room: RoomCatalogRow) {
+    // When joining, user becomes a regular member (role updated via loadPrivateRoomData refresh)
+    const roomLink: ShellRoomLink = { id: room.id, name: room.name, visibility: room.visibility as "public" | "private", role: "member" };
     setTrackedRooms((prev) => {
       if (prev.some((entry) => entry.id === room.id)) {
         return prev;
       }
-      return [...prev, { id: room.id, name: room.name, visibility: room.visibility as "public" | "private" }];
+      return [...prev, roomLink];
     });
     setRoomUnread((prev) => {
       if (!(room.id in prev)) {
@@ -1054,7 +1064,7 @@ function App() {
       delete next[room.id];
       return next;
     });
-    setActiveRoom({ id: room.id, name: room.name, visibility: room.visibility as "public" | "private" });
+    setActiveRoom(roomLink);
     setTab("room-chat");
   }
 

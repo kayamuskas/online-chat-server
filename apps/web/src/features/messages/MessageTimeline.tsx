@@ -37,6 +37,10 @@ interface MessageTimelineProps {
   onSaveEdit?: (messageId: string, newContent: string) => void;
   /** Called when user cancels an in-progress edit. */
   onCancelEdit?: () => void;
+  /** Called when user clicks Delete on a message. */
+  onDelete?: (message: MessageView) => void;
+  /** True if current user can delete any message (admin/owner in room context). */
+  canDeleteAny?: boolean;
   /** Called when user wants to load older messages (cursor: range.firstWatermark). */
   onLoadOlder?: () => void;
   /** True while older messages are being fetched. */
@@ -80,6 +84,8 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
+  onDelete,
+  canDeleteAny = false,
   onLoadOlder,
   loadingOlder = false,
   hasNewMessages = false,
@@ -301,6 +307,16 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
                       aria-label="Edit your message"
                     >
                       Edit
+                    </button>
+                  )}
+                  {(isOwn || canDeleteAny) && onDelete && (
+                    <button
+                      type="button"
+                      className="msg-bubble__action msg-bubble__action--delete"
+                      onClick={() => onDelete(msg)}
+                      aria-label="Delete this message"
+                    >
+                      Delete
                     </button>
                   )}
                 </div>
