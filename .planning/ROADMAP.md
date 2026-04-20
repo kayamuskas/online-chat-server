@@ -7,13 +7,13 @@
 
 ## Summary
 
-This roadmap assumes a greenfield implementation using the existing requirements and design prototype only as input material. The first milestone creates an offline-capable, production-like baseline; later phases layer domain rules, realtime behavior, UI flows, and final QA hardening.
+This roadmap assumes a greenfield implementation using the existing requirements and design prototype only as input material. The first milestone creates a production-like fresh-clone baseline; later phases layer domain rules, realtime behavior, UI flows, and final QA hardening.
 
 ## Phases
 
 | # | Phase | Goal | Requirements | Success Criteria |
 |---|-------|------|--------------|------------------|
-| 1 | Foundation and Offline Delivery | Create a real repo structure, local-only runtime packaging, queue foundation, and Docker Compose bootstrap that QA can start | OPS-01, OPS-02, ARCH-01, ARCH-02 | 5 |
+| 1 | Foundation and Delivery Bootstrap | Create a real repo structure, deterministic Docker packaging, queue foundation, and Docker Compose bootstrap that QA can start | OPS-01, OPS-02, ARCH-01, ARCH-02 | 5 |
 | 2 | Authentication Core | Implement account lifecycle, durable login behavior, and mockable mail flows | AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, OPS-04 | 4 |
 | 3 | Sessions and Presence | Implement multi-session management, IP tracking, last-seen persistence, and correct online/AFK/offline semantics | SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07 | 5 |
 | 4 | Rooms and Membership | Implement room catalog, global uniqueness, invite constraints, join/leave behavior, and room state model | ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, ROOM-06, ROOM-10, ROOM-11 | 5 |
@@ -26,24 +26,24 @@ This roadmap assumes a greenfield implementation using the existing requirements
 
 ## Phase Details
 
-### Phase 1: Foundation and Offline Delivery
+### Phase 1: Foundation and Delivery Bootstrap
 
-Goal: Establish a runnable monorepo/application structure with Docker Compose, local-only asset strategy, queue foundation, and deterministic startup from a fresh clone.
+Goal: Establish a runnable monorepo/application structure with Docker Compose, local asset strategy, queue foundation, and deterministic startup from a fresh clone.
 
 Requirements: `OPS-01`, `OPS-02`, `ARCH-01`, `ARCH-02`
 
 Plans: 4 plans
 
-- [x] `01-01-PLAN.md` — Create the monorepo workspace, shared contracts, and offline dependency strategy. *(complete 2026-04-18)*
+- [x] `01-01-PLAN.md` — Create the monorepo workspace, shared contracts, and Docker dependency strategy. *(complete 2026-04-18)*
 - [x] `01-02-PLAN.md` — Replace CDN/runtime frontend delivery with a local bundled web shell. *(complete 2026-04-18)*
 - [x] `01-03-PLAN.md` — Bootstrap the Nest REST/WebSocket API and BullMQ worker foundation. *(complete 2026-04-18)*
-- [x] `01-04-PLAN.md` — Package the stack with Docker Compose, offline Dockerfiles, and QA smoke scripts. *(complete 2026-04-18)*
+- [x] `01-04-PLAN.md` — Package the stack with Docker Compose, lockfile-backed Dockerfiles, and QA smoke scripts. *(complete 2026-04-18)*
 
 Success criteria:
 1. Repository contains backend, frontend, infra, and docs structure that supports planned implementation.
-2. `docker compose up` starts the stack using only local sources and preloaded base images.
+2. `docker compose up` starts the stack from a fresh clone using the committed manifests and lockfile.
 3. Frontend build no longer depends on CDN scripts or hosted fonts.
-4. Offline startup and local dependency strategy are documented and testable.
+4. Fresh-clone startup and lockfile-backed dependency strategy are documented and testable.
 5. Foundation explicitly supports queued async work and a mixed REST/WebSocket boundary.
 
 ### Phase 2: Authentication Core
@@ -219,7 +219,7 @@ Requirements: `PERF-01`, `PERF-02`
 Success criteria:
 1. Local load and integration checks cover the 300-user / 1000-member / 10k-history targets proportionally.
 2. Message delivery and presence update latencies are measured against the stated limits.
-3. Fresh-clone offline startup is tested as a release gate.
+3. Fresh-clone startup is tested as a release gate.
 4. A dedicated test covers progressive scrolling and integrity over 100,000+ message histories.
 5. Critical flows have automated coverage plus a QA checklist for manual verification.
 6. The repository is ready for public handoff with documentation aligned to actual behavior.

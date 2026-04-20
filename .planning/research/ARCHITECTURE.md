@@ -58,7 +58,7 @@ Recommended order:
 8. Messaging, watermarks, and history integrity
 9. Attachments and ACL enforcement
 10. Frontend shell and flows
-11. QA hardening, load/performance checks, offline startup validation
+11. QA hardening, load/performance checks, and fresh-clone startup validation
 
 ## Major Architectural Risks
 

@@ -10,8 +10,7 @@ provides:
   - "pnpm@10 workspace monorepo root with apps/* and packages/* graph"
   - "apps/api, apps/web, packages/shared package manifests using @chat/* naming"
   - "packages/shared: SERVICE_PORTS, RuntimeEnv, parseRuntimeEnv(), QUEUE_NAMES, SYSTEM_JOB_NAMES, redisConnectionOptions()"
-  - "vendor/pnpm-store/ placeholder for repo-local offline dependency cache"
-  - "docs/offline-runtime.md: documented refresh-and-verify offline strategy"
+  - "docs/offline-runtime.md: documented refresh-and-verify Docker dependency strategy"
 
 affects:
   - "01-02 (docker-compose and offline bootstrap)"
@@ -28,7 +27,7 @@ tech-stack:
   patterns:
     - "@chat/* workspace naming convention for all monorepo packages"
     - "packages/shared as the single source of cross-service constants"
-    - "vendor/pnpm-store/ as the repo-local offline dependency cache path"
+    - "pnpm-lock.yaml as the lockfile-backed Docker dependency source of truth"
     - "parseRuntimeEnv() fail-fast validation pattern"
 
 key-files:
@@ -44,21 +43,20 @@ key-files:
     - "packages/shared/src/index.ts (re-exports config + queue contracts)"
     - "packages/shared/src/config.ts (SERVICE_PORTS, RuntimeEnv, parseRuntimeEnv)"
     - "packages/shared/src/queue.ts (QUEUE_NAMES, SYSTEM_JOB_NAMES, redisConnectionOptions)"
-    - "vendor/pnpm-store/.gitkeep (reserves offline dependency cache path)"
-    - "docs/offline-runtime.md (offline strategy + maintainer refresh-and-verify procedure)"
+    - "docs/offline-runtime.md (Docker dependency strategy + maintainer refresh-and-verify procedure)"
   modified:
-    - ".gitignore (added node_modules, dist, build output exclusions; preserved vendor/pnpm-store)"
+    - ".gitignore (added node_modules, dist, build output exclusions)"
 
 key-decisions:
   - "pnpm 10.x as package manager — official Docker/offline fetch support; workspace monorepo semantics"
-  - "vendor/pnpm-store/ committed as a placeholder path — actual store populated by maintainer before release via documented refresh-and-verify procedure"
+  - "No vendored pnpm store in git — Docker builds resolve packages from the registry using the committed lockfile"
   - "QUEUE_NAMES and redisConnectionOptions centralised in @chat/shared — prevents incompatible Redis connection policies across worker/api"
   - "parseRuntimeEnv() throws on missing required env vars — fail-fast at startup beats undefined runtime behaviour"
   - "pnpm-lock.yaml stub committed — will be replaced with a real lock when pnpm install is run after Docker tooling is available"
 
 patterns-established:
   - "Pattern 1: All cross-service constants (ports, queue names, job names, connection helpers) live in packages/shared/src/ — never in app-level files"
-  - "Pattern 2: Offline Docker builds copy vendor/pnpm-store/ and use pnpm install --offline --frozen-lockfile — no registry access during docker compose up"
+  - "Pattern 2: Docker builds install from `pnpm-lock.yaml` with `--frozen-lockfile` — no vendored package cache in git"
   - "Pattern 3: RuntimeEnv interface is the single typed contract for environment variables across all services"
 
 requirements-completed:
@@ -73,7 +71,7 @@ completed: 2026-04-18
 
 # Phase 1 Plan 01: Workspace Root and Shared Contracts Summary
 
-**pnpm@10 monorepo workspace with apps/api, apps/web, packages/shared manifests, typed SERVICE_PORTS/QUEUE_NAMES/RuntimeEnv contracts, and a documented vendor/pnpm-store offline dependency strategy**
+**pnpm@10 monorepo workspace with apps/api, apps/web, packages/shared manifests, typed SERVICE_PORTS/QUEUE_NAMES/RuntimeEnv contracts, and a documented lockfile-backed Docker dependency strategy**
 
 ## Performance
 
@@ -88,7 +86,7 @@ completed: 2026-04-18
 - Monorepo root with `pnpm@10` packageManager, workspace scripts (`build`, `dev`, `test`, `lint`, `compose:smoke`), and `pnpm-workspace.yaml` covering `apps/*` and `packages/*`
 - Three package manifests (`@chat/api`, `@chat/web`, `@chat/shared`) using the consistent `@chat/*` naming convention; API manifest already declares `@chat/shared` as a workspace dependency
 - Shared TypeScript contracts: `SERVICE_PORTS`, `RuntimeEnv`, `parseRuntimeEnv()` (fail-fast env validation), `QUEUE_NAMES.system`, `SYSTEM_JOB_NAMES.echo`, `redisConnectionOptions()` (with `maxRetriesPerRequest: null` enforced)
-- `vendor/pnpm-store/.gitkeep` reserves the repo-local offline dependency path; `docs/offline-runtime.md` documents the full maintainer refresh-and-verify procedure tied to `pnpm-lock.yaml`
+- `docs/offline-runtime.md` documents the full maintainer refresh-and-verify procedure tied to `pnpm-lock.yaml`
 
 ## Task Commits
 
@@ -110,14 +108,13 @@ Each task was committed atomically:
 - `packages/shared/src/index.ts` - Re-exports config and queue contracts
 - `packages/shared/src/config.ts` - SERVICE_PORTS, RuntimeEnv, parseRuntimeEnv()
 - `packages/shared/src/queue.ts` - QUEUE_NAMES, SYSTEM_JOB_NAMES, redisConnectionOptions()
-- `vendor/pnpm-store/.gitkeep` - Reserves repo-local offline dependency cache path
 - `docs/offline-runtime.md` - Offline dependency strategy and maintainer refresh-and-verify procedure
-- `.gitignore` - Added node_modules, dist, build exclusions; preserved vendor/pnpm-store/
+- `.gitignore` - Added node_modules and build exclusions
 
 ## Decisions Made
 
-- Used `pnpm@10` — only package manager with official Docker offline fetch support via `pnpm fetch` + `pnpm install --offline --frozen-lockfile`
-- Committed `vendor/pnpm-store/.gitkeep` as a placeholder rather than running `pnpm fetch` now — pnpm is not available locally and the store must be populated with a real network-connected pnpm install before the first Docker build
+- Used `pnpm@10` — workspace tooling is stable and the committed lockfile can drive deterministic Docker installs with `--frozen-lockfile`
+- Chose not to vendor a pnpm store into git — dependency resolution now happens during Docker build from the committed lockfile
 - Enforced `maxRetriesPerRequest: null` in `redisConnectionOptions()` — BullMQ workers silently fail on Redis reconnect without this flag
 - `parseRuntimeEnv()` throws on missing `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` — required fields must be explicit at startup
 
@@ -131,19 +128,18 @@ None - plan executed exactly as written.
 
 ## Known Stubs
 
-- `vendor/pnpm-store/` contains only a `.gitkeep` placeholder. The actual offline package store must be populated by a maintainer running `pnpm fetch --store-dir ./vendor/pnpm-store` before the first `docker compose up --build`. See `docs/offline-runtime.md` for the complete refresh-and-verify procedure.
-- `pnpm-lock.yaml` is a structural stub. Replace with a real lockfile by running `pnpm install` (with network access) from the repo root before shipping.
+- `pnpm-lock.yaml` was initially introduced as a structural stub. It has since been refreshed into a real lockfile and now serves as the Docker build source of truth.
 
 ## User Setup Required
 
-None for this plan — no external services involved. The vendor store population requires a one-time maintainer step documented in `docs/offline-runtime.md`.
+None for this plan — no external services involved.
 
 ## Next Phase Readiness
 
 - Workspace skeleton is in place: all later plans can reference stable package locations (`apps/api`, `apps/web`, `packages/shared`)
 - Shared contracts (`QUEUE_NAMES`, `SERVICE_PORTS`, `RuntimeEnv`) are importable as `@chat/shared` from any workspace package
-- `docs/offline-runtime.md` documents the offline dependency path clearly for Plan 02 (Docker Compose bootstrap) to reference
-- Blocker: actual `pnpm-lock.yaml` and `vendor/pnpm-store/` population required before Docker images can be built — this is expected and documented
+- `docs/offline-runtime.md` documents the Docker dependency path clearly for Plan 02 (Docker Compose bootstrap) to reference
+- No vendored dependency cache is required; Docker images build from the committed lockfile
 
 ---
 *Phase: 01-foundation-and-offline-delivery*

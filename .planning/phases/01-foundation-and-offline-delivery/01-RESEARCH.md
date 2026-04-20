@@ -19,18 +19,18 @@
 
 | ID | Description | Research Support |
 |----|-------------|------------------|
-| OPS-01 | Fresh clone can be started by QA with `docker compose up`. [VERIFIED: .planning/REQUIREMENTS.md] | Use a Compose-defined 4-service baseline, health-gated startup, and a repo-committed offline dependency strategy. [CITED: https://docs.docker.com/reference/compose-file/services/] [CITED: https://pnpm.io/cli/fetch] |
-| OPS-02 | Application runs without internet access during startup and usage, assuming required Docker base images already exist locally. [VERIFIED: .planning/REQUIREMENTS.md] | Replace CDN assets, set Compose `pull_policy: never`, and install app deps from an offline store already inside the repo/build context. [VERIFIED: repo grep] [CITED: https://docs.docker.com/reference/compose-file/services/] [CITED: https://pnpm.io/cli/install] |
+| OPS-01 | Fresh clone can be started by QA with `docker compose up`. [VERIFIED: .planning/REQUIREMENTS.md] | Use a Compose-defined baseline, health-gated startup, and a documented lockfile-backed dependency strategy. [CITED: https://docs.docker.com/reference/compose-file/services/] [CITED: https://pnpm.io/cli/install] |
+| OPS-02 | Application starts from a fresh clone with deterministic lockfile-backed Docker builds and no runtime dependency installs inside containers. [VERIFIED: .planning/REQUIREMENTS.md] | Replace CDN assets, install app deps from `pnpm-lock.yaml` during Docker build, and forbid runtime package installs. [VERIFIED: repo grep] [CITED: https://pnpm.io/cli/install] |
 | ARCH-01 | System uses queues for asynchronous processing where deferred work exists. [VERIFIED: .planning/REQUIREMENTS.md] | Establish Redis + BullMQ queue plumbing now, with one shared connection factory and one worker process. [CITED: https://www.npmjs.com/package/bullmq] [CITED: https://www.npmjs.com/package/%40nestjs/bullmq] [CITED: https://context7.com/taskforcesh/bullmq/llms.txt] |
 | ARCH-02 | System uses a mixed REST and WebSocket model. [VERIFIED: .planning/REQUIREMENTS.md] | Start the API as a hybrid HTTP + Socket.IO server now, even if only health/meta and a handshake test exist in this phase. [CITED: https://docs.nestjs.com/websockets/gateways] [CITED: https://docs.nestjs.com/websockets/adapter] |
 
 ## Summary
 
-This phase should not try to implement chat behavior. It should create the irreversible operational foundation that later phases depend on: a real monorepo, a Compose topology that starts deterministically, a local-only asset and dependency path, a queue substrate, and a hybrid REST/WebSocket server boundary. The repo evidence is clear that none of this exists yet: there is no `package.json`, no lockfile, no Dockerfile, no Compose file, no test suite, and the prototype still loads React, ReactDOM, Babel, and fonts from the internet. [VERIFIED: repo inventory] [VERIFIED: repo grep]
+This phase should not try to implement chat behavior. It should create the irreversible operational foundation that later phases depend on: a real monorepo, a Compose topology that starts deterministically, a local asset and lockfile-backed dependency path, a queue substrate, and a hybrid REST/WebSocket server boundary. The repo evidence is clear that none of this exists yet: there is no `package.json`, no lockfile, no Dockerfile, no Compose file, no test suite, and the prototype still loads React, ReactDOM, Babel, and fonts from the internet. [VERIFIED: repo inventory] [VERIFIED: repo grep]
 
-The most important planning insight is that `pnpm fetch` and `pnpm install --offline` are documented for Docker builds, but those commands only remain offline if the store is already populated. Because Phase 1 requires a fresh clone to build and run without internet access, Phase 1 cannot rely on registry access during image build. The planner should therefore treat a repo-committed offline package store, or an equivalent repo-local vendored dependency cache consumed by Docker, as a Phase 1 deliverable rather than an implementation detail to postpone. [CITED: https://pnpm.io/cli/fetch] [CITED: https://pnpm.io/cli/install]
+The key planning insight is that Docker builds can stay deterministic without vendoring tarballs into git, as long as the repository commits a real `pnpm-lock.yaml` and all images install with `--frozen-lockfile`. Phase 1 should therefore optimize for `git clone && docker compose up`, with dependency resolution happening during Docker build rather than through a repo-committed package store. [CITED: https://pnpm.io/cli/install] [CITED: https://pnpm.io/docker]
 
-**Primary recommendation:** Build Phase 1 around a `pnpm` workspace monorepo with `apps/api`, `apps/web`, `packages/shared`, `infra/`, `vendor/`, and a Compose stack of `web`, `api`, `worker`, `postgres`, and `redis`; use Redis-backed BullMQ for the first queue foundation; and make offline dependency vendoring part of the phase gate, not a later hardening task. [CITED: https://pnpm.io/docker] [CITED: https://docs.docker.com/reference/compose-file/services/] [CITED: https://context7.com/taskforcesh/bullmq/llms.txt]
+**Primary recommendation:** Build Phase 1 around a `pnpm` workspace monorepo with `apps/api`, `apps/web`, `packages/shared`, `infra/`, and a Compose stack of `web`, `api`, `worker`, `postgres`, and `redis`; use Redis-backed BullMQ for the first queue foundation; and make the lockfile-backed Docker install path part of the phase gate, not a later hardening task. [CITED: https://pnpm.io/docker] [CITED: https://docs.docker.com/reference/compose-file/services/] [CITED: https://context7.com/taskforcesh/bullmq/llms.txt]
 
 ## Architectural Responsibility Map
 
@@ -50,7 +50,7 @@ The most important planning insight is that `pnpm fetch` and `pnpm install --off
 
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| `pnpm` | `10.x` [CITED: https://pnpm.io/cli/install] | Workspace package manager and offline-capable install workflow | `pnpm` officially documents Docker workflows using `fetch` and `install --offline`, including monorepo scenarios. [CITED: https://pnpm.io/cli/fetch] [CITED: https://pnpm.io/docker] |
+| `pnpm` | `10.x` [CITED: https://pnpm.io/cli/install] | Workspace package manager and lockfile-backed Docker install workflow | `pnpm` officially documents monorepo Docker workflows and strict lockfile installs. [CITED: https://pnpm.io/cli/install] [CITED: https://pnpm.io/docker] |
 | `TypeScript` | `5.9.2` published about 1 month ago [VERIFIED: npm package page https://www.npmjs.com/package/typescript?activeTab=versions] | Shared language across backend, frontend, and workspace tooling | One language reduces Phase 1 surface area while the repo is still empty. [ASSUMED] |
 | `@nestjs/core` | `11.1.6` published about 1 month ago [VERIFIED: npm package page https://www.npmjs.com/package/%40nestjs/core?activeTab=versions] | Backend application framework | Nest has official hybrid HTTP/WebSocket support and a strong module boundary for later phases. [CITED: https://docs.nestjs.com/websockets/gateways] |
 | `@nestjs/platform-socket.io` + `@nestjs/websockets` | Nest 11-compatible [CITED: https://docs.nestjs.com/websockets/gateways] | WebSocket transport with Socket.IO | Official Nest docs support Socket.IO out of the box, which is the pragmatic match for browser chat clients. [CITED: https://docs.nestjs.com/websockets/gateways] |
@@ -142,7 +142,7 @@ This structure is a recommendation for planning, not a discovered existing layou
 
 ### Pattern 1: Health-Gated Compose Topology
 
-**What:** Use long-form `depends_on` with `condition: service_healthy`, explicit `healthcheck` blocks, and `pull_policy: never` for services that must not pull from the network. [CITED: https://docs.docker.com/reference/compose-file/services/]
+**What:** Use long-form `depends_on` with `condition: service_healthy` and explicit `healthcheck` blocks so app services do not race their dependencies. [CITED: https://docs.docker.com/reference/compose-file/services/]
 
 **When to use:** Immediately in Phase 1, because startup determinism is itself a requirement. [VERIFIED: .planning/REQUIREMENTS.md]
 
@@ -152,7 +152,6 @@ This structure is a recommendation for planning, not a discovered existing layou
 services:
   postgres:
     image: postgres:18
-    pull_policy: never
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U chat -d chat"]
       interval: 10s
@@ -162,7 +161,6 @@ services:
 
   redis:
     image: redis:8
-    pull_policy: never
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -185,11 +183,11 @@ services:
       retries: 12
 ```
 
-### Pattern 2: Repo-Local Offline Dependency Store
+### Pattern 2: Lockfile-Backed Docker Install
 
-**What:** Build app images from source, but copy a repo-local `pnpm` store into the build context so `pnpm install --offline --frozen-lockfile` never hits the registry. [CITED: https://pnpm.io/cli/fetch] [CITED: https://pnpm.io/cli/install]
+**What:** Build app images from source, copy only workspace manifests and the committed lockfile first, then run `pnpm install --frozen-lockfile` during Docker build. [CITED: https://pnpm.io/cli/install] [CITED: https://pnpm.io/docker]
 
-**When to use:** Phase 1 only if the plan must satisfy the literal `git clone && docker compose up` offline contract. [VERIFIED: user prompt/.planning/PROJECT.md]
+**When to use:** Phase 1 when the plan must satisfy the literal `git clone && docker compose up` contract without requiring vendored tarballs in the repo. [VERIFIED: user prompt/.planning/PROJECT.md]
 
 **Example:**
 
@@ -200,19 +198,18 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 
-COPY vendor/pnpm-store /pnpm/store
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
-RUN pnpm install -r --offline --frozen-lockfile
+RUN pnpm install -r --frozen-lockfile
 
 COPY . .
 RUN pnpm -r build
 ```
 
-The `pnpm` docs prove the offline install mechanics, but using them from a fresh offline clone still requires the store to be present locally; that extra requirement comes from this project's acceptance bar, not from pnpm itself. [CITED: https://pnpm.io/cli/fetch] [CITED: https://pnpm.io/cli/install]
+The `pnpm` docs prove that `--frozen-lockfile` can keep Docker installs deterministic without requiring a vendored store in the repository. [CITED: https://pnpm.io/cli/install] [CITED: https://pnpm.io/docker]
 
 ### Pattern 3: Minimal Real Queue Foundation
 
@@ -285,12 +282,12 @@ A basic `@WebSocketGateway()` in the same app is enough for this phase; do not d
 
 ## Common Pitfalls
 
-### Pitfall 1: Treating `pnpm fetch` Alone as an Offline Strategy
+### Pitfall 1: Treating Vendored Dependency Caches as Mandatory
 
-**What goes wrong:** The planner assumes `pnpm fetch` makes Docker builds offline by itself. [CITED: https://pnpm.io/cli/fetch]  
-**Why it happens:** The docs show `fetch` + `install --offline`, but that still presumes packages are already present in the store before the offline install step. [CITED: https://pnpm.io/cli/install]  
-**How to avoid:** Make the offline store a repo artifact or another repo-local vendored dependency cache that Docker copies before install. [CITED: https://pnpm.io/cli/install]  
-**Warning signs:** The Dockerfile still expects first-time registry access during `docker compose up`. [ASSUMED]
+**What goes wrong:** The planner assumes the repo must commit a pnpm tarball cache to satisfy deterministic Docker builds.  
+**Why it happens:** Older offline requirements often encourage vendoring, even when a committed lockfile plus `--frozen-lockfile` is enough for the actual delivery contract. [CITED: https://pnpm.io/cli/install]  
+**How to avoid:** Treat `pnpm-lock.yaml` as the source of truth and verify that Dockerfiles install from it consistently. [CITED: https://pnpm.io/cli/install]  
+**Warning signs:** The repo starts accumulating package tarballs or giant cache directories even though `docker compose up` only requires network during image build. [ASSUMED]
 
 ### Pitfall 2: Only Verifying Container Start, Not Service Readiness
 
@@ -329,11 +326,10 @@ depends_on:
 
 Source: `https://docs.docker.com/reference/compose-file/services/` [CITED: https://docs.docker.com/reference/compose-file/services/]
 
-### `pnpm` offline install in Docker
+### `pnpm` lockfile install in Docker
 
 ```bash
-pnpm fetch --prod
-pnpm install -r --offline --prod
+pnpm install -r --frozen-lockfile --prod
 ```
 
 Source: `https://pnpm.io/cli/fetch` [CITED: https://pnpm.io/cli/fetch]
@@ -374,8 +370,8 @@ Source: `https://docs.nestjs.com/websockets/gateways` [CITED: https://docs.nestj
 
 1. Root workspace files: `package.json`, `pnpm-workspace.yaml`, lockfile, TS base config, ignore files, and shared scripts. [ASSUMED]
 2. `apps/api`, `apps/worker`, and `apps/web` skeletons with bootable processes. [ASSUMED]
-3. `infra/compose/compose.yaml` with named volumes, explicit healthchecks, `pull_policy: never`, and deterministic dependency order. [CITED: https://docs.docker.com/reference/compose-file/services/]
-4. Repo-local offline dependency cache consumed by Docker builds. [CITED: https://pnpm.io/cli/install]
+3. `infra/compose/compose.yaml` with named volumes, explicit healthchecks, and deterministic dependency order. [CITED: https://docs.docker.com/reference/compose-file/services/]
+4. Lockfile-backed dependency path consumed by Docker builds. [CITED: https://pnpm.io/cli/install]
 5. Web app that serves only bundled local assets and proves the prototype CDN path is gone. [VERIFIED: repo grep]
 6. API app with `/healthz`, `/api/v1/meta`, and one Socket.IO namespace or gateway stub. [CITED: https://docs.nestjs.com/websockets/gateways]
 7. Worker app with one queue, one processor, one queue-events hook, and graceful shutdown. [CITED: https://context7.com/taskforcesh/bullmq/llms.txt]
@@ -389,14 +385,14 @@ Source: `https://docs.nestjs.com/websockets/gateways` [CITED: https://docs.nestj
 | A1 | `apps/` + `packages/` is the best repo shape for this project | Architecture Patterns | Low; another monorepo layout can work if boundaries stay equivalent |
 | A2 | Node `22-slim` should be the container base | Architecture Patterns | Low; Node 20 or 24 could also work if library compatibility is validated |
 | A3 | A dedicated `worker` process should exist in Phase 1 instead of Phase 2 | Common Pitfalls / Deliverables | Medium; if deferred, later queue adoption becomes a refactor rather than additive work |
-| A4 | Committing a repo-local `pnpm` store is the most practical offline strategy under the stated startup contract | Summary / Deliverables | Medium; if repo size is unacceptable, the planner must design an alternative repo-local vendoring mechanism |
+| A4 | Committing a real `pnpm-lock.yaml` is sufficient for the stated startup contract | Summary / Deliverables | Medium; if private registries or unusual network constraints appear later, the planner may need an additional mirror strategy |
 | A5 | Sleep-based startup remains common enough to call out as a pitfall | Common Pitfalls | Low |
 
 ## Open Questions (RESOLVED)
 
-1. **How much repo growth is acceptable for the offline dependency cache?**
-   - Resolved decision: Phase 1 optimizes for the literal `git clone && docker compose up` offline contract first, even if the vendored dependency cache increases repository size. [VERIFIED: .planning/PROJECT.md]
-   - Execution implication: The phase plans should deliver a repo-local offline dependency path plus a documented refresh-and-verify procedure tied to `pnpm-lock.yaml`; repository size can be measured after implementation and optimized in a later phase if needed. [RESOLVED]
+1. **How much repo growth is acceptable for dependency delivery?**
+   - Resolved decision: Phase 1 optimizes for the literal `git clone && docker compose up` contract without committing a vendored pnpm store. [VERIFIED: .planning/PROJECT.md]
+   - Execution implication: The phase plans should deliver a lockfile-backed dependency path plus a documented refresh-and-verify procedure tied to `pnpm-lock.yaml`; repository size should remain bounded because package tarballs are not committed. [RESOLVED]
 
 2. **Should Phase 1 include an ORM decision or keep DB access minimal?**
    - Resolved decision: Keep Phase 1 at PostgreSQL connectivity, readiness, and container bootstrap only; do not force an ORM or domain schema decision in this phase. [VERIFIED: .planning/REQUIREMENTS.md]
@@ -432,14 +428,14 @@ Source: `https://docs.nestjs.com/websockets/gateways` [CITED: https://docs.nestj
 | Framework | None detected yet; Phase 1 should add a Compose smoke harness plus lightweight API/web checks. [VERIFIED: repo inventory] |
 | Config file | none — Wave 0 [VERIFIED: file scan] |
 | Quick run command | `docker compose up --build --wait` [CITED: https://context7.com/docker/compose/llms.txt] |
-| Full suite command | `scripts/qa/phase1-smoke.sh` after Compose startup, including offline and restart checks. [ASSUMED] |
+| Full suite command | `scripts/qa/phase1-smoke.sh` after Compose startup, including dependency-path and restart checks. [ASSUMED] |
 
 ### Phase Requirements → Test Map
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
 | OPS-01 | Fresh clone starts with `docker compose up` | smoke | `docker compose up --build --wait` | ❌ Wave 0 |
-| OPS-02 | Startup and usage avoid internet dependencies | smoke/manual hybrid | `scripts/qa/phase1-offline-check.sh` with network disabled or pull-blocked conditions | ❌ Wave 0 |
+| OPS-02 | Startup uses deterministic lockfile-backed Docker builds with no runtime dependency installs | smoke/manual hybrid | `scripts/qa/phase1-offline-check.sh` plus `docker compose up --build --wait` | ❌ Wave 0 |
 | ARCH-01 | Queue substrate boots and worker consumes a trivial job | integration | `scripts/qa/phase1-queue-check.sh` | ❌ Wave 0 |
 | ARCH-02 | REST and WebSocket entrypoints both exist | integration | `scripts/qa/phase1-transport-check.sh` | ❌ Wave 0 |
 
@@ -447,7 +443,7 @@ Source: `https://docs.nestjs.com/websockets/gateways` [CITED: https://docs.nestj
 
 - **Per task commit:** `docker compose config` plus targeted smoke script once created. [ASSUMED]
 - **Per wave merge:** `docker compose up --build --wait` plus queue and transport checks. [CITED: https://context7.com/docker/compose/llms.txt]
-- **Phase gate:** Full offline startup smoke green before `/gsd-verify-work`. [VERIFIED: .planning/ROADMAP.md]
+- **Phase gate:** Full fresh-clone startup smoke green before `/gsd-verify-work`. [VERIFIED: .planning/ROADMAP.md]
 
 ### Wave 0 Gaps
 
@@ -475,7 +471,7 @@ Source: `https://docs.nestjs.com/websockets/gateways` [CITED: https://docs.nestj
 
 | Pattern | STRIDE | Standard Mitigation |
 |---------|--------|---------------------|
-| Hidden runtime internet dependency | Denial of Service | Remove CDN assets, vendor packages locally, and set Compose `pull_policy: never` where appropriate. [VERIFIED: repo grep] [CITED: https://docs.docker.com/reference/compose-file/services/] |
+| Hidden runtime dependency setup | Denial of Service | Remove CDN assets, install from the committed lockfile during Docker build, and forbid runtime package installs. [VERIFIED: repo grep] [CITED: https://pnpm.io/cli/install] |
 | Queue worker stuck on bad Redis connection policy | Denial of Service | Follow BullMQ worker connection rules, including `maxRetriesPerRequest: null` for workers. [CITED: https://context7.com/taskforcesh/bullmq/llms.txt] |
 | Unnecessary writable container filesystems | Tampering | Keep only data volumes writable; app containers should prefer immutable artifacts outside explicit data dirs. [ASSUMED] |
 | Overexposed unauthenticated WebSocket surface | Spoofing / DoS | Keep the Phase 1 gateway minimal and prepare origin/auth guards before business events are added. [ASSUMED] |
@@ -485,8 +481,7 @@ Source: `https://docs.nestjs.com/websockets/gateways` [CITED: https://docs.nestj
 ### Primary (HIGH confidence)
 
 - `https://docs.docker.com/reference/compose-file/services/` - `depends_on`, `service_healthy`, `healthcheck`, `pull_policy`
-- `https://pnpm.io/cli/fetch` - Docker-oriented `pnpm fetch` and offline install flow
-- `https://pnpm.io/cli/install` - `--offline` semantics
+- `https://pnpm.io/cli/install` - `--frozen-lockfile` semantics
 - `https://pnpm.io/docker` - monorepo and Docker build guidance
 - `https://docs.nestjs.com/websockets/gateways` - Nest gateway and Socket.IO support
 - `https://docs.nestjs.com/websockets/adapter` - Redis adapter pattern for Socket.IO scaling

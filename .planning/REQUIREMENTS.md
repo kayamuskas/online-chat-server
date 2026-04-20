@@ -1,7 +1,7 @@
 # Requirements: Online Chat Server
 
 **Defined:** 2026-04-18
-**Core Value:** A fresh clone must start a fully functional classic chat system locally, offline, and in a way that matches the written requirements more strictly than any existing prototype.
+**Core Value:** A fresh clone must start a fully functional classic chat system locally and in a way that matches the written requirements more strictly than any existing prototype.
 
 ## v1 Requirements
 
@@ -81,7 +81,7 @@
 ### Operations and Quality
 
 - [ ] **OPS-01**: Fresh clone can be started by QA with `docker compose up`.
-- [ ] **OPS-02**: Application runs without internet access during startup and usage, assuming required Docker base images already exist locally.
+- [ ] **OPS-02**: Application starts from a fresh clone with `docker compose up`, using the committed lockfile/manifests for deterministic Docker builds and without runtime dependency installs inside containers.
 - [ ] **OPS-03**: Files are stored on the local filesystem and persist across restarts.
 - [ ] **OPS-04**: SMTP-dependent flows can run against mocks or local test doubles without requiring a real external mail service.
 - [ ] **ARCH-01**: System uses queues for asynchronous processing where deferred work exists.
@@ -104,7 +104,7 @@
 | Jabber/XMPP in v1 | Explicitly deferred to v2 by project decision |
 | Multi-server federation in v1 | Deferred with Jabber; v1 is single-server |
 | Native mobile apps | Not required by the source specification |
-| CDN-hosted runtime frontend assets | Conflicts with offline startup requirement |
+| CDN-hosted runtime frontend assets | Conflicts with deterministic fresh-clone startup |
 
 ## Traceability
 

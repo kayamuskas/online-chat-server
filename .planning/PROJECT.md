@@ -2,11 +2,11 @@
 
 ## What This Is
 
-This project is a production-like classic web chat application delivered as a single-server web stack with one browser client. It must implement the full primary scope from `requirements/requirements_raw.md` for v1, while treating `requirements/wireframes.md` and `requirements/desing_v1/` as starting UI references rather than the source of truth. The final result must be runnable by an external QA engineer from a public repository via `git clone && docker compose up`, without requiring internet access beyond already preloaded Docker base images.
+This project is a production-like classic web chat application delivered as a single-server web stack with one browser client. It must implement the full primary scope from `requirements/requirements_raw.md` for v1, while treating `requirements/wireframes.md` and `requirements/desing_v1/` as starting UI references rather than the source of truth. The final result must be runnable by an external QA engineer from a public repository via `git clone && docker compose up`, with application dependencies resolved during Docker image builds from the committed lockfile.
 
 ## Core Value
 
-A fresh clone must start a fully functional classic chat system locally, offline, and in a way that matches the written requirements more strictly than any existing prototype.
+A fresh clone must start a fully functional classic chat system locally and in a way that matches the written requirements more strictly than any existing prototype.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ A fresh clone must start a fully functional classic chat system locally, offline
 - Jabber/XMPP client support in v1 — explicitly deferred to v2 because the source requirements mark it as advanced follow-on work.
 - Federation between multiple servers in v1 — deferred with Jabber because v1 is scoped to a single local server and ordinary web client.
 - Native mobile applications — not required by the specification and would dilute delivery of the web product.
-- Internet-hosted dependencies during QA startup — forbidden by the acceptance criteria for offline operation.
+- Hidden or undocumented setup steps during QA startup.
 
 ## Context
 
@@ -56,7 +56,7 @@ Additional implementation hints already agreed for future planning:
 
 - **Scope**: Full primary specification in v1 — the whole non-advanced requirement set must be implemented, even if delivered incrementally through milestones.
 - **Delivery**: `git clone && docker compose up` must work — external QA cannot rely on undocumented local setup.
-- **Offline Runtime**: No internet access during startup or use — assume required Docker images already exist locally, but application dependencies must not be fetched online during QA execution.
+- **Startup Model**: `docker compose up` from a fresh clone must work using the committed manifests and lockfile, with dependency downloads allowed at Docker build time but not at container runtime.
 - **Topology**: Single server for v1 — no multi-server federation is required before v2.
 - **Product Truth**: `requirements/requirements_raw.md` wins over prototype visuals — design can move, split, or change to satisfy the written behavior.
 - **Storage**: Attachments must live on the local filesystem — this is an explicit non-functional requirement, not an implementation preference.
@@ -76,7 +76,7 @@ Additional implementation hints already agreed for future planning:
 | Treat `requirements/requirements_raw.md` as the source of truth | The user explicitly prioritized strict requirement compliance over the current design prototype | — Pending |
 | Scope Jabber/federation as v2 | The source requirements mark it as advanced follow-on work and the user confirmed it should not block v1 | — Pending |
 | Target a single-server Docker Compose deployment for v1 | QA acceptance is based on one local stack started from a fresh clone | — Pending |
-| Require offline-capable startup | The user defined offline operation as part of "done", so packaging and dependency strategy must account for it from the beginning | — Pending |
+| Require fresh-clone Docker startup | The user defined `git clone && docker compose up` as part of "done", so packaging and dependency strategy must support lockfile-backed image builds without extra vendored caches | — Pending |
 | Use the existing wireframes and `desing_v1` only as design input | The prototype is valuable reference material but cannot override the spec or constrain architecture decisions prematurely | — Pending |
 | Use PostgreSQL as the system of record | The user explicitly fixed the database choice | — Pending |
 | Require queues for asynchronous processing | The user explicitly marked queues as mandatory, which affects architecture from phase 1 onward | — Pending |

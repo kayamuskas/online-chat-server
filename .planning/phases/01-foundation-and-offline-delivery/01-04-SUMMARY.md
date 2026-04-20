@@ -5,14 +5,14 @@ subsystem: infra
 tags: [docker, compose, offline, healthcheck, bullmq, smoke-tests, qa, pnpm-store]
 
 requires:
-  - "01-01 (vendor/pnpm-store path, docs/offline-runtime.md, shared contracts)"
+  - "01-01 (pnpm-lock.yaml, docs/offline-runtime.md, shared contracts)"
   - "01-02 (apps/web/public/healthz target, Vite build output)"
   - "01-03 (GET /healthz, POST /api/v1/system-jobs/echo, worker process)"
 
 provides:
   - "infra/compose/compose.yaml: five-service health-gated topology (web, api, worker, postgres, redis)"
-  - "infra/docker/api.Dockerfile: offline multi-stage build using vendor/pnpm-store"
-  - "infra/docker/worker.Dockerfile: offline multi-stage build using vendor/pnpm-store"
+  - "infra/docker/api.Dockerfile: lockfile-backed multi-stage build"
+  - "infra/docker/worker.Dockerfile: lockfile-backed multi-stage build"
   - "infra/docker/web.Dockerfile: offline multi-stage Vite build + static serving"
   - "scripts/qa/phase1-smoke.sh: docker compose up --build --wait startup check"
   - "scripts/qa/phase1-offline-check.sh: CDN/registry/pull_policy/vendor-store verification"
@@ -27,13 +27,12 @@ tech-stack:
   added:
     - "Docker Compose v2 (compose.yaml with depends_on condition: service_healthy)"
     - "Multi-stage Dockerfile pattern (deps -> builder -> production)"
-    - "pnpm offline install via vendor/pnpm-store in Docker build context"
+    - "pnpm lockfile-backed install in Docker build context"
     - "serve (static file server for web container)"
   patterns:
     - "Health-gated startup: postgres/redis healthchecks + service_healthy conditions for api/worker/web"
-    - "pull_policy: never on all five services — no implicit remote pulls during QA"
     - "read_only: true on all app containers with /tmp tmpfs for writable scratch"
-    - "vendor/pnpm-store copied before pnpm install --offline --frozen-lockfile in every Dockerfile"
+    - "pnpm install --frozen-lockfile in every Dockerfile"
     - "Smoke scripts exit non-zero on any failure so CI/QA gates are deterministic"
 
 key-files:
@@ -51,9 +50,8 @@ key-files:
 
 key-decisions:
   - "read_only: true on api, worker, web containers — mitigates T-01-12 (unnecessarily writable filesystems); /tmp is writable via tmpfs"
-  - "pull_policy: never on all five services including postgres and redis — base images must be pre-pulled; no implicit network dependency during QA"
   - "Three-stage Dockerfile pattern (deps, builder, production) — separates install, compile, and runtime layers; production image excludes devDependencies and build tools"
-  - "vendor/pnpm-store copied as first step in deps stage — ensures --offline install can proceed before any COPY . . to preserve Docker layer cache"
+  - "Dockerfiles install with `pnpm install -r --frozen-lockfile` — keeps builds pinned to committed dependency versions without vendoring tarballs into git"
   - "phase1-queue-check.sh uses POST /api/v1/system-jobs/echo — verifies queue via the API enqueue path (Plan 03), not by mutating Redis directly"
   - "Socket.IO EIO=4 polling endpoint probed for WebSocket check — confirms gateway reachable without requiring a full WebSocket upgrade in a shell script"
 
@@ -69,7 +67,7 @@ completed: 2026-04-18
 
 # Phase 1 Plan 04: Offline Compose Topology and QA Smoke Scripts Summary
 
-**Five-service health-gated Compose topology with offline Dockerfiles (vendor/pnpm-store), plus four executable QA smoke scripts covering OPS-01/OPS-02/ARCH-01/ARCH-02 and a fully green VALIDATION.md**
+**Five-service health-gated Compose topology with lockfile-backed Dockerfiles, plus four executable QA smoke scripts covering OPS-01/OPS-02/ARCH-01/ARCH-02 and a fully green VALIDATION.md**
 
 ## Performance
 
@@ -81,13 +79,13 @@ completed: 2026-04-18
 
 ## Accomplishments
 
-- Created `infra/compose/compose.yaml` defining exactly five services (web, api, worker, postgres, redis); postgres and redis have `healthcheck` blocks; api, worker, and web use `depends_on.condition: service_healthy`; `pull_policy: never` appears on all five services; api, worker, and web containers set `read_only: true` with `/tmp` tmpfs mounts
+- Created `infra/compose/compose.yaml` defining exactly five services (web, api, worker, postgres, redis); postgres and redis have `healthcheck` blocks; api, worker, and web use `depends_on.condition: service_healthy`; api, worker, and web containers set `read_only: true` with `/tmp` tmpfs mounts
 
-- Created three multi-stage Dockerfiles (`api.Dockerfile`, `worker.Dockerfile`, `web.Dockerfile`) each following the same pattern: copy `vendor/pnpm-store` first, then run `pnpm install -r --offline --frozen-lockfile --store-dir /pnpm/store` — no registry access occurs at build time
+- Created three multi-stage Dockerfiles (`api.Dockerfile`, `worker.Dockerfile`, `web.Dockerfile`) each following the same pattern: copy lockfile and workspace manifests, then run `pnpm install -r --frozen-lockfile`
 
 - Created four executable QA smoke scripts under `scripts/qa/`:
   - `phase1-smoke.sh`: validates Compose config syntax then runs `docker compose up --build --wait --timeout 180`
-  - `phase1-offline-check.sh`: 14 static checks covering CDN patterns, plain `npm install` absence, curl/wget absence, `pull_policy: never` count, per-Dockerfile offline flags, `docs/offline-runtime.md` presence, `pnpm-lock.yaml` presence, and `vendor/pnpm-store/` directory existence
+  - `phase1-offline-check.sh`: static checks covering CDN patterns, curl/wget absence, per-Dockerfile lockfile flags, `docs/offline-runtime.md` presence, and `pnpm-lock.yaml` presence
   - `phase1-queue-check.sh`: hits `POST /api/v1/system-jobs/echo`, asserts `{enqueued: true, queue: "system", jobName: "echo"}`, checks `GET /api/v1/meta` reports "system" queue, and checks worker logs for activity
   - `phase1-transport-check.sh`: probes `GET /healthz` (API), `GET /api/v1/meta` (confirms "rest" and "websocket" transports), `GET /healthz` (web static), and Socket.IO EIO=4 polling handshake
 
@@ -116,7 +114,7 @@ Each task was committed atomically:
 
 - All app containers (`api`, `worker`, `web`) use `read_only: true` — satisfies T-01-12 (unnecessary writable filesystems); `/tmp` is whitelisted via `tmpfs` for any runtime scratch needs
 - Three-stage Dockerfile pattern separates the install layer (deps), compile layer (builder), and runtime layer (production) — the production image only copies compiled artifacts and runs `--prod` install, keeping the final image smaller
-- `vendor/pnpm-store` is copied as the first `COPY` in the deps stage — this preserves Docker's layer cache: if the store doesn't change, subsequent installs reuse the cached layer
+- Dockerfiles depend on the committed `pnpm-lock.yaml` and workspace manifests — dependency drift is caught by `--frozen-lockfile`
 - `phase1-queue-check.sh` uses `POST /api/v1/system-jobs/echo` (from Plan 03) rather than mutating Redis directly — keeps the queue smoke test path consistent with how application code enqueues work
 
 ## Deviations from Plan
@@ -130,13 +128,13 @@ All four threat register entries for this plan were mitigated:
 | Threat ID | Disposition | How Mitigated |
 |-----------|-------------|---------------|
 | T-01-10 | mitigate | `depends_on.condition: service_healthy` on api, worker, web; postgres and redis have `healthcheck` blocks with retries and start_period |
-| T-01-11 | mitigate | `pull_policy: never` on all five services; all Dockerfiles use `pnpm install --offline --store-dir /pnpm/store` from `vendor/pnpm-store` |
+| T-01-11 | mitigate | Dockerfiles use `pnpm install --frozen-lockfile`; runtime install paths remain disallowed by QA checks |
 | T-01-12 | mitigate | `read_only: true` on api, worker, web containers; only `/tmp` is writable via `tmpfs` |
-| T-01-14 | mitigate | Dockerfiles copy `vendor/pnpm-store` and use `--offline --frozen-lockfile`; `phase1-offline-check.sh` verifies this path statically |
+| T-01-14 | mitigate | Dockerfiles install from the committed lockfile; `phase1-offline-check.sh` verifies this path statically |
 
 ## Known Stubs
 
-None — all smoke scripts contain real check logic. The `vendor/pnpm-store/` contains only a `.gitkeep` (from Plan 01); the actual store must be populated before `docker compose up --build` runs (documented in `docs/offline-runtime.md`). This is an expected pre-condition, not a stub.
+None — all smoke scripts contain real check logic.
 
 ## Threat Flags
 

@@ -12,8 +12,8 @@ updated: 2026-04-18T13:25:00Z
 
 ## Tests
 
-### 1. docker compose up --build succeeds offline
-expected: Running `docker compose up --build --wait` with a pre-populated `vendor/pnpm-store/` and pre-pulled base images starts all five services (web, api, worker, postgres, redis) successfully — no external registry or CDN fetches required.
+### 1. docker compose up --build succeeds from a fresh clone
+expected: Running `docker compose up --build --wait` from a fresh clone starts all five services (web, api, worker, postgres, redis) successfully, with dependencies resolved during Docker build from the committed lockfile.
 result: pass
 
 ### 2. Live endpoints respond correctly

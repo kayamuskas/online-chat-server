@@ -9,8 +9,7 @@
 #
 # Prerequisites:
 #   - Docker daemon running
-#   - All required base images pre-pulled (node:22-slim, postgres:18, redis:8)
-#   - vendor/pnpm-store/ populated (see docs/offline-runtime.md)
+#   - Network access available for Docker image pulls and pnpm package downloads during build
 #
 # Exit codes:
 #   0 — all services healthy

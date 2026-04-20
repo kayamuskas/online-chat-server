@@ -35,7 +35,7 @@
 
 - Warning signs: CI or local dev uses online package installs and nobody tests startup without network.
 - Why it fails: The user's definition of done is operational, not just functional.
-- Prevention: Make offline startup a tracked requirement and acceptance test from the first milestone.
+- Prevention: Make fresh-clone startup a tracked requirement and acceptance test from the first milestone.
 - Phase pressure: Foundation and final hardening phases
 
 ## Pitfall 6: Deletion Cascades Without File Cleanup Discipline

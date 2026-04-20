@@ -300,9 +300,9 @@ export interface PublicUser {
 ### IN-04: `postgres` infrastructure service in compose.yaml has `pull_policy` commented out
 
 **File:** `infra/compose/compose.yaml:14`
-**Issue:** The `api`, `worker`, and `web` services all have `pull_policy: never` set, consistent with the offline-runtime requirement documented in `docs/offline-runtime.md`. However the `postgres` and `redis` infrastructure services have `pull_policy: never` commented out (`# pull_policy: never # TBD`). If the required base images (`postgres:18`, `redis:8`) are not pre-pulled, Compose will attempt to fetch them from the registry during `docker compose up`, violating the offline runtime guarantee for those services.
+**Issue:** This finding is obsolete after the dependency-strategy change. The project now expects `docker compose up` to resolve base images and npm packages during build/startup as needed.
 
-**Fix:** Either set `pull_policy: never` on `postgres` and `redis` (and document that these images must be pre-pulled), or document the intentional exception and the pre-pull procedure in `docs/offline-runtime.md`.
+**Fix:** No action required. Keep Compose and docs aligned to the fresh-clone startup contract instead of reintroducing the old restricted-pull policy.
 
 ---
 

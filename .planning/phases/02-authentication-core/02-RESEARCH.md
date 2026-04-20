@@ -100,7 +100,7 @@ The mail requirement should be treated as an **artifact generation problem**, no
 
 **When to use:** Password reset and any later auth mail flow that must remain SMTP-free.
 
-**Why this fits:** It satisfies OPS-04 directly while preserving offline startup and avoiding any extra preview service in Phase 2.
+**Why this fits:** It satisfies OPS-04 directly while preserving the fresh-clone startup contract and avoiding any extra preview service in Phase 2.
 
 ### Pattern 4: Minimal Authenticated Settings Surface
 
@@ -136,4 +136,3 @@ The mail requirement should be treated as an **artifact generation problem**, no
 ## Research Conclusion
 
 Phase 2 is best treated as the project’s first durable application slice, not as just “some endpoints plus forms.” The durable session model, filesystem outbox, and auth UI shell each need to be shaped now so later phases can extend them instead of replacing them. The repo already has enough infrastructure to do that cleanly if the plan establishes schema/bootstrap first, then backend auth flows, then password/mail workflows, then frontend integration and validation.
-

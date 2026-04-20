@@ -81,7 +81,7 @@ Implement the friendship lifecycle (send request → accept/decline → remove),
 - `requirements/wireframes.md` — contacts and personal messaging wireframe direction
 
 ### Project-wide constraints
-- `.planning/PROJECT.md` — PostgreSQL required, mixed REST/WebSocket, offline startup, classic chat UX
+- `.planning/PROJECT.md` — PostgreSQL required, mixed REST/WebSocket, fresh-clone startup, classic chat UX
 
 </canonical_refs>
 
