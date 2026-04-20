@@ -208,6 +208,14 @@ export class MessagesRepository {
       watermarkClause = `AND m.conversation_watermark < $${params.length}`;
     }
 
+    let afterWatermarkClause = '';
+    if (query.after_watermark !== undefined) {
+      params.push(query.after_watermark);
+      afterWatermarkClause = `AND m.conversation_watermark > $${params.length}`;
+    }
+
+    const sortAsc = query.after_watermark !== undefined;
+
     params.push(limit);
     const limitParam = `$${params.length}`;
 
@@ -235,13 +243,17 @@ export class MessagesRepository {
        WHERE m.conversation_type = $1
          AND m.conversation_id   = $2
          ${watermarkClause}
-       ORDER BY m.conversation_watermark DESC
+         ${afterWatermarkClause}
+       ORDER BY m.conversation_watermark ${sortAsc ? 'ASC' : 'DESC'}
        LIMIT ${limitParam}`,
       params,
     );
 
-    // Reverse so messages are in ascending (chronological) order.
-    const views = result.rows.reverse().map(rowToMessageView);
+    // When sorting ASC (after_watermark), rows are already chronological.
+    // When sorting DESC (before_watermark / default), reverse to chronological.
+    const views = sortAsc
+      ? result.rows.map(rowToMessageView)
+      : result.rows.reverse().map(rowToMessageView);
 
     // Total count in conversation (for MessageHistoryRange.totalCount).
     const countResult = await this.db.query<{ total: string }>(

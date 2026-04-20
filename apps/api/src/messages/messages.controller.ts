@@ -74,13 +74,23 @@ function parseEditMessageBody(body: unknown): { new_content: string } {
 
 function parseHistoryQuery(
   query: Record<string, string | undefined>,
-): { before_watermark?: number; limit?: number } {
-  const result: { before_watermark?: number; limit?: number } = {};
+): { before_watermark?: number; after_watermark?: number; limit?: number } {
+  const result: { before_watermark?: number; after_watermark?: number; limit?: number } = {};
   if (query['before_watermark'] !== undefined) {
     const bw = parseInt(query['before_watermark'], 10);
     if (!isNaN(bw) && bw > 0) {
       result.before_watermark = bw;
     }
+  }
+  if (query['after_watermark'] !== undefined) {
+    const aw = parseInt(query['after_watermark'], 10);
+    if (!isNaN(aw) && aw >= 0) {
+      result.after_watermark = aw;
+    }
+  }
+  // D-52: after_watermark takes precedence over before_watermark
+  if (result.after_watermark !== undefined && result.before_watermark !== undefined) {
+    delete result.before_watermark;
   }
   if (query['limit'] !== undefined) {
     const lim = parseInt(query['limit'], 10);
@@ -117,11 +127,12 @@ export class MessagesController {
     @Query() query: Record<string, string | undefined>,
     @CurrentUser() ctx: AuthContext,
   ) {
-    const { before_watermark, limit } = parseHistoryQuery(query);
+    const { before_watermark, after_watermark, limit } = parseHistoryQuery(query);
     const result = await this.messagesService.listHistory(ctx.user.id, {
       conversation_type: 'room' as ConversationType,
       conversation_id: roomId,
       before_watermark,
+      after_watermark,
       limit,
     });
     return result;
@@ -203,11 +214,12 @@ export class MessagesController {
     @Query() query: Record<string, string | undefined>,
     @CurrentUser() ctx: AuthContext,
   ) {
-    const { before_watermark, limit } = parseHistoryQuery(query);
+    const { before_watermark, after_watermark, limit } = parseHistoryQuery(query);
     const result = await this.messagesService.listHistory(ctx.user.id, {
       conversation_type: 'dm' as ConversationType,
       conversation_id: conversationId,
       before_watermark,
+      after_watermark,
       limit,
     });
     return result;
