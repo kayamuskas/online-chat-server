@@ -121,7 +121,7 @@ interface AuthenticatedShellProps {
   onAddContactOpen: () => void;
   onOpenDm: (userId: string) => void;
   onTrackDmConversation: (partnerId: string, conversationId: string) => void;
-  onPresenceUpdate: (presenceMap: Record<string, { status: string }>) => void;
+  onPresenceUpdate: (presenceMap: Record<string, string>) => void;
   onRoomJoined: (room: RoomCatalogRow) => void;
   onOpenTrackedRoom: (room: ShellRoomLink) => void;
   onManageRoom: (room: RoomCatalogRow) => void;
@@ -1037,10 +1037,10 @@ function App() {
     setTab("dm");
   }
 
-  function handlePresenceUpdate(presenceMap: Record<string, { status: string }>) {
+  function handlePresenceUpdate(presenceMap: Record<string, string>) {
     setContacts((prev) =>
       prev.map((contact) => {
-        const nextStatus = presenceMap[contact.userId]?.status;
+        const nextStatus = presenceMap[contact.userId];
         if (
           nextStatus !== "online" &&
           nextStatus !== "afk" &&

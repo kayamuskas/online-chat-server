@@ -25,7 +25,7 @@ interface ContactsSidebarProps {
   onAddContact?: () => void;
   onOpenDm?: (userId: string) => void;
   socket?: Socket | null;
-  onPresenceUpdate?: (presenceMap: Record<string, { status: string }>) => void;
+  onPresenceUpdate?: (presenceMap: Record<string, string>) => void;
   activePartnerId?: string | null;
 }
 
@@ -49,7 +49,7 @@ export function ContactsSidebar({
       socket.emit("getPresence", { userIds });
     }
 
-    function onPresence(presenceMap: Record<string, { status: string }>) {
+    function onPresence(presenceMap: Record<string, string>) {
       onPresenceUpdate?.(presenceMap);
     }
 
