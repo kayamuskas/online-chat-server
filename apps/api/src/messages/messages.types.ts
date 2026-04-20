@@ -1,3 +1,5 @@
+import type { AttachmentView } from '../attachments/attachments.types.js';
+
 /**
  * messages.types.ts — Phase 6 shared message domain type contracts.
  *
@@ -117,6 +119,8 @@ export interface MessageView {
   /** MSG-08: Monotonic per-conversation sequence number. */
   conversation_watermark: number;
   created_at: Date;
+  /** D-43: Attachment metadata. Empty array when message has no attachments. */
+  attachments: AttachmentView[];
 }
 
 /**
@@ -154,6 +158,8 @@ export interface SendMessageInput {
   content: string;
   /** MSG-03: Optional reply reference. Validated to be in the same conversation. */
   reply_to_id?: string | null;
+  /** D-45: Optional attachment IDs to bind at send time. */
+  attachment_ids?: string[];
 }
 
 /**
@@ -183,3 +189,5 @@ export interface MessageHistoryQuery {
   after_watermark?: number;
   limit?: number;
 }
+
+export type { AttachmentView } from '../attachments/attachments.types.js';
