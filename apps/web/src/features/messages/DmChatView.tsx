@@ -278,13 +278,8 @@ export function DmChatView({
         return;
       }
 
-      setMessages((prev) => {
-        const merged = mergeMessages(prev, [nextMessage]);
-        if (merged.length > prev.length) {
-          setHasNewMessages(true);
-        }
-        return merged;
-      });
+      setMessages((prev) => mergeMessages(prev, [nextMessage]));
+      setHasNewMessages(true);
       setRange((prev) =>
         prev
           ? {
