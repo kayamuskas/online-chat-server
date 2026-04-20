@@ -78,6 +78,7 @@ function makeMessageView(overrides: Partial<MessageView> = {}): MessageView {
     edited_at: null,
     conversation_watermark: 1,
     created_at: new Date('2026-01-01T10:00:00Z'),
+    attachments: [],
     ...overrides,
   };
 }

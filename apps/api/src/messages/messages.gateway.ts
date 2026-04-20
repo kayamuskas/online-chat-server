@@ -213,6 +213,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         edited_at: message.edited_at,
         conversation_watermark: message.conversation_watermark,
         created_at: message.created_at,
+        attachments: message.attachments ?? [],   // Phase 7 (D-43)
       },
     });
   }

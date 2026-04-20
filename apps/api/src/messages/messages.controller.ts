@@ -50,10 +50,22 @@ import type { ConversationType } from './messages.types.js';
 
 // ── Validation helpers ────────────────────────────────────────────────────────
 
-function parseSendMessageBody(body: unknown): { content: string; reply_to_id?: string | null } {
-  const b = (body ?? {}) as { content?: unknown; reply_to_id?: unknown };
+function parseSendMessageBody(body: unknown): {
+  content: string;
+  reply_to_id?: string | null;
+  attachment_ids?: string[];
+} {
+  const b = (body ?? {}) as { content?: unknown; reply_to_id?: unknown; attachment_ids?: unknown };
   if (typeof b.content !== 'string' || b.content.trim().length === 0) {
     throw new BadRequestException('content is required');
+  }
+  const attachment_ids: string[] = [];
+  if (Array.isArray(b.attachment_ids)) {
+    for (const id of b.attachment_ids) {
+      if (typeof id === 'string' && id.trim().length > 0) {
+        attachment_ids.push(id.trim());
+      }
+    }
   }
   return {
     content: b.content,
@@ -61,6 +73,7 @@ function parseSendMessageBody(body: unknown): { content: string; reply_to_id?: s
       typeof b.reply_to_id === 'string' && b.reply_to_id.trim().length > 0
         ? b.reply_to_id.trim()
         : null,
+    ...(attachment_ids.length > 0 ? { attachment_ids } : {}),
   };
 }
 
@@ -157,13 +170,14 @@ export class MessagesController {
     @Body() body: unknown,
     @CurrentUser() ctx: AuthContext,
   ) {
-    const { content, reply_to_id } = parseSendMessageBody(body);
+    const { content, reply_to_id, attachment_ids } = parseSendMessageBody(body);
     const message = await this.messagesService.sendMessage({
       conversation_type: 'room',
       conversation_id: roomId,
       author_id: ctx.user.id,
       content,
       reply_to_id,
+      attachment_ids,
     });
     // Fanout via WebSocket (D-34)
     await this.messagesGateway.broadcastMessageCreated(message);
@@ -245,13 +259,14 @@ export class MessagesController {
     @Body() body: unknown,
     @CurrentUser() ctx: AuthContext,
   ) {
-    const { content, reply_to_id } = parseSendMessageBody(body);
+    const { content, reply_to_id, attachment_ids } = parseSendMessageBody(body);
     const message = await this.messagesService.sendMessage({
       conversation_type: 'dm',
       conversation_id: conversationId,
       author_id: ctx.user.id,
       content,
       reply_to_id,
+      attachment_ids,
     });
     // Fanout via WebSocket (D-34)
     await this.messagesGateway.broadcastMessageCreated(message);
