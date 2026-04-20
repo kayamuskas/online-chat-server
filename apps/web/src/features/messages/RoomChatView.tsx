@@ -246,6 +246,12 @@ export function RoomChatView({
       setMessages((prev) => prev.filter((m) => m.id !== data.message_id));
     }
 
+    function onRoomDeleted(data: { room_id?: string }) {
+      if (data.room_id === roomId) {
+        onBack?.();
+      }
+    }
+
     function onReconnect() {
       socket.emit("joinRoom", { roomId });
       scheduleReconnectRefetch();
@@ -255,19 +261,21 @@ export function RoomChatView({
     socket.on("message-created", onMessageCreated);
     socket.on("message-edited", onMessageEdited);
     socket.on("message-deleted", onMessageDeleted);
+    socket.on("room-deleted", onRoomDeleted);
     socket.io.on("reconnect", onReconnect);
 
     return () => {
       socket.off("message-created", onMessageCreated);
       socket.off("message-edited", onMessageEdited);
       socket.off("message-deleted", onMessageDeleted);
+      socket.off("room-deleted", onRoomDeleted);
       socket.io.off("reconnect", onReconnect);
       if (reconnectTimerRef.current) {
         window.clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
       }
     };
-  }, [roomId, scheduleReconnectRefetch, socket]);
+  }, [roomId, scheduleReconnectRefetch, socket, onBack]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 

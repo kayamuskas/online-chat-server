@@ -9,9 +9,11 @@
  *  - RoomsController: REST endpoints for create, catalog, join, and leave flows.
  */
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DbModule } from '../db/db.module.js';
 import { AuthModule } from '../auth/auth.module.js';
+import { MessagesModule } from '../messages/messages.module.js';
+import { AttachmentsModule } from '../attachments/attachments.module.js';
 import { RoomsRepository } from './rooms.repository.js';
 import { RoomsService } from './rooms.service.js';
 import { RoomsController } from './rooms.controller.js';
@@ -27,7 +29,7 @@ import { UserRepository } from '../auth/user.repository.js';
  */
 
 @Module({
-  imports: [DbModule, AuthModule],
+  imports: [DbModule, AuthModule, forwardRef(() => MessagesModule), forwardRef(() => AttachmentsModule)],
   controllers: [RoomsController, RoomsManagementController],
   providers: [RoomsRepository, RoomsService, UserRepository],
   exports: [RoomsService, RoomsRepository],

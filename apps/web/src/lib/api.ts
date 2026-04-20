@@ -474,6 +474,15 @@ export async function listRoomBans(roomId: string): Promise<{ bans: RoomBan[] }>
 }
 
 /**
+ * DELETE /api/v1/rooms/:id
+ * Permanently delete a room (owner only).
+ * Returns undefined (204).
+ */
+export async function deleteRoom(roomId: string): Promise<void> {
+  return del(`/rooms/${encodeURIComponent(roomId)}`);
+}
+
+/**
  * DELETE /api/v1/rooms/:id/manage/bans/:userId
  * Unban a user. Caller must be owner or admin.
  * Returns undefined (204).

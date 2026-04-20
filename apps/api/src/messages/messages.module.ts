@@ -15,7 +15,7 @@
  * - ContactsModule: ContactsRepository (D-31/D-32 DM access checks).
  */
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DbModule } from '../db/db.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { RoomsModule } from '../rooms/rooms.module.js';
@@ -30,9 +30,9 @@ import { MessagesGateway } from './messages.gateway.js';
   imports: [
     DbModule,
     AuthModule,
-    RoomsModule,
+    forwardRef(() => RoomsModule),
     ContactsModule,
-    AttachmentsModule,  // Phase 7: attachment binding in sendMessage
+    forwardRef(() => AttachmentsModule),  // Phase 7: attachment binding in sendMessage
   ],
   controllers: [MessagesController],
   providers: [
@@ -40,6 +40,6 @@ import { MessagesGateway } from './messages.gateway.js';
     MessagesService,
     MessagesGateway,
   ],
-  exports: [MessagesService],
+  exports: [MessagesService, MessagesGateway],
 })
 export class MessagesModule {}

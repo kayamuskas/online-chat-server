@@ -92,6 +92,30 @@ export class AttachmentsRepository {
     await this.db.query(`DELETE FROM attachments WHERE id = $1`, [id]);
   }
 
+  /** Find all attachments belonging to messages in a room (for room deletion cascade D-07). */
+  async findByRoomId(roomId: string): Promise<{ id: string; storage_path: string }[]> {
+    const result = await this.db.query<{ id: string; storage_path: string }>(
+      `SELECT a.id, a.storage_path
+       FROM attachments a
+       JOIN messages m ON m.id = a.message_id
+       WHERE m.conversation_type = 'room' AND m.conversation_id = $1`,
+      [roomId],
+    );
+    return result.rows;
+  }
+
+  /** Delete all attachment DB records for messages in a room. */
+  async deleteByRoomId(roomId: string): Promise<void> {
+    await this.db.query(
+      `DELETE FROM attachments
+       WHERE message_id IN (
+         SELECT id FROM messages
+         WHERE conversation_type = 'room' AND conversation_id = $1
+       )`,
+      [roomId],
+    );
+  }
+
   /** Get AttachmentViews for a set of message IDs (for MessageView enrichment). */
   async getViewsByMessageIds(messageIds: string[]): Promise<Map<string, AttachmentView[]>> {
     if (messageIds.length === 0) return new Map();

@@ -2057,3 +2057,59 @@ body {
   background: rgba(176, 42, 42, 0.06);
   border-color: rgba(176, 42, 42, 0.3);
 }
+
+/* Danger zone container */
+.danger-zone {
+  border: 1px solid rgba(176, 42, 42, 0.3);
+  border-radius: 6px;
+  background-color: rgba(248, 113, 113, 0.04);
+  padding: 1rem;
+  margin-top: 1.5rem;
+}
+
+.danger-zone__title {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-error);
+  margin-bottom: 0.5rem;
+}
+
+.danger-zone__description {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.danger-zone__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: rgba(248, 113, 113, 0.06);
+  border-radius: var(--radius);
+}
+
+.danger-zone__confirm-text {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.danger-zone__confirm-text strong {
+  font-weight: 600;
+  color: var(--color-error);
+}
+
+.danger-zone__confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.danger-zone__password-field {
+  margin-bottom: 0;
+}

@@ -6,7 +6,7 @@
  * Exports AttachmentsRepository so MessagesModule can use bindAttachments.
  */
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DbModule } from '../db/db.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { RoomsModule } from '../rooms/rooms.module.js';
@@ -16,9 +16,9 @@ import { AttachmentsService } from './attachments.service.js';
 import { AttachmentsController } from './attachments.controller.js';
 
 @Module({
-  imports: [DbModule, AuthModule, RoomsModule, ContactsModule],
+  imports: [DbModule, AuthModule, forwardRef(() => RoomsModule), ContactsModule],
   controllers: [AttachmentsController],
   providers: [AttachmentsRepository, AttachmentsService],
-  exports: [AttachmentsRepository],
+  exports: [AttachmentsRepository, AttachmentsService],
 })
 export class AttachmentsModule {}
