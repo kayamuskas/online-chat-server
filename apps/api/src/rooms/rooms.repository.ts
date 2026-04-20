@@ -179,6 +179,29 @@ export class RoomsRepository {
     return result.rows;
   }
 
+  /** List ALL rooms (any visibility) where the given user has active membership. */
+  async listAllRoomsByUser(user_id: string): Promise<PrivateRoomMembershipRow[]> {
+    const result = await this.db.query<PrivateRoomMembershipRow>(
+      `SELECT r.id,
+              r.name,
+              r.description,
+              r.visibility,
+              r.owner_id,
+              r.created_at,
+              (SELECT COUNT(*)::INT FROM room_memberships WHERE room_id = r.id) AS member_count,
+              m.id AS membership_id,
+              m.user_id AS membership_user_id,
+              m.role AS membership_role,
+              m.joined_at AS membership_joined_at
+       FROM room_memberships m
+       INNER JOIN rooms r ON r.id = m.room_id
+       WHERE m.user_id = $1
+       ORDER BY r.name ASC`,
+      [user_id],
+    );
+    return result.rows;
+  }
+
   // ── Admin grants ───────────────────────────────────────────────────────────
 
   /** Grant admin privileges to a user within a room. Returns the admin row. */

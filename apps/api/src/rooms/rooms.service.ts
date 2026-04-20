@@ -102,6 +102,12 @@ export class RoomsService {
     return rows.map((row) => this.mapPrivateMembershipRow(row));
   }
 
+  /** List ALL rooms (public + private) where the user has active membership. */
+  async getMyRooms(userId: string): Promise<PrivateRoomMembershipView[]> {
+    const rows = await this.roomsRepo.listAllRoomsByUser(userId);
+    return rows.map((row) => this.mapPrivateMembershipRow(row));
+  }
+
   /**
    * List pending private-room invites addressed to the authenticated user.
    */

@@ -114,6 +114,18 @@ export class RoomsController {
   }
 
   /**
+   * GET /api/v1/rooms/mine
+   *
+   * List all rooms (public + private) where the authenticated user has membership.
+   * Used on app load to restore the sidebar room list after page refresh.
+   */
+  @Get('mine')
+  async myRooms(@CurrentUser() ctx: AuthContext) {
+    const rooms = await this.roomsService.getMyRooms(ctx.user.id);
+    return { rooms };
+  }
+
+  /**
    * GET /api/v1/rooms/mine/private
    *
    * List private rooms where the authenticated user currently has membership.

@@ -36,6 +36,7 @@ import {
   getIncomingRequests,
   acceptFriendRequest,
   declineFriendRequest,
+  getMyRooms,
   type FriendWithPresence,
   type IncomingFriendRequestView,
 } from "./lib/api";
@@ -900,15 +901,16 @@ function App() {
     setPrivateRoomsLoading(true);
     setPrivateRoomsError(null);
     try {
-      const [roomsResult, invitesResult] = await Promise.all([
+      const [roomsResult, invitesResult, allRoomsResult] = await Promise.all([
         getMyPrivateRooms(),
         getPendingPrivateInvites(),
+        getMyRooms(),
       ]);
       setPrivateRooms(roomsResult.rooms);
       setPendingInvites(invitesResult.invites);
       setTrackedRooms((prev) => {
         const next = new Map(prev.map((room) => [room.id, room]));
-        roomsResult.rooms.forEach(({ room }) => {
+        allRoomsResult.rooms.forEach(({ room }) => {
           next.set(room.id, { id: room.id, name: room.name });
         });
         return Array.from(next.values());

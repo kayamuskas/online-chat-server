@@ -360,6 +360,10 @@ export async function leaveRoom(roomId: string): Promise<void> {
  * GET /api/v1/rooms/mine/private
  * List authenticated user's private-room memberships.
  */
+export async function getMyRooms(): Promise<{ rooms: PrivateRoomEntry[] }> {
+  return get("/rooms/mine");
+}
+
 export async function getMyPrivateRooms(): Promise<{ rooms: PrivateRoomEntry[] }> {
   return get("/rooms/mine/private");
 }
