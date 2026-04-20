@@ -15,6 +15,8 @@ The main enabling fact is that the backend and frontend foundations for this pha
 
 That means Phase 9 is primarily a composition and UX-integration phase, not a backend-blocked phase.
 
+One correction is required before execution drifts further: the current product-shell work can satisfy the structural parts of `UI-01`/`UI-02` while still diverging visually from the agreed baseline in `requirements/desing_v1/`. Phase 9 should explicitly treat `desing_v1` as the design grammar to converge toward, not just as loose inspiration.
+
 ## What Is Ready Now
 
 ### Ready from completed phases
@@ -47,16 +49,19 @@ Phase 9 should be split into five plans:
 1. **09-01 Shell and layout contract**
    Build the real three-column shell and compact room navigation behavior.
 
-2. **09-02 Unread indicators**
+2. **09-02 Visual baseline adoption**
+   Pull the shell, navigation, and typography closer to `requirements/desing_v1/`.
+
+3. **09-03 Unread indicators**
    Add unread state and clearing behavior for room and contact navigation rows.
 
-3. **09-03 Infinite history UX**
+4. **09-04 Infinite history UX**
    Add upward infinite scroll on top of existing watermark/range metadata.
 
-4. **09-04 Menus and modal admin UX**
+5. **09-05 Menus and modal admin UX**
    Normalize management actions into menus/modals without blocking on Phase 8 destructive work.
 
-5. **09-05 Settings/session integration**
+6. **09-06 Settings/session integration**
    Fold session/account views into the final shell in a user-facing way.
 
 ## Key Risks
@@ -71,9 +76,10 @@ Do not reopen Phase 7 or Phase 8 as blockers.
 
 Proceed directly with:
 - `09-CONTEXT.md`
-- `09-01-PLAN.md` first, focused only on shell/layout and structural decomposition
+- `09-01-PLAN.md` first, focused on shell/layout and structural decomposition
+- immediately after that, a design-convergence pass anchored to `requirements/desing_v1/`
 
-That keeps the first execution wave narrow and reduces the risk of mixing shell refactor, unread logic, and infinite-scroll logic into one patch.
+That keeps the first execution wave narrow while still forcing the next wave to converge toward the already-agreed visual baseline.
 
 ---
 

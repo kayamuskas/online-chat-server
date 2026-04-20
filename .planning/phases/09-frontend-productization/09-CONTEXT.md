@@ -20,6 +20,7 @@ Phase 9 does NOT own attachment backend work, room/account destructive cascades,
 - **D-90:** The shipped app must present the classic three-column chat layout: left navigation/sidebar, center conversation view, right context/member panel.
 - **D-91:** The current authenticated shell in `App.tsx` is implementation scaffolding, not the final product contract. Phase 9 may restructure it aggressively.
 - **D-92:** Room navigation should compact when a conversation is active, matching `UI-02` and the previously locked room/contact sidebar direction.
+- **D-101:** `requirements/desing_v1/` is the visual and interaction baseline for Phase 9. The app does not need pixel-perfect reproduction, but it must move toward its warm light palette, serif+mono typography hierarchy, top navigation, accordion room navigation, and modal-driven management patterns rather than away from them.
 
 ### Unread indicators
 
@@ -40,6 +41,7 @@ Phase 9 does NOT own attachment backend work, room/account destructive cascades,
 
 - **D-99:** Because Phase 7 is temporarily deferred, Phase 9 must not block on attachment polish. Existing attachment UI, if present, can remain functional but is not a planning dependency for this phase.
 - **D-100:** Because Phase 8 is temporarily deferred, Phase 9 should only wire admin UI to capabilities that already exist or can degrade gracefully when a backend action is not yet implemented.
+- **D-102:** Structural refactors are allowed, but each visible shell/layout decision in Phase 9 should be explainable against `requirements/desing_v1/` or `requirements/wireframes.md`.
 </decisions>
 
 <canonical_refs>
@@ -49,6 +51,9 @@ Phase 9 does NOT own attachment backend work, room/account destructive cascades,
 - `.planning/ROADMAP.md` — Phase 9 goal and success criteria
 - `.planning/REQUIREMENTS.md` — `MSG-07`, `NOTF-01`, `NOTF-02`, `UI-01`, `UI-02`, `UI-03`
 - `requirements/requirements_raw.md` — classic chat UX expectations
+- `requirements/wireframes.md` — explicit three-column classic layout and manage-room/admin interaction expectations
+- `requirements/desing_v1/index.html` and `requirements/desing_v1/components/*.jsx` — concrete visual/interaction baseline for Phase 9
+- `requirements/desing_v1/styles.css` — warm light palette, typography hierarchy, and shell patterns to reuse conceptually
 
 ### Upstream phase outputs
 - `.planning/phases/04-rooms-and-membership/04-VERIFICATION.md` — deferred room-members UI gap now addressed in Phase 9
@@ -87,6 +92,12 @@ Phase 9 does NOT own attachment backend work, room/account destructive cascades,
 - Start Phase 9 by stabilizing one coherent shell in `App.tsx` plus a small number of child layout components instead of incrementally adding more state to the current top-level file.
 - Treat room members/context panel as part of the right rail, not as ad hoc inline content inside each feature view.
 - Keep attachment-related rendering opportunistic: support it where already wired, but do not let it drive the Phase 9 structure.
+- Use `desing_v1` as a design grammar:
+  - warm paper-like backgrounds instead of the current dark utility shell
+  - serif headlines/logo and mono metadata labels
+  - top navigation that exposes the main product areas directly
+  - accordion-style room rail once the user is inside a conversation
+  - modal-driven room management rather than treating every admin view as a standalone page
 </specifics>
 
 <deferred>

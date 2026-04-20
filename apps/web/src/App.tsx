@@ -68,6 +68,11 @@ type AppTab =
   | "dm"          // Phase 6: real DM conversation
   | "room-chat";  // Phase 6: real room conversation
 
+interface ShellRoomLink {
+  id: string;
+  name: string;
+}
+
 function isAccountRoute() {
   return window.location.pathname === "/account";
 }
@@ -93,6 +98,7 @@ interface AuthenticatedShellProps {
   requestActionBusy: string | null;
   contacts: FriendWithPresence[];
   privateRooms: PrivateRoomEntry[];
+  trackedRooms: ShellRoomLink[];
   pendingInvites: PendingRoomInviteEntry[];
   privateRoomsLoading: boolean;
   privateRoomsError: string | null;
@@ -100,6 +106,9 @@ interface AuthenticatedShellProps {
   managedRoom: RoomCatalogRow | null;
   activeRoom: { id: string; name: string } | null;
   dmPartnerId: string | null;
+  roomUnread: Record<string, number>;
+  dmUnread: Record<string, number>;
+  knownDmConversationIds: Record<string, string>;
   addContactOpen: boolean;
   onToggleRequestDropdown: () => void;
   onAcceptRequest: (id: string) => void;
@@ -109,13 +118,19 @@ interface AuthenticatedShellProps {
   onSelectTab: (tab: AppTab) => void;
   onAddContactOpen: () => void;
   onOpenDm: (userId: string) => void;
+  onTrackDmConversation: (partnerId: string, conversationId: string) => void;
   onPresenceUpdate: (presenceMap: Record<string, { status: string }>) => void;
   onRoomJoined: (room: RoomCatalogRow) => void;
+  onOpenTrackedRoom: (room: ShellRoomLink) => void;
   onManageRoom: (room: RoomCatalogRow) => void;
   onLeavePrivateRoom: (room: RoomCatalogRow) => void;
   onAcceptInvite: (roomId: string, inviteId: string) => void;
   onDeclineInvite: (roomId: string, inviteId: string) => void;
   onRoomCreated: (room: Room) => void;
+  onClearRoomUnread: (roomId: string) => void;
+  onClearDmUnread: (userId: string) => void;
+  onIncrementRoomUnread: (roomId: string) => void;
+  onIncrementDmUnread: (userId: string) => void;
   onBackFromManageRoom: () => void;
   onBackFromRoomChat: () => void;
   onSignedOut: () => void;
@@ -131,6 +146,7 @@ function AuthenticatedShell({
   requestActionBusy,
   contacts,
   privateRooms,
+  trackedRooms,
   pendingInvites,
   privateRoomsLoading,
   privateRoomsError,
@@ -138,6 +154,9 @@ function AuthenticatedShell({
   managedRoom,
   activeRoom,
   dmPartnerId,
+  roomUnread,
+  dmUnread,
+  knownDmConversationIds,
   addContactOpen,
   onToggleRequestDropdown,
   onAcceptRequest,
@@ -147,13 +166,19 @@ function AuthenticatedShell({
   onSelectTab,
   onAddContactOpen,
   onOpenDm,
+  onTrackDmConversation,
   onPresenceUpdate,
   onRoomJoined,
+  onOpenTrackedRoom,
   onManageRoom,
   onLeavePrivateRoom,
   onAcceptInvite,
   onDeclineInvite,
   onRoomCreated,
+  onClearRoomUnread,
+  onClearDmUnread,
+  onIncrementRoomUnread,
+  onIncrementDmUnread,
   onBackFromManageRoom,
   onBackFromRoomChat,
   onSignedOut,
@@ -171,6 +196,7 @@ function AuthenticatedShell({
     username: contact.username,
     presenceStatus: contact.presenceStatus,
     dmEligible: true,
+    unreadCount: dmUnread[contact.userId] ?? 0,
   }));
   const rightRailMembers = contacts.slice(0, 6).map((contact) => ({
     id: contact.userId,
@@ -178,6 +204,110 @@ function AuthenticatedShell({
     status: (contact.presenceStatus ?? "offline") as "online" | "afk" | "offline",
     lastSeenAt: contact.presenceStatus === "offline" ? new Date().toISOString() : null,
   }));
+  const knownDmEntries = Object.entries(knownDmConversationIds);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    trackedRooms.forEach((room) => {
+      socket.emit("joinRoom", { roomId: room.id });
+    });
+
+    return () => {
+      trackedRooms.forEach((room) => {
+        socket.emit("leaveRoom", { roomId: room.id });
+      });
+    };
+  }, [socket, trackedRooms]);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    knownDmEntries.forEach(([, conversationId]) => {
+      socket.emit("joinDm", { conversationId });
+    });
+
+    return () => {
+      knownDmEntries.forEach(([, conversationId]) => {
+        socket.emit("leaveDm", { conversationId });
+      });
+    };
+  }, [knownDmEntries, socket]);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    function onMessageCreated(payload: unknown) {
+      const raw = payload as {
+        message?: Record<string, unknown>;
+        conversation_type?: string;
+        conversation_id?: string;
+      };
+      const message = raw.message ?? {};
+      const conversationType =
+        raw.conversation_type
+        ?? (message.conversation_type as string | undefined)
+        ?? (message.conversationType as string | undefined);
+      const conversationId =
+        raw.conversation_id
+        ?? (message.conversation_id as string | undefined)
+        ?? (message.conversationId as string | undefined);
+      const authorId =
+        (message.author_id as string | undefined)
+        ?? (message.authorId as string | undefined);
+
+      if (!conversationType || !conversationId || authorId === user.id) {
+        return;
+      }
+
+      if (conversationType === "room") {
+        if (tab === "room-chat" && activeRoom?.id === conversationId) {
+          onClearRoomUnread(conversationId);
+          return;
+        }
+        onIncrementRoomUnread(conversationId);
+        return;
+      }
+
+      if (conversationType !== "dm") {
+        return;
+      }
+
+      const partnerId = knownDmEntries.find(([, id]) => id === conversationId)?.[0];
+      if (!partnerId) {
+        return;
+      }
+
+      if (tab === "dm" && dmPartnerId === partnerId) {
+        onClearDmUnread(partnerId);
+        return;
+      }
+
+      onIncrementDmUnread(partnerId);
+    }
+
+    socket.on("message-created", onMessageCreated);
+    return () => {
+      socket.off("message-created", onMessageCreated);
+    };
+  }, [
+    activeRoom?.id,
+    dmPartnerId,
+    knownDmEntries,
+    onClearDmUnread,
+    onClearRoomUnread,
+    onIncrementDmUnread,
+    onIncrementRoomUnread,
+    socket,
+    tab,
+    user.id,
+  ]);
 
   let shellTitle = "Classic chat";
   let shellSubtitle = "Rooms, contacts, and account surfaces in one product shell.";
@@ -285,6 +415,7 @@ function AuthenticatedShell({
           partnerId={dmPartnerId}
           partnerUsername={partner?.username ?? dmPartnerId}
           currentUserId={user.id}
+          onConversationReady={(conversationId) => onTrackDmConversation(dmPartnerId, conversationId)}
         />
       );
     }
@@ -437,6 +568,36 @@ function AuthenticatedShell({
             <span>{shellSubtitle}</span>
           </div>
         </div>
+        <nav className="app-topbar__tabs" aria-label="Primary navigation">
+          <button
+            type="button"
+            className={`app-topbar__tab${tab === "public-rooms" ? " app-topbar__tab--active" : ""}`}
+            onClick={() => onSelectTab("public-rooms")}
+          >
+            Public rooms
+          </button>
+          <button
+            type="button"
+            className={`app-topbar__tab${tab === "private-rooms" ? " app-topbar__tab--active" : ""}`}
+            onClick={() => onSelectTab("private-rooms")}
+          >
+            Private rooms
+          </button>
+          <button
+            type="button"
+            className={`app-topbar__tab${tab === "contacts" ? " app-topbar__tab--active" : ""}`}
+            onClick={onOpenContacts}
+          >
+            Contacts
+          </button>
+          <button
+            type="button"
+            className={`app-topbar__tab${tab === "sessions" ? " app-topbar__tab--active" : ""}`}
+            onClick={() => onSelectTab("sessions")}
+          >
+            Sessions
+          </button>
+        </nav>
         <div className="app-topbar__actions">
           <button
             type="button"
@@ -488,6 +649,30 @@ function AuthenticatedShell({
             >
               Create room
             </button>
+            {trackedRooms.length > 0 && (
+              <div className="app-shell__thread-list" aria-label="Known room chats">
+                {trackedRooms.map((room) => {
+                  const unreadCount = roomUnread[room.id] ?? 0;
+                  const isActive = tab === "room-chat" && activeRoom?.id === room.id;
+
+                  return (
+                    <button
+                      key={room.id}
+                      type="button"
+                      className={`app-shell__thread-row${isActive ? " app-shell__thread-row--active" : ""}`}
+                      onClick={() => onOpenTrackedRoom(room)}
+                    >
+                      <span className="app-shell__thread-name"># {room.name}</span>
+                      {unreadCount > 0 && (
+                        <span className="app-shell__thread-badge" aria-label={`${unreadCount} unread messages`}>
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           <section className="app-shell__nav-section">
@@ -503,6 +688,7 @@ function AuthenticatedShell({
               contacts={sidebarContacts}
               currentUserId={user.id}
               socket={socket}
+              activePartnerId={tab === "dm" ? dmPartnerId : null}
               onPresenceUpdate={onPresenceUpdate}
               onAddContact={onAddContactOpen}
               onOpenDm={onOpenDm}
@@ -570,6 +756,7 @@ function App() {
   const [tab, setTab] = useState<AppTab>("public-rooms");
   const [checkingSession, setCheckingSession] = useState(isAccountRoute());
   const [managedRoom, setManagedRoom] = useState<RoomCatalogRow | null>(null);
+  const [trackedRooms, setTrackedRooms] = useState<ShellRoomLink[]>([]);
   const [privateRooms, setPrivateRooms] = useState<PrivateRoomEntry[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingRoomInviteEntry[]>([]);
   const [privateRoomsLoading, setPrivateRoomsLoading] = useState(false);
@@ -585,6 +772,9 @@ function App() {
   const [requestActionBusy, setRequestActionBusy] = useState<string | null>(null);
   // Phase 6: active room for room-chat tab
   const [activeRoom, setActiveRoom] = useState<{ id: string; name: string } | null>(null);
+  const [roomUnread, setRoomUnread] = useState<Record<string, number>>({});
+  const [dmUnread, setDmUnread] = useState<Record<string, number>>({});
+  const [knownDmConversationIds, setKnownDmConversationIds] = useState<Record<string, string>>({});
 
   function handleAuthenticated(nextUser: PublicUser) {
     setUser(nextUser);
@@ -593,6 +783,7 @@ function App() {
 
   function handleSignedOut() {
     setUser(null);
+    setTrackedRooms([]);
     setPrivateRooms([]);
     setPendingInvites([]);
     setManagedRoom(null);
@@ -600,6 +791,9 @@ function App() {
     setPendingRequests([]);
     setDmPartnerId(null);
     setActiveRoom(null);
+    setRoomUnread({});
+    setDmUnread({});
+    setKnownDmConversationIds({});
     window.history.replaceState(null, "", "/");
   }
 
@@ -670,6 +864,13 @@ function App() {
       ]);
       setPrivateRooms(roomsResult.rooms);
       setPendingInvites(invitesResult.invites);
+      setTrackedRooms((prev) => {
+        const next = new Map(prev.map((room) => [room.id, room]));
+        roomsResult.rooms.forEach(({ room }) => {
+          next.set(room.id, { id: room.id, name: room.name });
+        });
+        return Array.from(next.values());
+      });
     } catch (error) {
       setPrivateRoomsError(
         error instanceof Error ? error.message : "Failed to load private-room data",
@@ -690,7 +891,34 @@ function App() {
   }
 
   function handleRoomJoined(room: RoomCatalogRow) {
+    setTrackedRooms((prev) => {
+      if (prev.some((entry) => entry.id === room.id)) {
+        return prev;
+      }
+      return [...prev, { id: room.id, name: room.name }];
+    });
+    setRoomUnread((prev) => {
+      if (!(room.id in prev)) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[room.id];
+      return next;
+    });
     setActiveRoom({ id: room.id, name: room.name });
+    setTab("room-chat");
+  }
+
+  function handleOpenTrackedRoom(room: ShellRoomLink) {
+    setRoomUnread((prev) => {
+      if (!(room.id in prev)) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[room.id];
+      return next;
+    });
+    setActiveRoom(room);
     setTab("room-chat");
   }
 
@@ -754,6 +982,19 @@ function App() {
     setTab("contacts");
   }
 
+  function handleOpenDm(userId: string) {
+    setDmUnread((prev) => {
+      if (!(userId in prev)) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[userId];
+      return next;
+    });
+    setDmPartnerId(userId);
+    setTab("dm");
+  }
+
   function handlePresenceUpdate(presenceMap: Record<string, { status: string }>) {
     setContacts((prev) =>
       prev.map((contact) => {
@@ -781,6 +1022,19 @@ function App() {
       if (managedRoom?.id === room.id) {
         setManagedRoom(null);
       }
+      if (activeRoom?.id === room.id) {
+        setActiveRoom(null);
+        setTab("private-rooms");
+      }
+      setTrackedRooms((prev) => prev.filter((entry) => entry.id !== room.id));
+      setRoomUnread((prev) => {
+        if (!(room.id in prev)) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[room.id];
+        return next;
+      });
       await loadPrivateRoomData();
     } catch (error) {
       setPrivateRoomsError(
@@ -794,8 +1048,12 @@ function App() {
       setPrivateRooms([]);
       setPendingInvites([]);
       setManagedRoom(null);
+      setTrackedRooms([]);
       setContacts([]);
       setPendingRequests([]);
+      setRoomUnread({});
+      setDmUnread({});
+      setKnownDmConversationIds({});
       return;
     }
 
@@ -835,6 +1093,7 @@ function App() {
         requestActionBusy={requestActionBusy}
         contacts={contacts}
         privateRooms={privateRooms}
+        trackedRooms={trackedRooms}
         pendingInvites={pendingInvites}
         privateRoomsLoading={privateRoomsLoading}
         privateRoomsError={privateRoomsError}
@@ -842,6 +1101,9 @@ function App() {
         managedRoom={managedRoom}
         activeRoom={activeRoom}
         dmPartnerId={dmPartnerId}
+        roomUnread={roomUnread}
+        dmUnread={dmUnread}
+        knownDmConversationIds={knownDmConversationIds}
         addContactOpen={addContactOpen}
         onToggleRequestDropdown={() => setRequestDropdownOpen((open) => !open)}
         onAcceptRequest={(id) => void handleAcceptRequest(id)}
@@ -850,17 +1112,48 @@ function App() {
         onCloseRequestDropdown={() => setRequestDropdownOpen(false)}
         onSelectTab={setTab}
         onAddContactOpen={() => setAddContactOpen(true)}
-        onOpenDm={(userId) => {
-          setDmPartnerId(userId);
-          setTab("dm");
+        onOpenDm={handleOpenDm}
+        onTrackDmConversation={(partnerId, conversationId) => {
+          setKnownDmConversationIds((prev) => (
+            prev[partnerId] === conversationId
+              ? prev
+              : { ...prev, [partnerId]: conversationId }
+          ));
         }}
         onPresenceUpdate={handlePresenceUpdate}
         onRoomJoined={handleRoomJoined}
+        onOpenTrackedRoom={handleOpenTrackedRoom}
         onManageRoom={handleManageRoom}
         onLeavePrivateRoom={(room) => void handleLeavePrivateRoom(room)}
         onAcceptInvite={(roomId, inviteId) => void handleAcceptInvite(roomId, inviteId)}
         onDeclineInvite={(roomId, inviteId) => void handleDeclineInvite(roomId, inviteId)}
         onRoomCreated={handleRoomCreated}
+        onClearRoomUnread={(roomId) => {
+          setRoomUnread((prev) => {
+            if (!(roomId in prev)) {
+              return prev;
+            }
+            const next = { ...prev };
+            delete next[roomId];
+            return next;
+          });
+        }}
+        onClearDmUnread={(userId) => {
+          setDmUnread((prev) => {
+            if (!(userId in prev)) {
+              return prev;
+            }
+            const next = { ...prev };
+            delete next[userId];
+            return next;
+          });
+        }}
+        onIncrementRoomUnread={(roomId) => {
+          setRoomUnread((prev) => ({ ...prev, [roomId]: (prev[roomId] ?? 0) + 1 }));
+        }}
+        onIncrementDmUnread={(userId) => {
+          setDmUnread((prev) => ({ ...prev, [userId]: (prev[userId] ?? 0) + 1 }));
+        }}
         onBackFromManageRoom={() => setTab("private-rooms")}
         onBackFromRoomChat={() => setTab("public-rooms")}
         onSignedOut={handleSignedOut}

@@ -14,18 +14,19 @@
 }
 
 :root {
-  --color-bg: #0f1117;
-  --color-surface: #1a1d27;
-  --color-border: #2d3148;
-  --color-text: #e2e4f0;
-  --color-muted: #8b8fa8;
-  --color-accent: #5b7cf6;
-  --color-ok: #4ade80;
-  --color-error: #f87171;
+  --color-bg: #fafaf7;
+  --color-surface: #ffffff;
+  --color-border: #c9c9c9;
+  --color-text: #1a1a1a;
+  --color-muted: #6b6b6b;
+  --color-accent: #b05a2c;
+  --color-ok: #3a7d3a;
+  --color-error: #b02a2a;
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
+  --font-serif: "Iowan Old Style", Georgia, "Times New Roman", serif;
   --radius: 0.375rem;
 }
 
@@ -210,8 +211,8 @@ body {
 
 .btn {
   background-color: var(--color-accent);
-  color: #fff;
-  border: none;
+  color: #fffdf9;
+  border: 1px solid var(--color-accent);
   border-radius: var(--radius);
   font-family: var(--font-sans);
   font-size: 0.9375rem;
@@ -236,7 +237,7 @@ body {
 }
 
 .btn--soft {
-  background-color: transparent;
+  background-color: var(--color-surface);
   color: var(--color-muted);
   border: 1px solid var(--color-border);
 }
@@ -248,8 +249,9 @@ body {
 }
 
 .btn--danger {
-  background-color: #7f1d1d;
-  color: #fecaca;
+  background-color: #b02a2a;
+  color: #fff4f4;
+  border-color: #b02a2a;
 }
 
 /* ── Link button ─────────────────────────────────────────────────────────── */
@@ -283,9 +285,10 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
-  height: 3.25rem;
+  min-height: 3.8rem;
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-surface);
+  gap: 1rem;
 }
 
 .app-topbar__brand,
@@ -304,41 +307,69 @@ body {
 .app-topbar__meta strong {
   font-size: 0.9rem;
   line-height: 1.1;
+  font-family: var(--font-serif);
+  font-weight: 600;
 }
 
 .app-topbar__meta span {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   color: var(--color-muted);
   line-height: 1.2;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .app-topbar__logo {
-  font-weight: 700;
-  font-size: 1rem;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.1rem;
   color: var(--color-text);
   letter-spacing: -0.01em;
 }
 
+.app-topbar__tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.app-topbar__tab {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  padding: 0.35rem 0.55rem;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.app-topbar__tab--active {
+  background: #f1efe9;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
 .app-topbar__notif {
   position: relative;
-  background: none;
-  border: 1px solid transparent;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   color: var(--color-text);
   cursor: pointer;
   padding: 0.35rem 0.6rem;
-  border-radius: var(--radius);
+  border-radius: 3px;
 }
 
 .app-topbar__notif:hover {
-  border-color: var(--color-border);
-  background-color: rgba(91, 124, 246, 0.08);
+  background-color: #f1efe9;
 }
 
 .notif-badge {
   position: absolute;
   top: -0.15rem;
   right: -0.05rem;
-  background: #e53e3e;
+  background: #c44;
   color: #fff;
   border-radius: 999px;
   font-size: 0.65rem;
@@ -362,7 +393,7 @@ body {
   margin: 2rem auto;
   width: 100%;
   padding: 0 1.5rem;
-  gap: 1.75rem;
+  gap: 1.35rem;
   align-items: start;
 }
 
@@ -377,10 +408,11 @@ body {
   gap: 1rem;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 1rem;
+  border-radius: 6px;
   padding: 1rem;
   position: sticky;
   top: 1rem;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02), 0 8px 24px -12px rgba(0, 0, 0, 0.08);
 }
 
 .app-shell__nav-section {
@@ -408,7 +440,7 @@ body {
   border: none;
   text-align: left;
   padding: 0.375rem 0.625rem;
-  border-radius: var(--radius);
+  border-radius: 3px;
   font-family: var(--font-sans);
   font-size: 0.875rem;
   color: var(--color-muted);
@@ -417,27 +449,86 @@ body {
 }
 
 .app-account__nav-item:hover {
-  background-color: var(--color-border);
+  background-color: #f1efe9;
   color: var(--color-text);
 }
 
 .app-account__nav-item--active {
-  background-color: var(--color-border);
+  background-color: #f1efe9;
   color: var(--color-text);
   font-weight: 500;
+}
+
+.app-shell__thread-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.app-shell__thread-row,
+.contacts-sidebar__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 0.3rem 0.2rem;
+  border-radius: 3px;
+  text-align: left;
+}
+
+.app-shell__thread-row {
+  cursor: pointer;
+}
+
+.app-shell__thread-row:hover,
+.contacts-sidebar__row:hover {
+  background-color: #f1efe9;
+}
+
+.app-shell__thread-row--active,
+.contacts-sidebar__row--active {
+  background-color: #f1efe9;
+}
+
+.app-shell__thread-name,
+.contacts-sidebar__name {
+  flex: 1;
+  font-size: 0.88rem;
+  color: var(--color-text);
+  min-width: 0;
+}
+
+.app-shell__thread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fffdf9;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  line-height: 1;
 }
 
 .app-account__content {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 1rem;
+  border-radius: 6px;
   padding: 1.5rem;
   min-height: 70dvh;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02), 0 8px 24px -12px rgba(0, 0, 0, 0.08);
 }
 
 .app-account__content h2 {
   font-size: 1.25rem;
-  font-weight: 600;
+  font-family: var(--font-serif);
+  font-weight: 500;
   color: var(--color-text);
   margin-bottom: 0.25rem;
 }
@@ -465,14 +556,16 @@ body {
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-accent);
+  color: var(--color-muted);
   margin-bottom: 0.45rem;
 }
 
 .app-shell__content-title {
-  font-size: 1.65rem;
+  font-family: var(--font-serif);
+  font-size: 1.9rem;
   line-height: 1.05;
   margin-bottom: 0.35rem;
+  font-weight: 500;
 }
 
 .app-shell__content-sub {
@@ -492,13 +585,16 @@ body {
 .app-shell__rail-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 1rem;
+  border-radius: 6px;
   padding: 1rem;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02), 0 8px 24px -12px rgba(0, 0, 0, 0.08);
 }
 
 .app-shell__rail-card h3 {
   font-size: 1rem;
+  font-family: var(--font-serif);
   margin-bottom: 0.35rem;
+  font-weight: 500;
 }
 
 .app-shell__rail-label {
@@ -602,7 +698,7 @@ body {
 }
 
 .sessions-table__row--current .sessions-table__cell {
-  background-color: rgba(91, 124, 246, 0.04);
+  background-color: rgba(176, 90, 44, 0.05);
 }
 
 .sessions-table__device {
@@ -637,8 +733,8 @@ body {
   font-family: var(--font-mono);
   letter-spacing: 0.03em;
   color: var(--color-ok);
-  background-color: rgba(74, 222, 128, 0.12);
-  border: 1px solid rgba(74, 222, 128, 0.3);
+  background-color: rgba(58, 125, 58, 0.12);
+  border: 1px solid rgba(58, 125, 58, 0.25);
   border-radius: 0.25rem;
   vertical-align: middle;
   text-transform: lowercase;
@@ -666,9 +762,9 @@ body {
  *   offline → gray    #6b7280
  */
 :root {
-  --presence-online: #4ade80;
-  --presence-afk: #f59e0b;
-  --presence-offline: #6b7280;
+  --presence-online: #3a7d3a;
+  --presence-afk: #c89030;
+  --presence-offline: #b0b0b0;
 }
 
 /* PresenceDot — compact colored indicator, no text (D-10) */
@@ -873,7 +969,7 @@ body {
 }
 
 .presence-demo__panel {
-  background-color: var(--color-bg);
+  background-color: #fcfbf7;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 1rem;
@@ -935,7 +1031,7 @@ body {
 }
 
 .rooms-list__item:hover {
-  background-color: rgba(91, 124, 246, 0.04);
+  background-color: #f1efe9;
 }
 
 .rooms-list__info {
@@ -1130,7 +1226,7 @@ body {
 }
 
 .members-table__role--owner {
-  background-color: rgba(91, 124, 246, 0.15);
+  background-color: rgba(176, 90, 44, 0.12);
   color: var(--color-accent);
 }
 
@@ -1145,8 +1241,8 @@ body {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
-  background-color: rgba(248, 113, 113, 0.08);
-  border: 1px solid rgba(248, 113, 113, 0.25);
+  background-color: #fbf0f0;
+  border: 1px solid #e0b3b3;
   border-radius: var(--radius);
   margin-top: 1rem;
 }
@@ -1250,6 +1346,11 @@ body {
   .app-topbar__actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .app-topbar__tabs {
+    width: 100%;
+    order: 3;
   }
 
   .app-account,

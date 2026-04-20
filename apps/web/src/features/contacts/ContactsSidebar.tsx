@@ -16,6 +16,7 @@ export interface ContactRow {
   username: string;
   presenceStatus?: PresenceStatus;
   dmEligible: boolean;
+  unreadCount?: number;
 }
 
 interface ContactsSidebarProps {
@@ -25,6 +26,7 @@ interface ContactsSidebarProps {
   onOpenDm?: (userId: string) => void;
   socket?: Socket | null;
   onPresenceUpdate?: (presenceMap: Record<string, { status: string }>) => void;
+  activePartnerId?: string | null;
 }
 
 export function ContactsSidebar({
@@ -34,6 +36,7 @@ export function ContactsSidebar({
   onOpenDm,
   socket = null,
   onPresenceUpdate,
+  activePartnerId = null,
 }: ContactsSidebarProps) {
   useEffect(() => {
     if (!socket || contacts.length === 0) {
@@ -70,10 +73,15 @@ export function ContactsSidebar({
       {contacts.map((c) => (
         <div
           key={c.userId}
-          style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.2rem 0" }}
+          className={`contacts-sidebar__row${activePartnerId === c.userId ? " contacts-sidebar__row--active" : ""}`}
         >
           <PresenceDot status={c.presenceStatus ?? "offline"} />
-          <span style={{ flex: 1, fontSize: "0.9rem" }}>{c.username}</span>
+          <span className="contacts-sidebar__name">{c.username}</span>
+          {c.unreadCount && c.unreadCount > 0 && (
+            <span className="app-shell__thread-badge" aria-label={`${c.unreadCount} unread messages`}>
+              {c.unreadCount > 9 ? "9+" : c.unreadCount}
+            </span>
+          )}
           {c.userId !== currentUserId && (
             <button
               type="button"

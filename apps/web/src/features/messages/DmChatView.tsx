@@ -109,6 +109,7 @@ interface DmChatViewProps {
    * an extra POST to initiateDm. DmChatView will call initiateDm itself if null.
    */
   conversationId?: string | null;
+  onConversationReady?: (conversationId: string) => void;
 }
 
 export function DmChatView({
@@ -116,6 +117,7 @@ export function DmChatView({
   partnerUsername,
   currentUserId,
   conversationId: initialConversationId = null,
+  onConversationReady,
 }: DmChatViewProps) {
   const [conversationId, setConversationId] = useState<string | null>(
     initialConversationId,
@@ -223,6 +225,12 @@ export function DmChatView({
     setHasNewMessages(false);
     void loadHistory();
   }, [conversationId, loadHistory]);
+
+  useEffect(() => {
+    if (conversationId) {
+      onConversationReady?.(conversationId);
+    }
+  }, [conversationId, onConversationReady]);
 
   const scheduleReconnectRefetch = useCallback(() => {
     if (!conversationId) {
