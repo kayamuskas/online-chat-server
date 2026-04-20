@@ -24,6 +24,7 @@ import {
   listRoomBans,
   unbanRoomUser,
   leaveRoom,
+  deleteRoom,
   type RoomCatalogRow,
   type RoomBan,
 } from "../../lib/api";
@@ -62,6 +63,11 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
   // Leave state
   const [leaveError, setLeaveError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+
+  // Delete room state (owner only)
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deletingRoom, setDeletingRoom] = useState(false);
+  const [deleteRoomError, setDeleteRoomError] = useState<string | null>(null);
 
   // Phase 5: Add friend from member row (D-05)
   const [addFriendTarget, setAddFriendTarget] = useState<string | null>(null);
@@ -181,6 +187,19 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
       setLeaveError(err instanceof Error ? err.message : "Failed to leave room");
     } finally {
       setLeaving(false);
+    }
+  }
+
+  async function handleDeleteRoom() {
+    setDeletingRoom(true);
+    setDeleteRoomError(null);
+    try {
+      await deleteRoom(room.id);
+      // Navigation happens via room-deleted WS event or onBack callback
+      onBack?.();
+    } catch (err) {
+      setDeleteRoomError(err instanceof Error ? err.message : "Deletion failed. Please try again.");
+      setDeletingRoom(false);
     }
   }
 
@@ -333,12 +352,45 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
         </div>
 
         {isOwner ? (
-          <div className="owner-leave-warning">
-            <span className="owner-leave-warning__icon" aria-hidden="true">&#9888;</span>
-            <p className="owner-leave-warning__text">
-              <strong>You cannot leave this room</strong> — you are the owner.
-              To remove yourself, delete the room instead.
+          <div className="danger-zone">
+            <div className="danger-zone__title">Danger Zone</div>
+            <p className="danger-zone__description">
+              Permanently delete this room, all its messages and attachments. This action cannot be undone.
             </p>
+            {!confirmingDelete ? (
+              <button
+                type="button"
+                className="btn btn--danger btn--xs"
+                onClick={() => setConfirmingDelete(true)}
+              >
+                Delete Room
+              </button>
+            ) : (
+              <div className="danger-zone__confirm">
+                <p className="danger-zone__confirm-text">
+                  This will permanently delete <strong>{room.name}</strong>, all its messages and attachments. This cannot be undone.
+                </p>
+                <div className="danger-zone__confirm-actions">
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    onClick={() => void handleDeleteRoom()}
+                    disabled={deletingRoom}
+                  >
+                    {deletingRoom ? "Deleting\u2026" : "Confirm Delete"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--soft"
+                    onClick={() => setConfirmingDelete(false)}
+                    disabled={deletingRoom}
+                  >
+                    Keep Room
+                  </button>
+                </div>
+                {deleteRoomError && <p className="error-msg">{deleteRoomError}</p>}
+              </div>
+            )}
           </div>
         ) : (
           <div className="manage-room__danger-card">
