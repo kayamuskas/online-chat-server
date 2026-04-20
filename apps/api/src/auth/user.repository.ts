@@ -57,6 +57,12 @@ export class UserRepository {
     return result.rows[0] ?? null;
   }
 
+  /** Delete a user by ID. FK ON DELETE SET NULL on messages.author_id and attachments.uploader_id
+   *  preserves DM message history (D-13). FK ON DELETE CASCADE handles sessions, password_reset_tokens. */
+  async deleteById(userId: string): Promise<void> {
+    await this.db.query(`DELETE FROM users WHERE id = $1`, [userId]);
+  }
+
   /**
    * Persist a new user row. Returns the created user.
    * Uniqueness constraints are enforced at the database level — callers

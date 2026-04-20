@@ -123,6 +123,11 @@ export class SessionRepository {
     }
   }
 
+  /** Delete ALL sessions for a user (used by AUTH-08 account deletion cascade — D-14). */
+  async deleteAllByUserId(userId: string): Promise<void> {
+    await this.db.query(`DELETE FROM sessions WHERE user_id = $1`, [userId]);
+  }
+
   /**
    * Delete all session rows for a user except the one identified by currentToken.
    *
