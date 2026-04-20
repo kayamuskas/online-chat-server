@@ -155,7 +155,7 @@ Plans: 5 plans
 
 - [x] `06.1-01-PLAN.md` — CORS fix on both gateways + install socket.io-client@4.8.3 (Wave 0 blocker). *(complete 2026-04-19)*
 - [x] `06.1-02-PLAN.md` — socket.ts singleton + SocketProvider + useSocket hook + App.tsx wiring. *(complete 2026-04-19)*
-- [x] `06.1-03-PLAN.md` — MessageTimeline smart autoscroll + ↓ новые сообщения indicator (D-05, MSG-07). *(complete 2026-04-19)*
+- [x] `06.1-03-PLAN.md` — MessageTimeline smart autoscroll + new messages indicator (D-05, MSG-07). *(complete 2026-04-19)*
 - [x] `06.1-04-PLAN.md` — RoomChatView + DmChatView WS subscriptions, reconnect recovery (D-04, D-06). *(complete 2026-04-19)*
 - [x] `06.1-05-PLAN.md` — ContactsSidebar getPresence polling + App.tsx presence state wiring (D-03). *(complete 2026-04-19)*
 
@@ -191,9 +191,14 @@ Success criteria:
 
 Goal: Complete admin tooling and destructive flows with correct cascades.
 
-Execution note: temporarily deferred. Keep the phase number and requirement ownership unchanged.
-
 Requirements: `ROOM-07`, `ROOM-08`, `ROOM-09`, `MSG-05`, `AUTH-08`
+
+Plans: 4 plans
+
+- [ ] `08-01-PLAN.md` — FK migration (SET NULL) and ROOM-07 admin-cannot-ban-admin fix.
+- [ ] `08-02-PLAN.md` — Message deletion (MSG-05): backend, WS broadcast, and UI delete button.
+- [ ] `08-03-PLAN.md` — Room deletion (ROOM-09): cascade with WS-first broadcast, FS cleanup, and danger zone UI.
+- [ ] `08-04-PLAN.md` — Account deletion (AUTH-08): full cascade and danger zone UI with password confirm.
 
 Success criteria:
 1. Owner/admin permissions match the written rules exactly.
