@@ -64,6 +64,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chat}
       # Path where MockMailService writes reset-link artifacts (QA-inspectable)
       MAIL_OUTBOX_DIR: /app/mail-outbox
+      # Path where uploaded files are stored (Phase 7, D-48, D-55)
+      UPLOADS_DIR: /app/uploads
       # Base URL embedded in reset links (override for non-localhost deployments)
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:4173}
       # Only this frontend origin may make credentialed browser requests.
@@ -84,6 +86,7 @@ services:
       # The rest of the API container filesystem remains read-only.
       # QA can inspect generated reset-link artifacts at .volumes/mail-outbox/ on the host.
       - ../../.volumes/mail-outbox:/app/mail-outbox
+      - ../../.volumes/uploads:/app/uploads
 
   worker:
     build:
