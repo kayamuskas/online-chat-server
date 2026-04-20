@@ -55,6 +55,8 @@ interface MessageViewRow {
   reply_author_id: string | null;
   reply_author_username: string | null;
   reply_content_preview: string | null;
+  // Phase 7: attachment LEFT JOIN result
+  attachments: unknown; // json_agg result or '[]'
 }
 
 function rowToMessageView(row: MessageViewRow): MessageView {
@@ -78,6 +80,11 @@ function rowToMessageView(row: MessageViewRow): MessageView {
     edited_at: row.edited_at,
     conversation_watermark: Number(row.conversation_watermark),
     created_at: row.created_at,
+    attachments: Array.isArray(row.attachments)
+      ? row.attachments
+      : typeof row.attachments === 'string'
+        ? JSON.parse(row.attachments)
+        : [],
   };
 }
 
@@ -235,11 +242,25 @@ export class MessagesRepository {
          m.created_at,
          rm.author_id        AS reply_author_id,
          ru.username         AS reply_author_username,
-         LEFT(rm.content, 200) AS reply_content_preview
+         LEFT(rm.content, 200) AS reply_content_preview,
+         COALESCE(att.attachments, '[]'::json) AS attachments
        FROM messages m
        INNER JOIN users a ON a.id = m.author_id
        LEFT  JOIN messages rm ON rm.id = m.reply_to_id
        LEFT  JOIN users ru ON ru.id = rm.author_id
+       LEFT JOIN (
+         SELECT a2.message_id,
+                json_agg(json_build_object(
+                  'id', a2.id,
+                  'original_filename', a2.original_filename,
+                  'mime_type', a2.mime_type,
+                  'file_size', a2.file_size,
+                  'comment', a2.comment
+                ) ORDER BY a2.created_at) AS attachments
+         FROM attachments a2
+         WHERE a2.message_id IS NOT NULL
+         GROUP BY a2.message_id
+       ) att ON att.message_id = m.id
        WHERE m.conversation_type = $1
          AND m.conversation_id   = $2
          ${watermarkClause}
@@ -309,11 +330,25 @@ export class MessagesRepository {
          m.created_at,
          rm.author_id        AS reply_author_id,
          ru.username         AS reply_author_username,
-         LEFT(rm.content, 200) AS reply_content_preview
+         LEFT(rm.content, 200) AS reply_content_preview,
+         COALESCE(att.attachments, '[]'::json) AS attachments
        FROM messages m
        INNER JOIN users a ON a.id = m.author_id
        LEFT  JOIN messages rm ON rm.id = m.reply_to_id
        LEFT  JOIN users ru ON ru.id = rm.author_id
+       LEFT JOIN (
+         SELECT a2.message_id,
+                json_agg(json_build_object(
+                  'id', a2.id,
+                  'original_filename', a2.original_filename,
+                  'mime_type', a2.mime_type,
+                  'file_size', a2.file_size,
+                  'comment', a2.comment
+                ) ORDER BY a2.created_at) AS attachments
+         FROM attachments a2
+         WHERE a2.message_id IS NOT NULL
+         GROUP BY a2.message_id
+       ) att ON att.message_id = m.id
        WHERE m.id = $1
        LIMIT 1`,
       [id],
