@@ -1,7 +1,6 @@
 # Phase 1 Compose topology
 # Five-service stack: postgres, redis, api, worker, web
 # Health-gated startup: api, worker, and web depend on healthy infrastructure
-# Offline mode: pull_policy: never on app services; base images must be pre-pulled
 
 name: chat
 
@@ -11,7 +10,6 @@ services:
 
   postgres:
     image: postgres:18
-    # pull_policy: never # TBD
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-chat}
@@ -28,7 +26,6 @@ services:
 
   redis:
     image: redis:8
-    # pull_policy: never # TBD
     restart: unless-stopped
     volumes:
       - ../../.volumes/redis:/data
@@ -45,7 +42,6 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/api.Dockerfile
-    pull_policy: never
     restart: unless-stopped
     depends_on:
       postgres:
@@ -92,7 +88,6 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/worker.Dockerfile
-    pull_policy: never
     restart: unless-stopped
     depends_on:
       postgres:
@@ -122,7 +117,6 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/web.Dockerfile
-    pull_policy: never
     restart: unless-stopped
     depends_on:
       api:

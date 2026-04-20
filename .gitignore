@@ -6,7 +6,7 @@
 .secret*
 .claude/settings.local.json
 
-# Dependencies (installed node_modules are excluded, but the offline vendor store is committed)
+# Dependencies
 node_modules/
 **/node_modules/
 
@@ -35,12 +35,8 @@ npm-debug.log*
 # Product requirements and design prototype (reference material only)
 requirements/
 
-# vendor/pnpm-store/ is intentionally NOT ignored — it is the repo-local offline dependency cache
-
 # Local Docker volume data
 .volumes/
 
-# Vendor cache: commit the offline pnpm store, ignore any other ad-hoc vendor files
+# Vendor cache
 vendor/*
-!vendor/pnpm-store/
-!vendor/pnpm-store/**
