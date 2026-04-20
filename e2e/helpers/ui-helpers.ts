@@ -16,8 +16,8 @@ export async function signInViaUi(page: Page, user: TestUser): Promise<void> {
   await page.fill('#signin-email', user.email);
   await page.fill('#signin-password', user.password);
   await page.click('button[type="submit"]:has-text("Sign in")');
-  // After successful sign-in, the app shell should render (not the auth card)
-  await page.waitForSelector('.app-shell', { timeout: 10_000 });
+  // After successful sign-in, the app layout renders (not the auth card)
+  await page.waitForSelector('.app-layout', { timeout: 10_000 });
 }
 
 /**
@@ -28,23 +28,23 @@ export async function signInViaUi(page: Page, user: TestUser): Promise<void> {
 export async function openRoomChat(page: Page, room: TestRoom): Promise<void> {
   // Click "Public rooms" tab
   await page.click('button:has-text("Public rooms")');
-  await page.waitForSelector('.rooms-catalog', { timeout: 8_000 });
+  await page.waitForSelector('.rooms-view', { timeout: 8_000 });
 
   // Search for the room by name
-  const searchInput = page.locator('input[placeholder*="Search"]').first();
+  const searchInput = page.locator('input.field__input').first();
   if (await searchInput.isVisible()) {
     await searchInput.fill(room.name);
+    await page.waitForTimeout(400); // debounce
   }
 
-  // If user is already a member, the sidebar thread list should have the room
-  // Try clicking the room in the thread list first
+  // If user is already tracked, the sidebar thread list should have the room
   const threadLink = page.locator('.app-shell__thread-row', { hasText: room.name });
   if (await threadLink.isVisible({ timeout: 2_000 }).catch(() => false)) {
     await threadLink.click();
   } else {
-    // Click the "Join" button in the catalog (in case user is not a member yet)
-    const joinBtn = page.locator('.rooms-catalog__row', { hasText: room.name })
-      .locator('button', { hasText: /Join|Open|Chat/ });
+    // Click the "Join" button in the catalog
+    const joinBtn = page.locator('.rooms-list__item', { hasText: room.name })
+      .locator('button', { hasText: /Join/i });
     await joinBtn.click();
   }
 

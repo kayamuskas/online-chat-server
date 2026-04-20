@@ -2,13 +2,12 @@
  * ws-auth.spec.ts — UAT #1: Authenticated socket handshake.
  *
  * Verifies that after signing in via the browser UI (which sets the HttpOnly
- * chat_session cookie), the Socket.IO client connects successfully and the
- * server emits the `ready` event confirming authentication.
+ * chat_session cookie), the Socket.IO client connects successfully.
  *
  * This is the browser-level proof that:
  *   - The cookie-name fix (ws-auth.ts imports SESSION_COOKIE_NAME) works end-to-end.
  *   - The browser automatically includes the session cookie in the WS handshake.
- *   - The server accepts the socket and emits `ready`.
+ *   - The app shell renders and stays stable (no forced redirect back to auth).
  *
  * Phase 6.1 UAT item: "Authenticated socket handshake"
  */
@@ -18,59 +17,43 @@ import { createAndSignIn } from '../helpers/api-setup';
 import { signInViaUi } from '../helpers/ui-helpers';
 
 test.describe('UAT #1 — Authenticated socket handshake', () => {
-  test('browser receives ready event after sign-in (cookie sent automatically)', async ({ page }) => {
+  test('browser sends session cookie and app shell loads after sign-in', async ({ page }) => {
     const user = await createAndSignIn();
 
-    // Capture socket events via console messages or page evaluate
-    const readyEventPromise = page.waitForFunction(
-      () => (window as Window & { __wsReady?: boolean }).__wsReady === true,
-      { timeout: 10_000 },
-    );
+    // Track any socket-related console errors before sign-in
+    const socketErrors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') socketErrors.push(msg.text());
+    });
 
-    // Inject a listener BEFORE the app loads so we catch the ready event
-    await page.addInitScript(() => {
-      const orig = window.addEventListener.bind(window);
-      // Monkey-patch CustomEvent dispatched by SocketProvider
-      window.__wsReady = false;
-      orig('ws:ready', () => {
-        (window as Window & { __wsReady?: boolean }).__wsReady = true;
-      });
+    // Track Socket.IO handshake request
+    let wsHandshakeStatus = 0;
+    page.on('response', (response) => {
+      if (response.url().includes('/socket.io/') && response.url().includes('EIO=4')) {
+        wsHandshakeStatus = response.status();
+      }
     });
 
     await signInViaUi(page, user);
 
-    // The SocketProvider emits a 'ready' event from the server.
-    // We check that the socket connected (no disconnect error in console).
-    const consoleErrors: string[] = [];
-    page.on('console', (msg) => {
-      if (msg.type() === 'error' && msg.text().includes('socket')) {
-        consoleErrors.push(msg.text());
-      }
-    });
+    // Allow socket handshake to complete
+    await page.waitForTimeout(2_000);
 
-    // After sign-in, the SocketProvider connects and the app shell renders.
-    // We verify the socket is connected by checking that the shell is stable
-    // (no redirect back to auth) and no socket error is logged.
-    await page.waitForSelector('.app-shell', { timeout: 8_000 });
-    await page.waitForTimeout(2_000); // Allow socket handshake to complete
+    // App layout must be stable (not redirected back to auth)
+    await expect(page.locator('.app-layout')).toBeVisible();
+    await expect(page.locator('#signin-email')).not.toBeVisible();
 
-    // Verify socket state via page evaluate — SocketProvider stores connection state
-    const socketConnected = await page.evaluate(() => {
-      // The SocketProvider renders children unconditionally; if the socket was
-      // disconnected with auth failure, the app would fall back to the auth shell.
-      return document.querySelector('.app-shell') !== null;
-    });
+    // Socket.IO polling handshake must succeed (HTTP 200)
+    // A 401/403 here would indicate the cookie-name bug is back
+    expect(wsHandshakeStatus).toBe(200);
 
-    expect(socketConnected).toBe(true);
-    expect(consoleErrors).toHaveLength(0);
+    // No console errors
+    expect(socketErrors).toHaveLength(0);
   });
 
-  test('unauthenticated page visit shows auth shell (no socket connection)', async ({ page }) => {
+  test('unauthenticated page visit shows auth form (no app shell)', async ({ page }) => {
     await page.goto('/');
-    // Auth shell should be visible immediately for unauthenticated users
     await page.waitForSelector('#signin-email', { timeout: 8_000 });
-    // App shell should NOT be visible
-    const appShell = page.locator('.app-shell');
-    await expect(appShell).not.toBeVisible();
+    await expect(page.locator('.app-layout')).not.toBeVisible();
   });
 });
