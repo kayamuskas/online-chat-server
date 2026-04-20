@@ -68,6 +68,7 @@ Additional implementation hints already agreed for future planning:
 - **Identity of Rooms**: Room names must be unique across the entire system, including private rooms.
 - **Invite Policy**: Invitations can be sent only to already registered users.
 - **History Scale**: History may reach 100,000+ messages in old rooms and still must support progressive loading.
+- **E2E Testing**: Playwright is the mandatory browser automation framework for all E2E and UAT tests — Cypress, Selenium, and other browser automation tools are out of scope.
 
 ## Key Decisions
 

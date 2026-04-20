@@ -141,5 +141,11 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - Phase 7: Attachments and Durable Delivery
 - Phase 8: Moderation and Destructive Actions
 
+## Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260420-h12 | Add Playwright as mandatory E2E test framework to requirements and project docs | 2026-04-20 | — | [260420-h12-playwright-testing-requirement](./quick/260420-h12-playwright-testing-requirement/) |
+
 ---
-*State initialized: 2026-04-18 | Updated: 2026-04-19T19:30:55Z*
+*State initialized: 2026-04-18 | Updated: 2026-04-20 — Completed quick task 260420-h12: Playwright testing requirement docs*

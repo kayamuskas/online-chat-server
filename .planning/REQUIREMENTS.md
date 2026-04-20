@@ -78,6 +78,10 @@
 - [ ] **UI-02**: After entering a room, the room list compacts into accordion style.
 - [ ] **UI-03**: Administrative actions are available through menus and modal dialogs.
 
+### Testing
+
+- [ ] **TEST-01**: E2E browser test suite uses Playwright as the sole browser automation framework for all UAT and integration tests; Cypress, Selenium, and other browser automation tools are excluded.
+
 ### Operations and Quality
 
 - [ ] **OPS-01**: Fresh clone can be started by QA with `docker compose up`.
@@ -170,12 +174,13 @@
 | ARCH-02 | Phase 1 | Pending |
 | PERF-01 | Phase 10 | Pending |
 | PERF-02 | Phase 10 | Pending |
+| TEST-01 | Phase 6.1 | Complete |
 
 **Coverage:**
-- v1 requirements: 57 total
-- Mapped to phases: 57
+- v1 requirements: 58 total
+- Mapped to phases: 58
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-18*
-*Last updated: 2026-04-18 after initial definition*
+*Last updated: 2026-04-20 — TEST-01 added (Playwright E2E framework mandate)*
