@@ -1096,6 +1096,45 @@ body {
   border: 1px solid rgba(139, 143, 168, 0.25);
 }
 
+.msg-timeline__history-status {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0.25rem 0 0.75rem;
+}
+
+.msg-timeline__history-status span {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: #f6f2ea;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.7rem;
+  text-transform: uppercase;
+}
+
+.msg-timeline__new-messages {
+  position: sticky;
+  bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.msg-timeline__new-messages-btn {
+  pointer-events: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  background: rgba(255, 253, 249, 0.96);
+  color: var(--color-text);
+  box-shadow: 0 10px 30px rgba(83, 57, 34, 0.14);
+}
+
 /* ── Create room form ─────────────────────────────────────────────────────── */
 
 .create-room-form {

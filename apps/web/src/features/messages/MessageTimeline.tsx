@@ -84,16 +84,23 @@ export function MessageTimeline({
   const hasMoreBefore = range?.hasMoreBefore ?? false;
   const scrollRef = useRef<HTMLDivElement>(null);
   const previousMessageCountRef = useRef(messages.length);
+  const pendingOlderLoadRef = useRef(false);
+  const restoreScrollRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
 
   useEffect(() => {
+    const node = scrollRef.current;
     const nextCount = messages.length;
     const previousCount = previousMessageCountRef.current;
 
-    if (nextCount > previousCount) {
+    if (restoreScrollRef.current && node && nextCount > previousCount) {
+      const { scrollHeight, scrollTop } = restoreScrollRef.current;
+      node.scrollTop = node.scrollHeight - scrollHeight + scrollTop;
+      restoreScrollRef.current = null;
+    } else if (nextCount > previousCount) {
       if (!isScrolledUp) {
-        scrollRef.current?.scrollTo({
-          top: scrollRef.current.scrollHeight,
+        node?.scrollTo({
+          top: node.scrollHeight,
           behavior: "smooth",
         });
         onScrollToBottom?.();
@@ -102,6 +109,26 @@ export function MessageTimeline({
 
     previousMessageCountRef.current = nextCount;
   }, [isScrolledUp, messages.length, onScrollToBottom]);
+
+  useEffect(() => {
+    if (!loadingOlder) {
+      pendingOlderLoadRef.current = false;
+    }
+  }, [loadingOlder, messages.length]);
+
+  function requestOlderMessages() {
+    const node = scrollRef.current;
+    if (!node || !hasMoreBefore || loadingOlder || pendingOlderLoadRef.current) {
+      return;
+    }
+
+    restoreScrollRef.current = {
+      scrollHeight: node.scrollHeight,
+      scrollTop: node.scrollTop,
+    };
+    pendingOlderLoadRef.current = true;
+    onLoadOlder?.();
+  }
 
   function handleScroll() {
     const node = scrollRef.current;
@@ -116,6 +143,10 @@ export function MessageTimeline({
 
     if (!nextIsScrolledUp && hasNewMessages) {
       onScrollToBottom?.();
+    }
+
+    if (node.scrollTop < 120) {
+      requestOlderMessages();
     }
   }
 
@@ -143,17 +174,11 @@ export function MessageTimeline({
       onScroll={handleScroll}
       style={{ position: "relative", overflowY: "auto", height: "100%" }}
     >
-      {/* Load older messages affordance (MSG-08, D-29) */}
-      {hasMoreBefore && (
-        <div className="msg-timeline__load-older">
-          <button
-            type="button"
-            className="btn btn--soft btn--xs"
-            onClick={onLoadOlder}
-            disabled={loadingOlder}
-          >
-            {loadingOlder ? "Loading…" : "Load older messages"}
-          </button>
+      {(hasMoreBefore || loadingOlder) && (
+        <div className="msg-timeline__history-status" aria-live="polite">
+          <span>
+            {loadingOlder ? "Loading earlier messages…" : "Scroll up for earlier messages"}
+          </span>
         </div>
       )}
 
@@ -265,30 +290,13 @@ export function MessageTimeline({
       </ul>
 
       {isScrolledUp && hasNewMessages && (
-        <div
-          style={{
-            position: "sticky",
-            bottom: "1rem",
-            display: "flex",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
+        <div className="msg-timeline__new-messages">
           <button
             type="button"
             className="msg-timeline__new-messages-btn"
             onClick={handleScrollToBottom}
-            style={{
-              pointerEvents: "auto",
-              border: "1px solid rgba(255,255,255,0.18)",
-              borderRadius: "999px",
-              padding: "0.55rem 0.9rem",
-              background: "rgba(17,24,39,0.92)",
-              color: "#f9fafb",
-              boxShadow: "0 10px 30px rgba(15,23,42,0.28)",
-            }}
           >
-            &#8595; новые сообщения
+            &#8595; New messages
           </button>
         </div>
       )}
