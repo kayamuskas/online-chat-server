@@ -1458,6 +1458,79 @@ body {
   border-radius: var(--radius);
 }
 
+.account-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.account-overview__hero,
+.account-overview__snapshot {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #fcfbf7;
+  padding: 1rem;
+}
+
+.account-overview__hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.account-overview__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.account-overview__card {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #fffdfa;
+  padding: 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-overview__card:hover {
+  background: #f7f3eb;
+}
+
+.account-overview__label,
+.account-overview__kicker {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+}
+
+.account-overview__card strong {
+  display: block;
+  margin: 0.35rem 0 0.45rem;
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.account-overview__card p {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.account-overview__snapshot-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  margin-top: 0.5rem;
+}
+
 /* cannot-leave notice for non-owner rooms */
 .rooms-notice {
   font-size: 0.875rem;
@@ -1534,5 +1607,14 @@ body {
   .manage-room__footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .account-overview__grid,
+  .account-overview__snapshot-row {
+    grid-template-columns: 1fr;
+  }
+
+  .account-overview__hero {
+    flex-direction: column;
   }
 }

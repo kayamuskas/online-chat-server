@@ -209,6 +209,15 @@ Execution note: this is the current execution target while Phase 7 and Phase 8 a
 
 Requirements: `MSG-07`, `NOTF-01`, `NOTF-02`, `UI-01`, `UI-02`, `UI-03`
 
+Plans: 6 plans
+
+- [x] `09-01-PLAN.md` — Product shell and three-column layout contract. *(complete 2026-04-20)*
+- [x] `09-02-PLAN.md` — Visual baseline adoption from `requirements/desing_v1/`. *(complete 2026-04-20)*
+- [x] `09-03-PLAN.md` — Unread indicators for known rooms and DM contacts. *(complete 2026-04-20)*
+- [x] `09-04-PLAN.md` — Infinite upward history loading with scroll-position preservation. *(complete 2026-04-20)*
+- [x] `09-05-PLAN.md` — Modal room-management UX with tabs aligned to the design baseline. *(complete 2026-04-20)*
+- [x] `09-06-PLAN.md` — Account hub integration for password, sessions, presence, and current-browser sign-out. *(complete 2026-04-20)*
+
 Success criteria:
 1. Shipped UI follows the classic chat layout and not the prototype's implementation shortcuts.
 2. Infinite scroll and smart autoscroll behavior work in long histories.

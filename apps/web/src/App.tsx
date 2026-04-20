@@ -47,6 +47,7 @@ import { ContactsView } from "./features/contacts/ContactsView";
 import { AuthShell } from "./features/auth/AuthShell";
 import { PasswordSettingsView } from "./features/account/PasswordSettingsView";
 import { ActiveSessionsView } from "./features/account/ActiveSessionsView";
+import { AccountOverviewView } from "./features/account/AccountOverviewView";
 import { CompactPresenceList } from "./features/presence/CompactPresenceList";
 import { DetailedPresencePanel } from "./features/presence/DetailedPresencePanel";
 import { PublicRoomsView } from "./features/rooms/PublicRoomsView";
@@ -57,6 +58,7 @@ import { RoomChatView } from "./features/messages/RoomChatView";
 import { SocketProvider, useSocket } from "./features/socket/SocketProvider";
 
 type AppTab =
+  | "account"
   | "password"
   | "sessions"
   | "presence"
@@ -336,6 +338,9 @@ function AuthenticatedShell({
   } else if (tab === "sessions") {
     shellTitle = "Active sessions";
     shellSubtitle = "Inspect browsers, IPs, and revoke access cleanly";
+  } else if (tab === "account") {
+    shellTitle = "Account";
+    shellSubtitle = "Security, sessions, and presence controls in one place";
   } else if (tab === "password") {
     shellTitle = "Account settings";
     shellSubtitle = "Password and authentication controls";
@@ -426,6 +431,18 @@ function AuthenticatedShell({
 
     if (tab === "sessions") {
       return <ActiveSessionsView onSignedOut={onSignedOut} />;
+    }
+
+    if (tab === "account") {
+      return (
+        <AccountOverviewView
+          user={user}
+          onOpenPassword={() => onSelectTab("password")}
+          onOpenSessions={() => onSelectTab("sessions")}
+          onOpenPresence={() => onSelectTab("presence")}
+          onSignedOut={onSignedOut}
+        />
+      );
     }
 
     return (
@@ -538,6 +555,25 @@ function AuthenticatedShell({
       );
     }
 
+    if (tab === "account" || tab === "password" || tab === "sessions" || tab === "presence") {
+      return (
+        <>
+          <section className="app-shell__rail-card">
+            <p className="app-shell__rail-label">Account area</p>
+            <h3>{user.username}</h3>
+            <p className="app-shell__rail-copy">
+              Password changes, active-session review, presence verification, and
+              current-browser sign-out are grouped in the same shell flow.
+            </p>
+          </section>
+          <section className="app-shell__rail-card">
+            <p className="app-shell__rail-label">Current email</p>
+            <p className="app-shell__rail-copy">{user.email}</p>
+          </section>
+        </>
+      );
+    }
+
     return (
       <>
         <section className="app-shell__rail-card">
@@ -592,10 +628,10 @@ function AuthenticatedShell({
           </button>
           <button
             type="button"
-            className={`app-topbar__tab${tab === "sessions" ? " app-topbar__tab--active" : ""}`}
-            onClick={() => onSelectTab("sessions")}
+            className={`app-topbar__tab${tab === "account" || tab === "password" || tab === "sessions" || tab === "presence" ? " app-topbar__tab--active" : ""}`}
+            onClick={() => onSelectTab("account")}
           >
-            Sessions
+            Account
           </button>
         </nav>
         <div className="app-topbar__actions">
@@ -699,6 +735,13 @@ function AuthenticatedShell({
             <div className="app-account__nav-label">Account</div>
             <button
               type="button"
+              className={`app-account__nav-item${tab === "account" ? " app-account__nav-item--active" : ""}`}
+              onClick={() => onSelectTab("account")}
+            >
+              Overview
+            </button>
+            <button
+              type="button"
               className={`app-account__nav-item${tab === "password" ? " app-account__nav-item--active" : ""}`}
               onClick={() => onSelectTab("password")}
             >
@@ -753,7 +796,7 @@ function AuthenticatedShell({
 
 function App() {
   const [user, setUser] = useState<PublicUser | null>(null);
-  const [tab, setTab] = useState<AppTab>("public-rooms");
+  const [tab, setTab] = useState<AppTab>("account");
   const [checkingSession, setCheckingSession] = useState(isAccountRoute());
   const [managedRoom, setManagedRoom] = useState<RoomCatalogRow | null>(null);
   const [trackedRooms, setTrackedRooms] = useState<ShellRoomLink[]>([]);

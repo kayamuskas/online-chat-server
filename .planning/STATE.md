@@ -131,12 +131,13 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 ## Roadmap Evolution
 
 - Phase 6.1 inserted after Phase 6: WebSocket Real-Time Client (URGENT) — WS client deferred from Phase 6, discovered during UAT
-- Phase 6.1 executed inline with local summaries because the installed GSD toolchain exposed `init` but not the newer `query` API expected by the workflow wrapper.
+- Current local `gsd-sdk` exposes `state`, `init`, and other point commands, but still does not expose the newer `query` subcommand expected by some workflow wrappers. Always verify command availability before assuming either path.
 - Execution override on 2026-04-20: Phase 7 (Attachments and Durable Delivery) and Phase 8 (Moderation and Destructive Actions) are temporarily deferred. Phase 9 (Frontend Productization) executes next. Phase numbering stays unchanged for traceability.
+- Phase 9 execution on 2026-04-20 has already covered shell layout, design-baseline convergence, unread indicators, infinite history, modal room management, and account-hub integration. Planning artifacts must track these executed slices explicitly.
 
 ## Next Up
 
-- Phase 9: Frontend Productization
+- Phase 9: verification and phase-summary sync
 - Phase 7: Attachments and Durable Delivery
 - Phase 8: Moderation and Destructive Actions
 
