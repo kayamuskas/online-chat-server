@@ -24,7 +24,7 @@ import {
   type MessageHistoryRange,
   type ReplyPreview,
 } from "../../lib/api";
-import { MessageTimeline } from "./MessageTimeline";
+import { MessageTimeline, type MessageTimelineHandle } from "./MessageTimeline";
 import { MessageComposer } from "./MessageComposer";
 import { useSocket } from "../socket/SocketProvider";
 
@@ -119,6 +119,7 @@ export function RoomChatView({
   const [editSaving, setEditSaving] = useState(false);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timelineRef = useRef<MessageTimelineHandle>(null);
   const socket = useSocket();
 
   const loadHistory = useCallback(
@@ -272,6 +273,7 @@ export function RoomChatView({
     );
     setReplyTo(null);
     setHasNewMessages(false);
+    timelineRef.current?.scrollToBottom();
   }
 
   function handleReply(msg: MessageView) {
@@ -339,6 +341,7 @@ export function RoomChatView({
         )}
 
         <MessageTimeline
+          ref={timelineRef}
           messages={messages}
           range={range}
           currentUserId={currentUserId}

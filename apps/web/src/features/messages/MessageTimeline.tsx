@@ -13,7 +13,7 @@
  *   - No infinite scroll polish — Phase 9 will build on top of this contract
  */
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { MessageView, MessageHistoryRange } from "../../lib/api";
 import { attachmentDownloadUrl } from "../../lib/api";
 import { MessageEditor } from "./MessageEditor";
@@ -66,7 +66,11 @@ function formatTimestamp(iso: string): string {
     d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
-export function MessageTimeline({
+export interface MessageTimelineHandle {
+  scrollToBottom: () => void;
+}
+
+export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimelineProps>(function MessageTimeline({
   messages,
   range,
   currentUserId,
@@ -80,7 +84,7 @@ export function MessageTimeline({
   loadingOlder = false,
   hasNewMessages = false,
   onScrollToBottom,
-}: MessageTimelineProps) {
+}: MessageTimelineProps, ref) {
   const hasMoreBefore = range?.hasMoreBefore ?? false;
   const scrollRef = useRef<HTMLDivElement>(null);
   const previousMessageCountRef = useRef(messages.length);
@@ -178,6 +182,8 @@ export function MessageTimeline({
     onScrollToBottom?.();
   }
 
+  useImperativeHandle(ref, () => ({ scrollToBottom: handleScrollToBottom }));
+
   return (
     <div
       ref={scrollRef}
@@ -190,9 +196,17 @@ export function MessageTimeline({
     >
       {(hasMoreBefore || loadingOlder) && (
         <div className="msg-timeline__history-status" aria-live="polite">
-          <span>
-            {loadingOlder ? "Loading earlier messages…" : "Scroll up for earlier messages"}
-          </span>
+          {loadingOlder ? (
+            <span>Loading earlier messages…</span>
+          ) : (
+            <button
+              type="button"
+              className="msg-timeline__history-status__btn"
+              onClick={requestOlderMessages}
+            >
+              Scroll up for earlier messages
+            </button>
+          )}
         </div>
       )}
 
@@ -316,4 +330,4 @@ export function MessageTimeline({
       )}
     </div>
   );
-}
+});

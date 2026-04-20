@@ -30,7 +30,7 @@ import {
   type ReplyPreview,
 } from "../../lib/api";
 // attachmentDownloadUrl is rendered via MessageTimeline (shared component)
-import { MessageTimeline } from "./MessageTimeline";
+import { MessageTimeline, type MessageTimelineHandle } from "./MessageTimeline";
 import { MessageComposer } from "./MessageComposer";
 import { useSocket } from "../socket/SocketProvider";
 
@@ -140,6 +140,7 @@ export function DmChatView({
   const [editSaving, setEditSaving] = useState(false);
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timelineRef = useRef<MessageTimelineHandle>(null);
   const socket = useSocket();
 
   // ── Step 1: open / retrieve the dm_conversations row ──────────────────────
@@ -358,6 +359,7 @@ export function DmChatView({
     );
     setReplyTo(null);
     setHasNewMessages(false);
+    timelineRef.current?.scrollToBottom();
   }
 
   function handleReply(msg: MessageView) {
@@ -471,6 +473,7 @@ export function DmChatView({
         )}
 
         <MessageTimeline
+          ref={timelineRef}
           messages={messages}
           range={range}
           currentUserId={currentUserId}
