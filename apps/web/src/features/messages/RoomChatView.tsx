@@ -19,6 +19,7 @@ import {
   getRoomHistory,
   sendRoomMessage,
   editRoomMessage,
+  attachmentDownloadUrl,
   type MessageView,
   type MessageHistoryRange,
   type ReplyPreview,
@@ -52,6 +53,15 @@ function mapWsMessage(raw: any): MessageView {
     conversationWatermark: Number(
       msg.conversation_watermark ?? msg.conversationWatermark,
     ),
+    attachments: Array.isArray(msg.attachments)
+      ? msg.attachments.map((a: any) => ({
+          id: a.id,
+          originalFilename: a.original_filename ?? a.originalFilename,
+          mimeType: a.mime_type ?? a.mimeType,
+          fileSize: Number(a.file_size ?? a.fileSize),
+          comment: a.comment ?? null,
+        }))
+      : [],
   };
 }
 
@@ -148,7 +158,13 @@ export function RoomChatView({
 
     reconnectTimerRef.current = window.setTimeout(async () => {
       try {
-        const result = await getRoomHistory(roomId);
+        // Use after_watermark for efficient catch-up (D-54)
+        const lastWatermark = messages.length > 0
+          ? messages[messages.length - 1].conversationWatermark
+          : undefined;
+        const result = lastWatermark !== undefined
+          ? await getRoomHistory(roomId, { afterWatermark: lastWatermark })
+          : await getRoomHistory(roomId);
         setRange(result.range);
         setMessages((prev) => {
           const merged = mergeMessages(prev, result.messages);
@@ -161,7 +177,7 @@ export function RoomChatView({
         // silent reconnect recovery per phase plan
       }
     }, 500);
-  }, [roomId]);
+  }, [roomId, messages]);
 
   useEffect(() => {
     if (!socket) {
@@ -247,10 +263,11 @@ export function RoomChatView({
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  async function handleSend(content: string, replyToId: string | null) {
+  async function handleSend(content: string, replyToId: string | null, attachmentIds: string[]) {
     const result = await sendRoomMessage(roomId, {
       content,
       ...(replyToId ? { replyToId } : {}),
+      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     });
     setMessages((prev) => mergeMessages(prev, [result.message]));
     setRange((prev) =>

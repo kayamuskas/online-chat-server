@@ -29,6 +29,7 @@ import {
   type MessageHistoryRange,
   type ReplyPreview,
 } from "../../lib/api";
+// attachmentDownloadUrl is rendered via MessageTimeline (shared component)
 import { MessageTimeline } from "./MessageTimeline";
 import { MessageComposer } from "./MessageComposer";
 import { useSocket } from "../socket/SocketProvider";
@@ -58,6 +59,15 @@ function mapWsMessage(raw: any): MessageView {
     conversationWatermark: Number(
       msg.conversation_watermark ?? msg.conversationWatermark,
     ),
+    attachments: Array.isArray(msg.attachments)
+      ? msg.attachments.map((a: any) => ({
+          id: a.id,
+          originalFilename: a.original_filename ?? a.originalFilename,
+          mimeType: a.mime_type ?? a.mimeType,
+          fileSize: Number(a.file_size ?? a.fileSize),
+          comment: a.comment ?? null,
+        }))
+      : [],
   };
 }
 
@@ -225,7 +235,13 @@ export function DmChatView({
 
     reconnectTimerRef.current = window.setTimeout(async () => {
       try {
-        const result = await getDmHistory(conversationId);
+        // Use after_watermark for efficient catch-up (D-54)
+        const lastWatermark = messages.length > 0
+          ? messages[messages.length - 1].conversationWatermark
+          : undefined;
+        const result = lastWatermark !== undefined
+          ? await getDmHistory(conversationId, { afterWatermark: lastWatermark })
+          : await getDmHistory(conversationId);
         setRange(result.range);
         setMessages((prev) => {
           const merged = mergeMessages(prev, result.messages);
@@ -238,7 +254,7 @@ export function DmChatView({
         // silent reconnect recovery per phase plan
       }
     }, 500);
-  }, [conversationId]);
+  }, [conversationId, messages]);
 
   useEffect(() => {
     if (!socket || !conversationId) {
@@ -324,11 +340,12 @@ export function DmChatView({
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  async function handleSend(content: string, replyToId: string | null) {
+  async function handleSend(content: string, replyToId: string | null, attachmentIds: string[]) {
     if (!conversationId) return;
     const result = await sendDmMessage(conversationId, {
       content,
       ...(replyToId ? { replyToId } : {}),
+      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     });
     setMessages((prev) => mergeMessages(prev, [result.message]));
     setRange((prev) =>
