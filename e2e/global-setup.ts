@@ -29,6 +29,18 @@ export interface E2EFixtures {
   dm: { id: string };
 }
 
+/**
+ * Playwright saves cookies with secure:true even when the server didn't set the Secure
+ * flag, due to CDP/Chrome internals. Strip it so cookies are sent over plain HTTP in tests.
+ */
+function stripSecureFlag(path: string): void {
+  const state = JSON.parse(fs.readFileSync(path, 'utf-8')) as {
+    cookies: Array<Record<string, unknown>>;
+  };
+  state.cookies = state.cookies.map((c) => ({ ...c, secure: false }));
+  fs.writeFileSync(path, JSON.stringify(state, null, 2));
+}
+
 export default async function globalSetup() {
   console.log('\n[E2E global-setup] Creating shared test fixtures…');
 
@@ -55,12 +67,14 @@ export default async function globalSetup() {
   await signInViaUi(pageAlice, alice);
   await ctxAlice.storageState({ path: '.alice-session.json' });
   await ctxAlice.close();
+  stripSecureFlag('.alice-session.json');
 
   const ctxBob = await browser.newContext({ baseURL: 'http://localhost:4173' });
   const pageBob = await ctxBob.newPage();
   await signInViaUi(pageBob, bob);
   await ctxBob.storageState({ path: '.bob-session.json' });
   await ctxBob.close();
+  stripSecureFlag('.bob-session.json');
 
   await browser.close();
 

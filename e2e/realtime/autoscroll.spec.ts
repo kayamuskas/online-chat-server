@@ -26,14 +26,10 @@ test.describe('UAT #7 — Smart autoscroll and new-message pill', () => {
       }
       await waitForMessage(pageBob, 'Msg 20', { timeout: 10_000 });
 
-      // Bob scrolls up — set scrollTop to a position clearly above the bottom
-      // (scrollHeight - clientHeight - 200) so the isScrolledUp threshold (>100) is met
+      // Bob scrolls up via mouse wheel (real browser event → triggers React onScroll)
       const timeline = pageBob.locator('.msg-timeline');
-      await timeline.evaluate((el) => {
-        const target = Math.max(0, el.scrollHeight - el.clientHeight - 200);
-        el.scrollTop = target;
-        el.dispatchEvent(new Event('scroll'));
-      });
+      await timeline.hover();
+      await pageBob.mouse.wheel(0, -5000);
       await pageBob.waitForTimeout(400);
 
       // Alice sends new message while Bob is scrolled up
