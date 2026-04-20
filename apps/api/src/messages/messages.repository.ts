@@ -303,6 +303,16 @@ export class MessagesRepository {
     return { messages: views, range };
   }
 
+  // ── Write: delete message ─────────────────────────────────────────────────
+
+  /**
+   * Hard-delete a single message by ID (D-01).
+   * Attachment records cascade via ON DELETE CASCADE on attachments.message_id.
+   */
+  async deleteMessage(messageId: string): Promise<void> {
+    await this.db.query(`DELETE FROM messages WHERE id = $1`, [messageId]);
+  }
+
   // ── Read: single enriched MessageView ────────────────────────────────────
 
   /**

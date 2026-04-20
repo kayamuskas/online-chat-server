@@ -33,6 +33,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -300,5 +301,44 @@ export class MessagesController {
     // Fanout via WebSocket (D-34)
     await this.messagesGateway.broadcastMessageEdited(message);
     return { message };
+  }
+
+  // ── Room delete ──────────────────────────────────────────────────────────
+
+  /**
+   * DELETE /api/v1/messages/rooms/:roomId/messages/:messageId
+   *
+   * Author or room admin/owner can delete.
+   * Permission check: D-02 — author OR room admin/owner for room messages.
+   * Returns 204 No Content on success (T-08-05: no body to leak content).
+   */
+  @Delete('rooms/:roomId/messages/:messageId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteRoomMessage(
+    @Param('roomId') roomId: string,
+    @Param('messageId') messageId: string,
+    @CurrentUser() ctx: AuthContext,
+  ): Promise<void> {
+    const result = await this.messagesService.deleteMessage(messageId, ctx.user.id);
+    await this.messagesGateway.broadcastMessageDeleted(messageId, result.conversation_type, result.conversation_id);
+  }
+
+  // ── DM delete ────────────────────────────────────────────────────────────
+
+  /**
+   * DELETE /api/v1/messages/dm/:conversationId/messages/:messageId
+   *
+   * Only the author can delete their DM message (no admin concept in DMs — D-02).
+   * Returns 204 No Content on success.
+   */
+  @Delete('dm/:conversationId/messages/:messageId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteDmMessage(
+    @Param('conversationId') conversationId: string,
+    @Param('messageId') messageId: string,
+    @CurrentUser() ctx: AuthContext,
+  ): Promise<void> {
+    const result = await this.messagesService.deleteMessage(messageId, ctx.user.id);
+    await this.messagesGateway.broadcastMessageDeleted(messageId, result.conversation_type, result.conversation_id);
   }
 }
