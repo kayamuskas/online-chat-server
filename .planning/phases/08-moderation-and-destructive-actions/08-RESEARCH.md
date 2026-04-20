@@ -444,17 +444,19 @@ const [confirming, setConfirming] = useState(false);
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Нужна ли новая миграция 0008 для изменения FK?**
    - What we know: `messages.author_id` = RESTRICT, `attachments.uploader_id` = RESTRICT
    - What's unclear: Возможно, плановщик предпочтёт `UPDATE ... SET author_id = NULL` в сервисном слое вместо ALTER TABLE
    - Recommendation: Новая миграция `0008_destructive_actions_fk.sql` с `ALTER TABLE messages ALTER COLUMN author_id DROP NOT NULL` + `ON DELETE SET NULL` и аналогично для attachments. Это чище и соответствует паттерну `reply_to_id ON DELETE SET NULL`.
+   - **RESOLVED:** Используется подход с миграцией (08-01-PLAN.md Task 1). `AUTH_SCHEMA_BOOTSTRAP_SQL` обновляется + создаётся `0008_destructive_actions_fk.sql` как reference-файл.
 
 2. **Где разместить `broadcastRoomDeleted()` в gateway?**
    - What we know: MessagesGateway уже имеет `roomChannel()` helper и `server` ref
    - What's unclear: room:deleted семантически связан с rooms, не messages — но gateway namespace один
    - Recommendation: Добавить `broadcastRoomDeleted()` в MessagesGateway (не создавать новый) — уже используется для room-level message events.
+   - **RESOLVED:** Добавлено в MessagesGateway (08-03-PLAN.md Task 1). Один gateway-класс — консистентно с существующей архитектурой.
 
 ---
 
