@@ -244,4 +244,27 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       },
     });
   }
+
+  /**
+   * Broadcast 'message-deleted' to all clients in the conversation channel.
+   *
+   * Payload is minimal — just the message ID and conversation context (D-01, D-03).
+   * Event name uses kebab-case consistent with 'message-created' and 'message-edited' (Pitfall 5).
+   */
+  async broadcastMessageDeleted(
+    messageId: string,
+    conversationType: 'room' | 'dm',
+    conversationId: string,
+  ): Promise<void> {
+    const channel =
+      conversationType === 'room'
+        ? roomChannel(conversationId)
+        : dmChannel(conversationId);
+
+    this.server.to(channel).emit('message-deleted', {
+      conversation_type: conversationType,
+      conversation_id: conversationId,
+      message_id: messageId,
+    });
+  }
 }

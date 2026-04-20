@@ -2048,3 +2048,12 @@ body {
     flex-direction: column;
   }
 }
+
+/* -- Phase 8: Moderation and Destructive Actions ----------------------------- */
+
+/* Message delete action (danger color on hover) */
+.msg-bubble__action--delete:hover {
+  color: var(--color-error);
+  background: rgba(176, 42, 42, 0.06);
+  border-color: rgba(176, 42, 42, 0.3);
+}

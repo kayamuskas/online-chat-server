@@ -30,6 +30,7 @@ import {
 } from '@nestjs/common';
 import { MessagesRepository, type MessageHistoryResult } from './messages.repository.js';
 import { RoomsRepository } from '../rooms/rooms.repository.js';
+import { RoomsService } from '../rooms/rooms.service.js';
 import { ContactsRepository } from '../contacts/contacts.repository.js';
 import { AttachmentsRepository } from '../attachments/attachments.repository.js';
 import {
@@ -49,6 +50,7 @@ export class MessagesService {
   constructor(
     private readonly repo: MessagesRepository,
     private readonly roomsRepo: RoomsRepository,
+    private readonly roomsService: RoomsService,
     private readonly contactsRepo: ContactsRepository,
     private readonly attachmentsRepo: AttachmentsRepository,
   ) {}
@@ -233,5 +235,47 @@ export class MessagesService {
       throw new NotFoundException(`Message '${input.message_id}' disappeared during edit`);
     }
     return updated;
+  }
+
+  // ── Delete message ─────────────────────────────────────────────────────────
+
+  /**
+   * Delete a message (D-01 hard delete).
+   *
+   * Permission tiers (D-02):
+   *   - Room messages: author OR room admin/owner may delete.
+   *   - DM messages: only the author may delete.
+   *
+   * Returns conversation context for WS fanout.
+   */
+  async deleteMessage(
+    messageId: string,
+    callerId: string,
+  ): Promise<{ conversation_type: 'room' | 'dm'; conversation_id: string }> {
+    const message = await this.repo.findMessageById(messageId);
+    if (!message) {
+      throw new NotFoundException(`Message '${messageId}' not found`);
+    }
+
+    if (message.conversation_type === 'room') {
+      const isAuthor = message.author_id === callerId;
+      // RoomsService.isAdmin() checks room_admins table AND owner_id — includes owner
+      const isAdminOrOwner = await this.roomsService.isAdmin(message.conversation_id, callerId);
+      if (!isAuthor && !isAdminOrOwner) {
+        throw new ForbiddenException('Only the author or a room admin may delete this message');
+      }
+    } else {
+      // DM: only author (no admin concept — D-02)
+      if (message.author_id !== callerId) {
+        throw new ForbiddenException('Only the author may delete their DM message');
+      }
+    }
+
+    await this.repo.deleteMessage(messageId);
+
+    return {
+      conversation_type: message.conversation_type as 'room' | 'dm',
+      conversation_id: message.conversation_id,
+    };
   }
 }

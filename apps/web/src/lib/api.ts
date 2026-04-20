@@ -841,6 +841,24 @@ export async function editDmMessage(
   return { message: mapMessageView(raw.message) };
 }
 
+// ── Phase 8: Message deletion ──────────────────────────────────────────────────
+
+/**
+ * DELETE /api/v1/messages/rooms/:roomId/messages/:messageId
+ * Author or room admin/owner can delete (D-02).
+ */
+export async function deleteRoomMessage(roomId: string, messageId: string): Promise<void> {
+  return del(`/messages/rooms/${encodeURIComponent(roomId)}/messages/${encodeURIComponent(messageId)}`);
+}
+
+/**
+ * DELETE /api/v1/messages/dm/:conversationId/messages/:messageId
+ * Only the author can delete their DM message (D-02: no admin concept in DMs).
+ */
+export async function deleteDmMessage(conversationId: string, messageId: string): Promise<void> {
+  return del(`/messages/dm/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
+}
+
 // ── Phase 7: Attachments ───────────────────────────────────────────────────────
 
 /**
