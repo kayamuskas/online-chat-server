@@ -3,13 +3,13 @@
 **Created:** 2026-04-18
 **Mode:** YOLO
 **Granularity:** Fine
-**Coverage:** 57 / 57 v1 requirements mapped
+**Coverage:** 61 / 61 v1 requirements mapped
 
 ## Summary
 
 This roadmap assumes a greenfield implementation using the existing requirements and design prototype only as input material. The first milestone creates a production-like fresh-clone baseline; later phases layer domain rules, realtime behavior, UI flows, and final QA hardening.
 
-Execution override as of 2026-04-20: Phase 7 and Phase 8 are temporarily deferred. Execute Phase 9 next. The phase numbers remain unchanged for traceability; only the immediate working order changes.
+Execution note as of 2026-04-20: Phases 1 through 9 are complete in planning artifacts. Phase 10 is the active execution target for release hardening, performance evidence, and milestone close-out.
 
 ## Phases
 
@@ -20,7 +20,7 @@ Execution override as of 2026-04-20: Phase 7 and Phase 8 are temporarily deferre
 | 3 | Sessions and Presence | Implement multi-session management, IP tracking, last-seen persistence, and correct online/AFK/offline semantics | SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07 | 5 |
 | 4 | Rooms and Membership | Implement room catalog, global uniqueness, invite constraints, join/leave behavior, and room state model | ROOM-01, ROOM-02, ROOM-03, ROOM-04, ROOM-05, ROOM-06, ROOM-10, ROOM-11 | 5 |
 | 5 | Contacts and DM Policy | Implement friendships, friend requests, user bans, and DM eligibility rules | FRND-01, FRND-02, FRND-03, FRND-04, FRND-05, FRND-06 | 4 |
-| 6 | Messaging Core | 7/7 | Complete   | 2026-04-19 |
+| 6 | Messaging Core | Implement the message engine shared by rooms and direct dialogs, including history integrity primitives | MSG-01, MSG-02, MSG-03, MSG-04, MSG-08 | 5 |
 | 7 | Attachments and Durable Delivery | Add attachment flow, ACL enforcement, offline delivery, bounded queue strategy, and filesystem-backed persistence | MSG-06, MSG-09, FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-06, OPS-03 | 5 |
 | 8 | Moderation and Destructive Actions | Complete admin controls, bans, message deletion, room deletion, and account deletion side effects | ROOM-07, ROOM-08, ROOM-09, MSG-05, AUTH-08 | 4 |
 | 9 | Frontend Productization | Replace the prototype shell with the real app UI, navigation, unread indicators, infinite scroll, session screens, and modal admin UX | MSG-07, NOTF-01, NOTF-02, UI-01, UI-02, UI-03 | 5 |
@@ -108,13 +108,15 @@ Goal: Implement friendship workflow and direct-message access rules.
 
 Requirements: `FRND-01`, `FRND-02`, `FRND-03`, `FRND-04`, `FRND-05`, `FRND-06`
 
-Plans: 5 plans
+Plans: 7 plans
 
 - [x] `05-01-PLAN.md` — Contacts schema migration, domain type definitions, and test scaffold. *(complete 2026-04-18)*
 - [x] `05-02-PLAN.md` — ContactsRepository (SQL) and ContactsService (policy layer, DM eligibility). *(complete 2026-04-18)*
 - [x] `05-03-PLAN.md` — ContactsController (REST endpoints) and ContactsModule registration in AppModule. *(complete 2026-04-19)*
-- [ ] `05-04-PLAN.md` — API client extensions and contacts feature components (sidebar, dropdown, modals, DM stub).
-- [ ] `05-05-PLAN.md` — App.tsx wiring and RoomMembersTable inline friend-request action.
+- [x] `05-04-PLAN.md` — API client extensions and contacts feature components (sidebar, dropdown, modals, DM stub). *(complete 2026-04-19)*
+- [x] `05-05-PLAN.md` — App.tsx wiring and RoomMembersTable inline friend-request action. *(complete 2026-04-19)*
+- [x] `05-06-PLAN.md` — Contacts frontend discoverability, management handoff, and blocked-user username projection. *(complete 2026-04-19)*
+- [x] `05-07-PLAN.md` — Ban/request consistency and regression coverage for blocked-user request suppression. *(complete 2026-04-19)*
 
 Success criteria:
 1. Friend requests can be sent, accepted, and removed.
@@ -136,7 +138,7 @@ Plans: 7 plans
 - [x] `06-04-PLAN.md` — Frontend message engine — RoomChatView, DmChatView, useMessages hook. *(complete 2026-04-19)*
 - [x] `06-05-PLAN.md` — Shell integration — RoomChatView wired into room nav, DM stub wired. *(complete 2026-04-19)*
 - [x] `06-06-PLAN.md` — Gap closure — reply_preview hydration at send-time + unfreeze after unban. *(complete 2026-04-19)*
-- [ ] `06-07-PLAN.md` — Remaining gap closure items (if any).
+- [x] `06-07-PLAN.md` — Remaining gap closure items: banned-DM eligibility response and frozen-history UX closure. *(complete 2026-04-19)*
 
 Success criteria:
 1. Users can send multiline UTF-8 messages with reply references.
@@ -195,10 +197,10 @@ Requirements: `ROOM-07`, `ROOM-08`, `ROOM-09`, `MSG-05`, `AUTH-08`
 
 Plans: 4 plans
 
-- [ ] `08-01-PLAN.md` — FK migration (SET NULL) and ROOM-07 admin-cannot-ban-admin fix.
-- [ ] `08-02-PLAN.md` — Message deletion (MSG-05): backend, WS broadcast, and UI delete button.
-- [ ] `08-03-PLAN.md` — Room deletion (ROOM-09): cascade with WS-first broadcast, FS cleanup, and danger zone UI.
-- [ ] `08-04-PLAN.md` — Account deletion (AUTH-08): full cascade and danger zone UI with password confirm.
+- [x] `08-01-PLAN.md` — FK migration (SET NULL) and ROOM-07 admin-cannot-ban-admin fix. *(complete 2026-04-20)*
+- [x] `08-02-PLAN.md` — Message deletion (MSG-05): backend, WS broadcast, and UI delete button. *(complete 2026-04-20)*
+- [x] `08-03-PLAN.md` — Room deletion (ROOM-09): cascade with WS-first broadcast, FS cleanup, and danger zone UI. *(complete 2026-04-20)*
+- [x] `08-04-PLAN.md` — Account deletion (AUTH-08): full cascade and danger zone UI with password confirm. *(complete 2026-04-20)*
 
 Success criteria:
 1. Owner/admin permissions match the written rules exactly.
@@ -210,7 +212,7 @@ Success criteria:
 
 Goal: Build the real frontend shell and chat UX from the wireframe direction, aligned strictly to requirements.
 
-Execution note: this is the current execution target while Phase 7 and Phase 8 are deferred.
+Execution note: this phase is complete; the active execution target is now Phase 10.
 
 Requirements: `MSG-07`, `NOTF-01`, `NOTF-02`, `UI-01`, `UI-02`, `UI-03`
 
@@ -236,6 +238,14 @@ Goal: Make the system defensible against the stated QA and non-functional accept
 
 Requirements: `PERF-01`, `PERF-02`
 
+Plans: 5 plans
+
+- [ ] `10-01-PLAN.md` — Startup preflight and release-gate foundation.
+- [ ] `10-02-PLAN.md` — Perf-lite smoke and latency probe evidence.
+- [ ] `10-03-PLAN.md` — 100k-history seed path and dedicated Playwright proof.
+- [ ] `10-04-PLAN.md` — Artifact reduction and blocking release-gate orchestration.
+- [ ] `10-05-PLAN.md` — Release docs and verification record sync.
+
 Success criteria:
 1. Local load and integration checks cover the 300-user / 1000-member / 10k-history targets proportionally.
 2. Message delivery and presence update latencies are measured against the stated limits.
@@ -248,7 +258,7 @@ Success criteria:
 
 - Session and account capabilities are implemented in their owning domain phases and surfaced in the real frontend during Phase 9.
 - Jabber/federation intentionally stays out of this roadmap and should be introduced in a later roadmap revision for v2.
-- Working order override: Phase 9 executes next while Phase 7 and Phase 8 are deferred, but requirement-to-phase mapping and historical references keep the original numbering.
+- The temporary working-order override used on 2026-04-20 has been consumed; historical numbering remains unchanged, but the active phase is now 10.
 
 ---
 *Roadmap created: 2026-04-18*

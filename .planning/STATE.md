@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: Phase 9 - Frontend Productization
+current_phase: Phase 10 - Performance, QA, and Release Hardening
 status: planning
-last_updated: "2026-04-20T16:54:00.107Z"
+last_updated: "2026-04-20T17:01:43Z"
 progress:
   total_phases: 11
   completed_phases: 10
@@ -16,7 +16,7 @@ progress:
 # State
 
 **Updated:** 2026-04-20
-**Current phase:** Phase 9 - Frontend Productization
+**Current phase:** Phase 10 - Performance, QA, and Release Hardening
 **Status:** Planning
 
 ## Project Reference
@@ -24,7 +24,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-18)
 
 **Core value:** A fresh clone must start a fully functional classic chat system locally and in a way that matches the written requirements more strictly than any existing prototype.
-**Current focus:** Phase 9 planning and execution. Phase 7 and Phase 8 are temporarily deferred by explicit roadmap override.
+**Current focus:** Phase 10 planning and release-hardening execution. Phases 1 through 9 are complete in planning artifacts, with remaining work concentrated in performance, QA, and release evidence.
 
 ## Phase 1 Plans Completed
 
@@ -128,18 +128,50 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - Reconnect recovery refetches the latest history page after a 500ms debounce and merges by message id because `after_watermark` is not available yet.
 - Contacts presence stays request/response based: `getPresence` immediately and every 30 seconds; no push presence or friend-request events were added in Phase 6.1.
 
+## Phase 7 Plans
+
+- [x] 07-01: Attachments migration, repository, Multer upload path, and Docker volume persistence (COMPLETE)
+- [x] 07-02: Durable delivery via `after_watermark` history catch-up (COMPLETE)
+- [x] 07-03: Attachment ACL enforcement, upload/download endpoints, and module wiring (COMPLETE)
+- [x] 07-04: Message attachments hydration and gateway fanout integration (COMPLETE)
+- [x] 07-05: Frontend upload/paste flow, attachment rendering, and reconnect catch-up wiring (COMPLETE)
+
+## Phase 8 Plans
+
+- [x] 08-01: FK migration and room moderation rule hardening, including the final D-17 re-verification fix (COMPLETE)
+- [x] 08-02: Message deletion across backend, WS broadcast, and frontend controls (COMPLETE)
+- [x] 08-03: Room deletion cascade with WS-first broadcast and danger-zone UI (COMPLETE)
+- [x] 08-04: Account deletion cascade with password confirmation and shell sign-out handoff (COMPLETE)
+
+## Phase 9 Plans
+
+- [x] 09-01: Product shell and three-column layout contract (COMPLETE)
+- [x] 09-02: Design-baseline convergence from `requirements/desing_v1/` (COMPLETE)
+- [x] 09-03: Unread indicators for known rooms and DM contacts (COMPLETE)
+- [x] 09-04: Infinite upward history loading with scroll-position preservation (COMPLETE)
+- [x] 09-05: Modal room-management UX aligned to the design baseline (COMPLETE)
+- [x] 09-06: Account hub integration for password, sessions, presence, and current-browser sign-out (COMPLETE)
+
+## Phase 10 Plans
+
+- [ ] 10-01: Startup preflight and release-gate foundation
+- [ ] 10-02: Perf-lite smoke and latency probe evidence
+- [ ] 10-03: 100k-history seed path and Playwright proof
+- [ ] 10-04: Artifact reduction and blocking release-gate orchestration
+- [ ] 10-05: Release docs and verification record sync
+
 ## Roadmap Evolution
 
 - Phase 6.1 inserted after Phase 6: WebSocket Real-Time Client (URGENT) — WS client deferred from Phase 6, discovered during UAT
 - Current local `gsd-sdk` exposes `state`, `init`, and other point commands, but still does not expose the newer `query` subcommand expected by some workflow wrappers. Always verify command availability before assuming either path.
-- Execution override on 2026-04-20: Phase 7 (Attachments and Durable Delivery) and Phase 8 (Moderation and Destructive Actions) are temporarily deferred. Phase 9 (Frontend Productization) executes next. Phase numbering stays unchanged for traceability.
-- Phase 9 execution on 2026-04-20 has already covered shell layout, design-baseline convergence, unread indicators, infinite history, modal room management, and account-hub integration. Planning artifacts must track these executed slices explicitly.
+- Temporary execution override on 2026-04-20 was fully consumed: Phases 7, 8, and 9 are now complete, and the active phase is 10.
+- Phase 10 formalizes release evidence for already-implemented product capabilities rather than adding new end-user features.
 
 ## Next Up
 
-- Phase 9: verification and phase-summary sync
-- Phase 7: Attachments and Durable Delivery
-- Phase 8: Moderation and Destructive Actions
+- Phase 10: execute startup gate, perf-lite smoke, latency probe, and 100k-history proof
+- Phase 10: generate release artifacts in `artifacts/perf/` and release docs in `docs/release/`
+- Project milestone close-out after Phase 10 verification
 
 ## Quick Tasks Completed
 
@@ -148,4 +180,4 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 | 260420-h12 | Add Playwright as mandatory E2E test framework to requirements and project docs | 2026-04-20 | — | [260420-h12-playwright-testing-requirement](./quick/260420-h12-playwright-testing-requirement/) |
 
 ---
-*State initialized: 2026-04-18 | Updated: 2026-04-20 — Completed quick task 260420-h12: Playwright testing requirement docs*
+*State initialized: 2026-04-18 | Updated: 2026-04-20 — synchronized active phase to Phase 10 and aligned completed phase summaries through Phase 9*
