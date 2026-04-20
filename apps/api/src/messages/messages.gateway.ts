@@ -267,4 +267,14 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       message_id: messageId,
     });
   }
+
+  /**
+   * Broadcast 'room-deleted' to all sockets in the room channel.
+   * MUST be called BEFORE any data deletion (D-06).
+   */
+  async broadcastRoomDeleted(roomId: string): Promise<void> {
+    this.server.to(roomChannel(roomId)).emit('room-deleted', {
+      room_id: roomId,
+    });
+  }
 }

@@ -149,6 +149,19 @@ export class AttachmentsService implements OnApplicationBootstrap {
     return { attachment, storagePath: attachment.storage_path };
   }
 
+  /**
+   * Delete all attachments for a room: unlink files from FS, then delete DB records.
+   * Called as step 1 of room deletion cascade (D-07, D-08).
+   * Files already gone from disk silently ignored (same pattern as onApplicationBootstrap).
+   */
+  async deleteForRoom(roomId: string): Promise<void> {
+    const attachments = await this.repo.findByRoomId(roomId);
+    for (const att of attachments) {
+      await unlink(att.storage_path).catch(() => { /* file may already be gone */ });
+    }
+    await this.repo.deleteByRoomId(roomId);
+  }
+
   /** Expose uploadsDir for Multer config in controller. */
   getUploadsDir(): string {
     return this.uploadsDir;

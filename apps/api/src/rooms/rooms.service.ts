@@ -13,9 +13,11 @@
  * Controllers must stay thin; all actor-vs-target policy checks live here.
  */
 
-import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { RoomsRepository } from './rooms.repository.js';
 import { UserRepository } from '../auth/user.repository.js';
+import { MessagesGateway } from '../messages/messages.gateway.js';
+import { AttachmentsService } from '../attachments/attachments.service.js';
 import type {
   Room,
   RoomMembership,
@@ -35,6 +37,10 @@ export class RoomsService {
   constructor(
     private readonly roomsRepo: RoomsRepository,
     private readonly userRepo: UserRepository,
+    @Inject(forwardRef(() => MessagesGateway))
+    private readonly gateway: MessagesGateway,
+    @Inject(forwardRef(() => AttachmentsService))
+    private readonly attachmentsService: AttachmentsService,
   ) {}
 
   // ── Room creation ──────────────────────────────────────────────────────────
@@ -385,6 +391,33 @@ export class RoomsService {
    */
   async listBanned(roomId: string): Promise<RoomBan[]> {
     return this.roomsRepo.listBanned(roomId);
+  }
+
+  // ── Room deletion ──────────────────────────────────────────────────────────
+
+  /**
+   * Delete a room with full cascade (D-07).
+   *
+   * Order: WS broadcast FIRST (D-06), then FS cleanup, then DB cascade.
+   */
+  async deleteRoom(roomId: string, actorId: string): Promise<void> {
+    await this.getRoom(roomId);  // throws NotFoundException if not found
+
+    // D-06: WS broadcast BEFORE any data deletion
+    await this.gateway.broadcastRoomDeleted(roomId);
+
+    // D-07 step 1-2: Delete attachment files from FS + attachment DB records
+    await this.attachmentsService.deleteForRoom(roomId);
+
+    // D-07 step 3-5: Delete room record — FK CASCADE handles:
+    //   messages (author_id is SET NULL for user-owned msgs, message rows deleted)
+    //   room_memberships, room_admins, room_bans, room_invites
+    await this.roomsRepo.deleteRoom(roomId);
+  }
+
+  /** List rooms owned by userId (for AUTH-08 cascade). */
+  async listOwnedRooms(userId: string): Promise<Room[]> {
+    return this.roomsRepo.listOwnedRooms(userId);
   }
 
   // ── Authority check helpers ────────────────────────────────────────────────

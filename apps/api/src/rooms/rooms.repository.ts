@@ -375,4 +375,31 @@ export class RoomsRepository {
     );
     return result.rows;
   }
+
+  // ── Room deletion ──────────────────────────────────────────────────────────
+
+  /** Hard-delete a room by ID. ON DELETE CASCADE removes memberships, bans, admins, invites. Messages also cascade. */
+  async deleteRoom(roomId: string): Promise<void> {
+    await this.db.query(`DELETE FROM rooms WHERE id = $1`, [roomId]);
+  }
+
+  /** List all rooms owned by a user (for AUTH-08 account deletion cascade). */
+  async listOwnedRooms(userId: string): Promise<Room[]> {
+    const result = await this.db.query<Room>(
+      `SELECT id, name, description, visibility, owner_id, created_at, updated_at
+       FROM rooms WHERE owner_id = $1 ORDER BY created_at ASC`,
+      [userId],
+    );
+    return result.rows;
+  }
+
+  /** Remove user from all room_admins rows (for AUTH-08 cascade). */
+  async removeAdminFromAllRooms(userId: string): Promise<void> {
+    await this.db.query(`DELETE FROM room_admins WHERE user_id = $1`, [userId]);
+  }
+
+  /** Remove user from all room_memberships (for AUTH-08 cascade). */
+  async removeMemberFromAllRooms(userId: string): Promise<void> {
+    await this.db.query(`DELETE FROM room_memberships WHERE user_id = $1`, [userId]);
+  }
 }

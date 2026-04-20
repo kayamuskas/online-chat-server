@@ -208,4 +208,21 @@ export class RoomsManagementController {
     await requireAdminOrOwner(this.roomsService, roomId, ctx.user.id);
     await this.roomsService.unbanMember(roomId, targetUserId);
   }
+
+  /**
+   * DELETE /api/v1/rooms/:id
+   *
+   * Permanently deletes the room and all its messages/attachments (D-05).
+   * Caller must be the room owner.
+   * 204 on success.
+   */
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteRoom(
+    @Param('id') roomId: string,
+    @CurrentUser() ctx: AuthContext,
+  ): Promise<void> {
+    await requireOwner(this.roomsService, roomId, ctx.user.id);
+    await this.roomsService.deleteRoom(roomId, ctx.user.id);
+  }
 }
