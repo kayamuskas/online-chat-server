@@ -307,6 +307,15 @@ export class RoomsService {
   ): Promise<RoomBan> {
     await this.getRoom(roomId);
 
+    // D-17: admin cannot ban another admin — only owner can ban an admin
+    const targetIsAdmin = await this.roomsRepo.isAdmin(roomId, targetUserId);
+    if (targetIsAdmin) {
+      const callerIsOwner = await this.isOwner(roomId, bannedByUserId);
+      if (!callerIsOwner) {
+        throw new ForbiddenException('Only the room owner can ban an admin');
+      }
+    }
+
     // Remove from membership if present (ignore false — user may not have been a member)
     await this.roomsRepo.removeMember(roomId, targetUserId);
 
