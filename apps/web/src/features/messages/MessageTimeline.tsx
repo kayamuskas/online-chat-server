@@ -203,10 +203,10 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
               type="button"
               className="msg-timeline__history-status__btn"
               onClick={() => {
-                // Bypass pendingOlderLoadRef — explicit user click always wins
                 const node = scrollRef.current;
                 if (!node || !hasMoreBefore || loadingOlder) return;
                 restoreScrollRef.current = { scrollHeight: node.scrollHeight, scrollTop: node.scrollTop };
+                pendingOlderLoadRef.current = true; // prevent scroll listener double-trigger
                 onLoadOlder?.();
               }}
             >

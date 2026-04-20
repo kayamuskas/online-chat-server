@@ -74,6 +74,7 @@ type AppTab =
 interface ShellRoomLink {
   id: string;
   name: string;
+  visibility: "public" | "private";
 }
 
 function isAccountRoute() {
@@ -665,62 +666,52 @@ function AuthenticatedShell({
         <nav className="app-account__nav app-shell__sidebar">
           <section className="app-shell__nav-section">
             <div className="app-account__nav-label">Rooms</div>
-            <button
-              type="button"
-              className={`app-account__nav-item${tab === "public-rooms" ? " app-account__nav-item--active" : ""}`}
-              onClick={() => onSelectTab("public-rooms")}
-            >
-              Public rooms
-            </button>
-            <button
-              type="button"
-              className={`app-account__nav-item${tab === "private-rooms" ? " app-account__nav-item--active" : ""}`}
-              onClick={() => onSelectTab("private-rooms")}
-            >
-              Private rooms
-            </button>
-            <button
-              type="button"
-              className={`app-account__nav-item${tab === "create-room" ? " app-account__nav-item--active" : ""}`}
-              onClick={() => onSelectTab("create-room")}
-            >
-              Create room
-            </button>
-            {trackedRooms.length > 0 && (
-              <div className="app-shell__thread-list" aria-label="Known room chats">
-                {trackedRooms.map((room) => {
-                  const unreadCount = roomUnread[room.id] ?? 0;
-                  const isActive = tab === "room-chat" && activeRoom?.id === room.id;
-
-                  return (
-                    <button
-                      key={room.id}
-                      type="button"
-                      className={`app-shell__thread-row${isActive ? " app-shell__thread-row--active" : ""}`}
-                      onClick={() => onOpenTrackedRoom(room)}
-                    >
-                      <span className="app-shell__thread-name"># {room.name}</span>
-                      {unreadCount > 0 && (
-                        <span className="app-shell__thread-badge" aria-label={`${unreadCount} unread messages`}>
-                          {unreadCount > 9 ? "9+" : unreadCount}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            {(() => {
+              const publicRooms = trackedRooms.filter((r) => r.visibility === "public");
+              const privateRooms = trackedRooms.filter((r) => r.visibility === "private");
+              const renderRoom = (room: ShellRoomLink) => {
+                const unreadCount = roomUnread[room.id] ?? 0;
+                const isActive = tab === "room-chat" && activeRoom?.id === room.id;
+                return (
+                  <button
+                    key={room.id}
+                    type="button"
+                    className={`app-shell__thread-row${isActive ? " app-shell__thread-row--active" : ""}`}
+                    onClick={() => onOpenTrackedRoom(room)}
+                  >
+                    <span className="app-shell__thread-name"># {room.name}</span>
+                    {unreadCount > 0 && (
+                      <span className="app-shell__thread-badge" aria-label={`${unreadCount} unread messages`}>
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              };
+              return (
+                <div className="app-shell__thread-list">
+                  {publicRooms.length > 0 && (
+                    <>
+                      <div className="app-account__nav-sublabel">Public</div>
+                      {publicRooms.map(renderRoom)}
+                    </>
+                  )}
+                  {privateRooms.length > 0 && (
+                    <>
+                      <div className="app-account__nav-sublabel">Private</div>
+                      {privateRooms.map(renderRoom)}
+                    </>
+                  )}
+                  {trackedRooms.length === 0 && (
+                    <p className="app-shell__thread-empty">No rooms joined yet</p>
+                  )}
+                </div>
+              );
+            })()}
           </section>
 
           <section className="app-shell__nav-section">
             <div className="app-account__nav-label">Contacts</div>
-            <button
-              type="button"
-              className={`app-account__nav-item${tab === "contacts" ? " app-account__nav-item--active" : ""}`}
-              onClick={onOpenContacts}
-            >
-              Contacts
-            </button>
             <ContactsSidebar
               contacts={sidebarContacts}
               currentUserId={user.id}
@@ -911,7 +902,7 @@ function App() {
       setTrackedRooms((prev) => {
         const next = new Map(prev.map((room) => [room.id, room]));
         allRoomsResult.rooms.forEach(({ room }) => {
-          next.set(room.id, { id: room.id, name: room.name });
+          next.set(room.id, { id: room.id, name: room.name, visibility: room.visibility as "public" | "private" });
         });
         return Array.from(next.values());
       });
@@ -939,7 +930,7 @@ function App() {
       if (prev.some((entry) => entry.id === room.id)) {
         return prev;
       }
-      return [...prev, { id: room.id, name: room.name }];
+      return [...prev, { id: room.id, name: room.name, visibility: room.visibility as "public" | "private" }];
     });
     setRoomUnread((prev) => {
       if (!(room.id in prev)) {
@@ -949,7 +940,7 @@ function App() {
       delete next[room.id];
       return next;
     });
-    setActiveRoom({ id: room.id, name: room.name });
+    setActiveRoom({ id: room.id, name: room.name, visibility: room.visibility as "public" | "private" });
     setTab("room-chat");
   }
 

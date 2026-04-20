@@ -435,6 +435,23 @@ body {
   margin-bottom: 0.25rem;
 }
 
+.app-account__nav-sublabel {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  padding: 0.2rem 0.625rem 0.1rem;
+  opacity: 0.65;
+  text-transform: uppercase;
+  margin-top: 0.25rem;
+}
+
+.app-shell__thread-empty {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  padding: 0.25rem 0.625rem;
+}
+
 .app-account__nav-item {
   background: none;
   border: none;
