@@ -12,9 +12,14 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository.js';
 import { SessionRepository } from './session.repository.js';
+import { RoomsService } from '../rooms/rooms.service.js';
+import { RoomsRepository } from '../rooms/rooms.repository.js';
+import { ContactsRepository } from '../contacts/contacts.repository.js';
 import { hashPassword, verifyPassword } from './passwords.js';
 import { buildSessionExpiry, resolveSessionPolicy } from './session-policy.js';
 import type {
@@ -43,6 +48,12 @@ export class AuthService {
   constructor(
     private readonly users: UserRepository,
     private readonly sessions: SessionRepository,
+    @Inject(forwardRef(() => RoomsService))
+    private readonly roomsService: RoomsService,
+    @Inject(forwardRef(() => RoomsRepository))
+    private readonly roomsRepo: RoomsRepository,
+    @Inject(forwardRef(() => ContactsRepository))
+    private readonly contactsRepo: ContactsRepository,
   ) {}
 
   /**
@@ -223,5 +234,49 @@ export class AuthService {
    */
   async revokeAllOtherSessions(userId: string, currentToken: string): Promise<void> {
     await this.sessions.deleteAllOtherByUserId(userId, currentToken);
+  }
+
+  /**
+   * Delete the user's account with full cascade (D-10, D-15):
+   *   1. Verify password (D-10)
+   *   2. Delete owned rooms — each triggers room:deleted WS broadcast + full cascade (D-11)
+   *   3. Strip admin roles in non-owned rooms (D-12)
+   *   4. Remove remaining memberships
+   *   5. Delete contacts/friendships/bans
+   *   6. Delete DM conversations — NOT messages (D-13)
+   *   7. Delete all sessions (D-14)
+   *   8. Delete user record — FK ON DELETE SET NULL preserves DM messages
+   */
+  async deleteAccount(userId: string, password: string): Promise<void> {
+    // D-10: verify password before proceeding
+    const user = await this.users.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const valid = await verifyPassword(password, user.password_hash);
+    if (!valid) throw new UnauthorizedException('Incorrect password');
+
+    // D-11: delete owned rooms (each with WS broadcast + full cascade)
+    const ownedRooms = await this.roomsService.listOwnedRooms(userId);
+    for (const room of ownedRooms) {
+      await this.roomsService.deleteRoom(room.id, userId);
+    }
+
+    // D-12: strip admin roles in non-owned rooms
+    await this.roomsRepo.removeAdminFromAllRooms(userId);
+
+    // D-15: remove remaining memberships
+    await this.roomsRepo.removeMemberFromAllRooms(userId);
+
+    // D-15: delete contacts/friendships/bans
+    await this.contactsRepo.deleteAllFor(userId);
+
+    // D-13, D-15: delete DM conversations (NOT messages — messages preserved with author_id SET NULL)
+    await this.contactsRepo.deleteDmConversationsFor(userId);
+
+    // D-14: delete all sessions (WS sockets get 401 on next auth check)
+    await this.sessions.deleteAllByUserId(userId);
+
+    // Final: delete user record (FK ON DELETE SET NULL handles remaining message/attachment refs)
+    await this.users.deleteById(userId);
   }
 }

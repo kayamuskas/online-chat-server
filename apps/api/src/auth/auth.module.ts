@@ -6,9 +6,11 @@
  * inject it without re-declaring its dependencies.
  */
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DbModule } from '../db/db.module.js';
 import { MailModule } from '../mail/mail.module.js';
+import { RoomsModule } from '../rooms/rooms.module.js';
+import { ContactsModule } from '../contacts/contacts.module.js';
 import { AuthController } from './auth.controller.js';
 import { PasswordResetController } from './password-reset.controller.js';
 import { SessionManagementController } from './session-management.controller.js';
@@ -22,7 +24,7 @@ import { AuthRateLimitGuard } from './auth-rate-limit.guard.js';
 import { CurrentUserGuard } from './current-user.guard.js';
 
 @Module({
-  imports: [DbModule, MailModule],
+  imports: [DbModule, MailModule, forwardRef(() => RoomsModule), forwardRef(() => ContactsModule)],
   controllers: [AuthController, PasswordResetController, SessionManagementController],
   providers: [
     AuthService,

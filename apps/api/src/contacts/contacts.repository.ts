@@ -383,4 +383,34 @@ export class ContactsRepository {
     );
     return result.rows[0] ?? null;
   }
+
+  /**
+   * Delete all contact-related data for a user: friend_requests, friendships, user_bans.
+   * Used by AUTH-08 account deletion cascade (D-15 step: delete contacts/friendships/bans).
+   */
+  async deleteAllFor(userId: string): Promise<void> {
+    await this.db.query(
+      `DELETE FROM friend_requests WHERE requester_id = $1 OR target_id = $1`,
+      [userId],
+    );
+    await this.db.query(
+      `DELETE FROM friendships WHERE user_a_id = $1 OR user_b_id = $1`,
+      [userId],
+    );
+    await this.db.query(
+      `DELETE FROM user_bans WHERE banner_user_id = $1 OR banned_user_id = $1`,
+      [userId],
+    );
+  }
+
+  /**
+   * Delete all DM conversation records for a user (NOT the messages — D-13).
+   * Used by AUTH-08 account deletion cascade (D-15 step: delete DM conversations).
+   */
+  async deleteDmConversationsFor(userId: string): Promise<void> {
+    await this.db.query(
+      `DELETE FROM dm_conversations WHERE user_a_id = $1 OR user_b_id = $1`,
+      [userId],
+    );
+  }
 }

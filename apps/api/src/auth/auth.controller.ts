@@ -15,12 +15,14 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Req,
   Res,
   HttpCode,
   HttpStatus,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { ChangePasswordService } from './change-password.service.js';
@@ -160,5 +162,29 @@ export class AuthController {
       currentPassword: input.currentPassword,
       newPassword: input.newPassword,
     });
+  }
+
+  /**
+   * DELETE /api/v1/auth/account
+   *
+   * Permanently deletes the authenticated user's account (D-10, D-15, D-16).
+   * Requires password confirmation in request body.
+   * On success: clears session cookie, returns 204.
+   */
+  @Delete('account')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(CurrentUserGuard)
+  async deleteAccount(
+    @CurrentUser() ctx: AuthContext,
+    @Body() body: unknown,
+    @Res({ passthrough: true }) res: ResponseLike,
+  ): Promise<void> {
+    const b = (body ?? {}) as { password?: unknown };
+    if (typeof b.password !== 'string' || b.password.trim().length === 0) {
+      throw new BadRequestException('password is required');
+    }
+
+    await this.authService.deleteAccount(ctx.user.id, b.password);
+    clearSessionCookie(res);
   }
 }
