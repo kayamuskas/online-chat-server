@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS messages (
   conversation_type       TEXT        NOT NULL
                                       CHECK (conversation_type IN ('room', 'dm')),
   conversation_id         UUID        NOT NULL,
-  author_id               UUID        NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  author_id               UUID        REFERENCES users (id) ON DELETE SET NULL,
   content                 TEXT        NOT NULL,
   reply_to_id             UUID        REFERENCES messages (id) ON DELETE SET NULL,
   edited_at               TIMESTAMPTZ,
@@ -240,7 +240,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_reply_to_id
 CREATE TABLE IF NOT EXISTS attachments (
   id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   message_id        UUID        REFERENCES messages(id) ON DELETE CASCADE,
-  uploader_id       UUID        NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  uploader_id       UUID        REFERENCES users(id) ON DELETE SET NULL,
   original_filename TEXT        NOT NULL,
   mime_type         TEXT        NOT NULL,
   file_size         BIGINT      NOT NULL,
@@ -256,6 +256,19 @@ CREATE INDEX IF NOT EXISTS idx_attachments_message_id
 CREATE INDEX IF NOT EXISTS idx_attachments_orphan_cleanup
   ON attachments (created_at)
   WHERE message_id IS NULL;
+
+-- ── Phase 8: Destructive actions FK changes (migration 0008) ───────────────
+
+-- For existing databases: change RESTRICT to SET NULL for user deletion support
+ALTER TABLE messages ALTER COLUMN author_id DROP NOT NULL;
+ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_author_id_fkey;
+ALTER TABLE messages ADD CONSTRAINT messages_author_id_fkey
+  FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE attachments ALTER COLUMN uploader_id DROP NOT NULL;
+ALTER TABLE attachments DROP CONSTRAINT IF EXISTS attachments_uploader_id_fkey;
+ALTER TABLE attachments ADD CONSTRAINT attachments_uploader_id_fkey
+  FOREIGN KEY (uploader_id) REFERENCES users(id) ON DELETE SET NULL;
 `;
 
 @Injectable()
