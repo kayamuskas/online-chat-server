@@ -797,7 +797,7 @@ function AuthenticatedShell({
 function App() {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [tab, setTab] = useState<AppTab>("account");
-  const [checkingSession, setCheckingSession] = useState(isAccountRoute());
+  const [checkingSession, setCheckingSession] = useState(true);
   const [managedRoom, setManagedRoom] = useState<RoomCatalogRow | null>(null);
   const [trackedRooms, setTrackedRooms] = useState<ShellRoomLink[]>([]);
   const [privateRooms, setPrivateRooms] = useState<PrivateRoomEntry[]>([]);
@@ -841,24 +841,23 @@ function App() {
   }
 
   useEffect(() => {
-    if (!isAccountRoute()) {
-      setCheckingSession(false);
-      return;
-    }
-
     let cancelled = false;
 
     async function restoreSession() {
-      setCheckingSession(true);
       try {
         const result = await me();
         if (!cancelled) {
           setUser(result.user);
+          if (!isAccountRoute()) {
+            window.history.replaceState(null, "", "/account");
+          }
         }
       } catch {
         if (!cancelled) {
           setUser(null);
-          window.history.replaceState(null, "", "/");
+          if (isAccountRoute()) {
+            window.history.replaceState(null, "", "/");
+          }
         }
       } finally {
         if (!cancelled) {
