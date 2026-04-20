@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listSessions, signOut, type PublicUser, type SessionInventoryItem } from "../../lib/api";
+import { listSessions, signOut, deleteAccount, type PublicUser, type SessionInventoryItem } from "../../lib/api";
 
 interface AccountOverviewViewProps {
   user: PublicUser;
@@ -20,6 +20,10 @@ export function AccountOverviewView({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [confirmingDeleteAccount, setConfirmingDeleteAccount] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +55,18 @@ export function AccountOverviewView({
 
   const currentSession = sessions.find((session) => session.isCurrentSession) ?? null;
   const otherSessionCount = sessions.filter((session) => !session.isCurrentSession).length;
+
+  async function handleDeleteAccount() {
+    setDeletingAccount(true);
+    setDeleteAccountError(null);
+    try {
+      await deleteAccount({ password: deletePassword });
+      onSignedOut();  // Same callback as sign-out — redirects to auth screen (D-16)
+    } catch (err) {
+      setDeleteAccountError(err instanceof Error ? err.message : "Deletion failed. Please try again.");
+      setDeletingAccount(false);
+    }
+  }
 
   async function handleSignOutCurrent() {
     setSigningOut(true);
@@ -117,6 +133,56 @@ export function AccountOverviewView({
           </div>
         </section>
       )}
+
+      <section className="danger-zone">
+        <div className="danger-zone__title">Danger Zone</div>
+        <p className="danger-zone__description">
+          Permanently delete your account. All rooms you own will be deleted. You will be signed out immediately.
+        </p>
+        {!confirmingDeleteAccount ? (
+          <button
+            type="button"
+            className="btn btn--danger btn--xs"
+            onClick={() => setConfirmingDeleteAccount(true)}
+          >
+            Delete Account
+          </button>
+        ) : (
+          <div className="danger-zone__confirm">
+            <p className="danger-zone__confirm-text">
+              Enter your password to confirm account deletion. This action cannot be undone.
+            </p>
+            <input
+              type="password"
+              className="field__input danger-zone__password-field"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              disabled={deletingAccount}
+              autoComplete="current-password"
+              placeholder="Your current password"
+            />
+            <div className="danger-zone__confirm-actions">
+              <button
+                type="button"
+                className="btn btn--danger"
+                onClick={() => void handleDeleteAccount()}
+                disabled={deletingAccount || deletePassword.trim().length === 0}
+              >
+                {deletingAccount ? "Deleting\u2026" : "Confirm Delete Account"}
+              </button>
+              <button
+                type="button"
+                className="btn btn--soft"
+                onClick={() => { setConfirmingDeleteAccount(false); setDeletePassword(""); setDeleteAccountError(null); }}
+                disabled={deletingAccount}
+              >
+                Keep Account
+              </button>
+            </div>
+            {deleteAccountError && <p className="error-msg">{deleteAccountError}</p>}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

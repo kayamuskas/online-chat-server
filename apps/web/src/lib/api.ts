@@ -225,6 +225,24 @@ export async function changePassword(params: {
 }
 
 /**
+ * DELETE /api/v1/auth/account
+ * Permanently deletes the authenticated account. Requires password confirmation (D-10).
+ */
+export async function deleteAccount(params: { password: string }): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/account`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const msg = typeof data?.message === "string" ? data.message : "Deletion failed. Please try again.";
+    throw Object.assign(new Error(msg), { statusCode: res.status });
+  }
+}
+
+/**
  * POST /api/v1/auth/password-reset/request
  * Silently enqueues a reset mail artifact. Always returns 200.
  */
