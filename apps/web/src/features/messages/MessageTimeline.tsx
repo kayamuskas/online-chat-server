@@ -162,10 +162,6 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
     if (!nextIsScrolledUp && hasNewMessages) {
       onScrollToBottom?.();
     }
-
-    if (node.scrollTop < 120) {
-      requestOlderMessages();
-    }
   }
 
   function handleScrollToBottom() {

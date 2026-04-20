@@ -70,31 +70,28 @@ export function ContactsSidebar({
           No contacts yet.
         </p>
       )}
-      {contacts.map((c) => (
-        <div
-          key={c.userId}
-          className={`contacts-sidebar__row${activePartnerId === c.userId ? " contacts-sidebar__row--active" : ""}`}
-        >
-          <PresenceDot status={c.presenceStatus ?? "offline"} />
-          <span className="contacts-sidebar__name">{c.username}</span>
-          {c.unreadCount && c.unreadCount > 0 && (
-            <span className="app-shell__thread-badge" aria-label={`${c.unreadCount} unread messages`}>
-              {c.unreadCount > 9 ? "9+" : c.unreadCount}
-            </span>
-          )}
-          {c.userId !== currentUserId && (
-            <button
-              type="button"
-              className="btn btn--soft btn--xs"
-              disabled={!c.dmEligible}
-              title={!c.dmEligible ? "Add as friend to message" : undefined}
-              onClick={c.dmEligible ? () => onOpenDm?.(c.userId) : undefined}
-            >
-              Msg
-            </button>
-          )}
-        </div>
-      ))}
+      {contacts.map((c) => {
+        const canDm = c.dmEligible && c.userId !== currentUserId;
+        return (
+          <div
+            key={c.userId}
+            className={`contacts-sidebar__row${activePartnerId === c.userId ? " contacts-sidebar__row--active" : ""}${canDm ? " contacts-sidebar__row--clickable" : ""}`}
+            onClick={canDm ? () => onOpenDm?.(c.userId) : undefined}
+            role={canDm ? "button" : undefined}
+            tabIndex={canDm ? 0 : undefined}
+            onKeyDown={canDm ? (e) => { if (e.key === "Enter" || e.key === " ") onOpenDm?.(c.userId); } : undefined}
+            title={!c.dmEligible && c.userId !== currentUserId ? "Add as friend to message" : undefined}
+          >
+            <PresenceDot status={c.presenceStatus ?? "offline"} />
+            <span className="contacts-sidebar__name">{c.username}</span>
+            {!!c.unreadCount && c.unreadCount > 0 && (
+              <span className="app-shell__thread-badge" aria-label={`${c.unreadCount} unread messages`}>
+                {c.unreadCount > 9 ? "9+" : c.unreadCount}
+              </span>
+            )}
+          </div>
+        );
+      })}
       <button
         type="button"
         className="app-account__nav-item"

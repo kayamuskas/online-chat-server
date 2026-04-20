@@ -426,6 +426,69 @@ body {
   border-top: 1px solid var(--color-border);
 }
 
+.app-shell__section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  padding: 0.25rem 0.625rem;
+  margin-bottom: 0.1rem;
+}
+
+.app-shell__section-toggle:hover {
+  color: var(--color-text);
+}
+
+.app-shell__subsection-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  padding: 0.2rem 0.625rem 0.1rem;
+  opacity: 0.65;
+  text-transform: uppercase;
+  margin-top: 0.25rem;
+}
+
+.app-shell__subsection-toggle:hover {
+  opacity: 1;
+}
+
+.app-shell__section-arrow {
+  display: inline-block;
+  font-size: 0.7rem;
+  transition: transform 0.15s;
+  line-height: 1;
+}
+
+.app-shell__section-arrow--collapsed {
+  transform: rotate(-90deg);
+}
+
+.app-shell__thread-icon {
+  font-size: 0.8rem;
+  width: 1rem;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--color-muted);
+}
+
 .app-account__nav-label {
   font-family: var(--font-mono);
   font-size: 0.65rem;
@@ -496,7 +559,8 @@ body {
   text-align: left;
 }
 
-.app-shell__thread-row {
+.app-shell__thread-row,
+.contacts-sidebar__row--clickable {
   cursor: pointer;
 }
 

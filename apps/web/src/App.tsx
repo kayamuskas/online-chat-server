@@ -190,6 +190,10 @@ function AuthenticatedShell({
   onAddContactSuccess,
 }: AuthenticatedShellProps) {
   const socket = useSocket();
+  const [roomsOpen, setRoomsOpen] = useState(true);
+  const [publicOpen, setPublicOpen] = useState(true);
+  const [privateOpen, setPrivateOpen] = useState(true);
+  const [contactsOpen, setContactsOpen] = useState(true);
   const isCompactNavigation =
     tab === "room-chat" || tab === "dm" || tab === "manage-room";
   const partner = dmPartnerId
@@ -200,7 +204,7 @@ function AuthenticatedShell({
     username: contact.username,
     presenceStatus: contact.presenceStatus,
     dmEligible: true,
-    unreadCount: dmUnread[contact.userId] ?? 0,
+    unreadCount: dmUnread[contact.userId] || undefined,
   }));
   const rightRailMembers = contacts.slice(0, 6).map((contact) => ({
     id: contact.userId,
@@ -665,13 +669,21 @@ function AuthenticatedShell({
       <main className={`app-account${isCompactNavigation ? " app-account--compact" : ""}`}>
         <nav className="app-account__nav app-shell__sidebar">
           <section className="app-shell__nav-section">
-            <div className="app-account__nav-label">Rooms</div>
-            {(() => {
-              const publicRooms = trackedRooms.filter((r) => r.visibility === "public");
-              const privateRooms = trackedRooms.filter((r) => r.visibility === "private");
+            <button
+              type="button"
+              className="app-shell__section-toggle"
+              onClick={() => setRoomsOpen((o) => !o)}
+            >
+              <span className={`app-shell__section-arrow${roomsOpen ? "" : " app-shell__section-arrow--collapsed"}`}>▾</span>
+              ROOMS
+            </button>
+            {roomsOpen && (() => {
+              const sidebarPublicRooms = trackedRooms.filter((r) => r.visibility === "public");
+              const sidebarPrivateRooms = trackedRooms.filter((r) => r.visibility === "private");
               const renderRoom = (room: ShellRoomLink) => {
                 const unreadCount = roomUnread[room.id] ?? 0;
                 const isActive = tab === "room-chat" && activeRoom?.id === room.id;
+                const icon = room.visibility === "private" ? "🔒" : "#";
                 return (
                   <button
                     key={room.id}
@@ -679,7 +691,8 @@ function AuthenticatedShell({
                     className={`app-shell__thread-row${isActive ? " app-shell__thread-row--active" : ""}`}
                     onClick={() => onOpenTrackedRoom(room)}
                   >
-                    <span className="app-shell__thread-name"># {room.name}</span>
+                    <span className="app-shell__thread-icon">{icon}</span>
+                    <span className="app-shell__thread-name">{room.name}</span>
                     {unreadCount > 0 && (
                       <span className="app-shell__thread-badge" aria-label={`${unreadCount} unread messages`}>
                         {unreadCount > 9 ? "9+" : unreadCount}
@@ -690,16 +703,30 @@ function AuthenticatedShell({
               };
               return (
                 <div className="app-shell__thread-list">
-                  {publicRooms.length > 0 && (
+                  {sidebarPublicRooms.length > 0 && (
                     <>
-                      <div className="app-account__nav-sublabel">Public</div>
-                      {publicRooms.map(renderRoom)}
+                      <button
+                        type="button"
+                        className="app-shell__subsection-toggle"
+                        onClick={() => setPublicOpen((o) => !o)}
+                      >
+                        <span className={`app-shell__section-arrow${publicOpen ? "" : " app-shell__section-arrow--collapsed"}`}>▾</span>
+                        Public
+                      </button>
+                      {publicOpen && sidebarPublicRooms.map(renderRoom)}
                     </>
                   )}
-                  {privateRooms.length > 0 && (
+                  {sidebarPrivateRooms.length > 0 && (
                     <>
-                      <div className="app-account__nav-sublabel">Private</div>
-                      {privateRooms.map(renderRoom)}
+                      <button
+                        type="button"
+                        className="app-shell__subsection-toggle"
+                        onClick={() => setPrivateOpen((o) => !o)}
+                      >
+                        <span className={`app-shell__section-arrow${privateOpen ? "" : " app-shell__section-arrow--collapsed"}`}>▾</span>
+                        Private
+                      </button>
+                      {privateOpen && sidebarPrivateRooms.map(renderRoom)}
                     </>
                   )}
                   {trackedRooms.length === 0 && (
@@ -711,16 +738,25 @@ function AuthenticatedShell({
           </section>
 
           <section className="app-shell__nav-section">
-            <div className="app-account__nav-label">Contacts</div>
-            <ContactsSidebar
-              contacts={sidebarContacts}
-              currentUserId={user.id}
-              socket={socket}
-              activePartnerId={tab === "dm" ? dmPartnerId : null}
-              onPresenceUpdate={onPresenceUpdate}
-              onAddContact={onAddContactOpen}
-              onOpenDm={onOpenDm}
-            />
+            <button
+              type="button"
+              className="app-shell__section-toggle"
+              onClick={() => setContactsOpen((o) => !o)}
+            >
+              <span className={`app-shell__section-arrow${contactsOpen ? "" : " app-shell__section-arrow--collapsed"}`}>▾</span>
+              CONTACTS
+            </button>
+            {contactsOpen && (
+              <ContactsSidebar
+                contacts={sidebarContacts}
+                currentUserId={user.id}
+                socket={socket}
+                activePartnerId={tab === "dm" ? dmPartnerId : null}
+                onPresenceUpdate={onPresenceUpdate}
+                onAddContact={onAddContactOpen}
+                onOpenDm={onOpenDm}
+              />
+            )}
           </section>
 
           <section className="app-shell__nav-section app-shell__nav-section--account">
