@@ -179,5 +179,7 @@ export interface MessageHistoryQuery {
   conversation_id: string;
   /** Fetch messages with watermark < before_watermark (older than cursor). */
   before_watermark?: number;
+  /** Fetch messages with watermark > after_watermark (newer than cursor). D-52..D-54: catch-up after reconnect. */
+  after_watermark?: number;
   limit?: number;
 }
