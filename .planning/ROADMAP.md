@@ -9,6 +9,8 @@
 
 This roadmap assumes a greenfield implementation using the existing requirements and design prototype only as input material. The first milestone creates a production-like fresh-clone baseline; later phases layer domain rules, realtime behavior, UI flows, and final QA hardening.
 
+Execution override as of 2026-04-20: Phase 7 and Phase 8 are temporarily deferred. Execute Phase 9 next. The phase numbers remain unchanged for traceability; only the immediate working order changes.
+
 ## Phases
 
 | # | Phase | Goal | Requirements | Success Criteria |
@@ -189,6 +191,8 @@ Success criteria:
 
 Goal: Complete admin tooling and destructive flows with correct cascades.
 
+Execution note: temporarily deferred. Keep the phase number and requirement ownership unchanged.
+
 Requirements: `ROOM-07`, `ROOM-08`, `ROOM-09`, `MSG-05`, `AUTH-08`
 
 Success criteria:
@@ -200,6 +204,8 @@ Success criteria:
 ### Phase 9: Frontend Productization
 
 Goal: Build the real frontend shell and chat UX from the wireframe direction, aligned strictly to requirements.
+
+Execution note: this is the current execution target while Phase 7 and Phase 8 are deferred.
 
 Requirements: `MSG-07`, `NOTF-01`, `NOTF-02`, `UI-01`, `UI-02`, `UI-03`
 
@@ -228,6 +234,7 @@ Success criteria:
 
 - Session and account capabilities are implemented in their owning domain phases and surfaced in the real frontend during Phase 9.
 - Jabber/federation intentionally stays out of this roadmap and should be introduced in a later roadmap revision for v2.
+- Working order override: Phase 9 executes next while Phase 7 and Phase 8 are deferred, but requirement-to-phase mapping and historical references keep the original numbering.
 
 ---
 *Roadmap created: 2026-04-18*

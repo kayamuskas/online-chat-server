@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: Phase 7 - Attachments and Durable Delivery
-status: verifying
-last_updated: "2026-04-20T06:55:00.000Z"
+current_phase: Phase 9 - Frontend Productization
+status: planning
+last_updated: "2026-04-20T09:30:00.000Z"
 progress:
   total_phases: 11
   completed_phases: 7
@@ -16,15 +16,15 @@ progress:
 # State
 
 **Updated:** 2026-04-20
-**Current phase:** Phase 7 - Attachments and Durable Delivery
-**Status:** Verifying
+**Current phase:** Phase 9 - Frontend Productization
+**Status:** Planning
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-04-18)
 
-**Core value:** A fresh clone must start a fully functional classic chat system locally, offline, and in a way that matches the written requirements more strictly than any existing prototype.
-**Current focus:** Phase 7 prep. Phase 6.1 realtime client execution completed.
+**Core value:** A fresh clone must start a fully functional classic chat system locally and in a way that matches the written requirements more strictly than any existing prototype.
+**Current focus:** Phase 9 planning and execution. Phase 7 and Phase 8 are temporarily deferred by explicit roadmap override.
 
 ## Phase 1 Plans Completed
 
@@ -132,9 +132,11 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 
 - Phase 6.1 inserted after Phase 6: WebSocket Real-Time Client (URGENT) — WS client deferred from Phase 6, discovered during UAT
 - Phase 6.1 executed inline with local summaries because the installed GSD toolchain exposed `init` but not the newer `query` API expected by the workflow wrapper.
+- Execution override on 2026-04-20: Phase 7 (Attachments and Durable Delivery) and Phase 8 (Moderation and Destructive Actions) are temporarily deferred. Phase 9 (Frontend Productization) executes next. Phase numbering stays unchanged for traceability.
 
 ## Next Up
 
+- Phase 9: Frontend Productization
 - Phase 7: Attachments and Durable Delivery
 - Phase 8: Moderation and Destructive Actions
 
