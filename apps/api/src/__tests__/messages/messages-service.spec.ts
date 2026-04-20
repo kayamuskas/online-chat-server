@@ -33,6 +33,7 @@ import type {
 import type { DmConversation } from '../../contacts/contacts.types.js';
 import type { RoomMembership, RoomBan } from '../../rooms/rooms.types.js';
 import type { AttachmentsRepository } from '../../attachments/attachments.repository.js';
+import type { RoomsService } from '../../rooms/rooms.service.js';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -129,6 +130,12 @@ function makeAttachmentsRepoStub(overrides?: Record<string, unknown>): Attachmen
   } as unknown as AttachmentsRepository;
 }
 
+function makeRoomsServiceStub(): RoomsService {
+  return {
+    isAdmin: vi.fn().mockResolvedValue(false),
+  } as unknown as RoomsService;
+}
+
 function makeService(
   msgRepo?: Partial<MessagesRepository>,
   roomsRepo?: Partial<RoomsRepository>,
@@ -137,6 +144,7 @@ function makeService(
   return new MessagesService(
     makeMessagesRepoStub(msgRepo),
     makeRoomsRepoStub(roomsRepo),
+    makeRoomsServiceStub(),
     makeContactsRepoStub(contactsRepo),
     makeAttachmentsRepoStub(),
   );
