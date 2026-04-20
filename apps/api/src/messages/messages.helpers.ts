@@ -204,7 +204,7 @@ export function nextWatermark(messages: Message[]): number {
  */
 export function computeHistoryRange(
   messages: Message[],
-  opts: { totalCount: number | null },
+  opts: { totalCount: number | null; hasMoreBefore?: boolean },
 ): MessageHistoryRange {
   if (messages.length === 0) {
     return {
@@ -219,9 +219,10 @@ export function computeHistoryRange(
   const firstWatermark = Math.min(...watermarks);
   const lastWatermark = Math.max(...watermarks);
 
-  // hasMoreBefore: there are messages with lower watermarks than firstWatermark
-  // i.e., the conversation started before this page's earliest watermark
-  const hasMoreBefore = firstWatermark > 1;
+  // hasMoreBefore must reflect actual older persisted rows, not watermark gaps.
+  // Deleted messages can leave sparse watermarks (e.g. only watermark 7 remains),
+  // so firstWatermark > 1 does not imply there are older messages to load.
+  const hasMoreBefore = opts.hasMoreBefore ?? firstWatermark > 1;
 
   return {
     firstWatermark,

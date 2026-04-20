@@ -29,7 +29,7 @@ import { UserRepository } from '../auth/user.repository.js';
  */
 
 @Module({
-  imports: [DbModule, AuthModule, forwardRef(() => MessagesModule), forwardRef(() => AttachmentsModule)],
+  imports: [DbModule, forwardRef(() => AuthModule), forwardRef(() => MessagesModule), forwardRef(() => AttachmentsModule)],
   controllers: [RoomsController, RoomsManagementController],
   providers: [RoomsRepository, RoomsService, UserRepository],
   exports: [RoomsService, RoomsRepository],

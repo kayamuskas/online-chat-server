@@ -315,7 +315,7 @@ export class MessagesController {
   @Delete('rooms/:roomId/messages/:messageId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteRoomMessage(
-    @Param('roomId') roomId: string,
+    @Param('roomId') _roomId: string,
     @Param('messageId') messageId: string,
     @CurrentUser() ctx: AuthContext,
   ): Promise<void> {
@@ -334,7 +334,7 @@ export class MessagesController {
   @Delete('dm/:conversationId/messages/:messageId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteDmMessage(
-    @Param('conversationId') conversationId: string,
+    @Param('conversationId') _conversationId: string,
     @Param('messageId') messageId: string,
     @CurrentUser() ctx: AuthContext,
   ): Promise<void> {

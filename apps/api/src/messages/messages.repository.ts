@@ -285,6 +285,20 @@ export class MessagesRepository {
     );
     const totalCount = Number(countResult.rows[0]?.total ?? 0);
 
+    let hasMoreBefore = false;
+    const firstWatermark = views[0]?.conversation_watermark;
+    if (firstWatermark !== undefined) {
+      const olderCountResult = await this.db.query<{ total: string }>(
+        `SELECT COUNT(*)::BIGINT AS total
+         FROM messages
+         WHERE conversation_type = $1
+           AND conversation_id = $2
+           AND conversation_watermark < $3`,
+        [query.conversation_type, query.conversation_id, firstWatermark],
+      );
+      hasMoreBefore = Number(olderCountResult.rows[0]?.total ?? 0) > 0;
+    }
+
     // Derive range metadata from the in-memory page using the shared helper.
     const rawMessages = views.map((v) => ({
       id: v.id,
@@ -298,7 +312,7 @@ export class MessagesRepository {
       created_at: v.created_at,
     }));
 
-    const range = computeHistoryRange(sortByWatermark(rawMessages), { totalCount });
+    const range = computeHistoryRange(sortByWatermark(rawMessages), { totalCount, hasMoreBefore });
 
     return { messages: views, range };
   }

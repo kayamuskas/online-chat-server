@@ -113,7 +113,7 @@ describe('MSG-08: computeHistoryRange returns correct range metadata', () => {
 
   it('hasMoreBefore is true when firstWatermark > 1 (older messages exist)', () => {
     const messages = makeMessages('room', 'room-1', [3, 4, 5]);
-    const range = computeHistoryRange(messages, { totalCount: 10 });
+    const range = computeHistoryRange(messages, { totalCount: 10, hasMoreBefore: true });
     expect(range.hasMoreBefore).toBe(true);
   });
 
@@ -135,6 +135,14 @@ describe('MSG-08: computeHistoryRange returns correct range metadata', () => {
     expect(range.lastWatermark).toBe(0);
     expect(range.hasMoreBefore).toBe(false);
     expect(range.totalCount).toBe(0);
+  });
+
+  it('supports sparse watermarks after deletions without implying older history exists', () => {
+    const messages = makeMessages('room', 'room-1', [7]);
+    const range = computeHistoryRange(messages, { totalCount: 1, hasMoreBefore: false });
+    expect(range.firstWatermark).toBe(7);
+    expect(range.lastWatermark).toBe(7);
+    expect(range.hasMoreBefore).toBe(false);
   });
 });
 

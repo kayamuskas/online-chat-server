@@ -39,7 +39,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service.js';
 import { extractSessionToken } from '../ws/ws-auth.js';
 import type { Message, MessageView } from './messages.types.js';
@@ -86,7 +86,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
    */
   private readonly socketUserMap = new Map<string, string>();
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
+  ) {}
 
   // ── Connection lifecycle ──────────────────────────────────────────────────
 

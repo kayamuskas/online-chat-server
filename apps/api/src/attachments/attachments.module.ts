@@ -16,7 +16,7 @@ import { AttachmentsService } from './attachments.service.js';
 import { AttachmentsController } from './attachments.controller.js';
 
 @Module({
-  imports: [DbModule, AuthModule, forwardRef(() => RoomsModule), ContactsModule],
+  imports: [DbModule, forwardRef(() => AuthModule), forwardRef(() => RoomsModule), ContactsModule],
   controllers: [AttachmentsController],
   providers: [AttachmentsRepository, AttachmentsService],
   exports: [AttachmentsRepository, AttachmentsService],

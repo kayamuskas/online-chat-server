@@ -409,7 +409,7 @@ export class RoomsService {
    *
    * Order: WS broadcast FIRST (D-06), then FS cleanup, then DB cascade.
    */
-  async deleteRoom(roomId: string, actorId: string): Promise<void> {
+  async deleteRoom(roomId: string, _actorId: string): Promise<void> {
     await this.getRoom(roomId);  // throws NotFoundException if not found
 
     // D-06: WS broadcast BEFORE any data deletion

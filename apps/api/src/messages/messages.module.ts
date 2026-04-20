@@ -29,7 +29,7 @@ import { MessagesGateway } from './messages.gateway.js';
 @Module({
   imports: [
     DbModule,
-    AuthModule,
+    forwardRef(() => AuthModule),
     forwardRef(() => RoomsModule),
     ContactsModule,
     forwardRef(() => AttachmentsModule),  // Phase 7: attachment binding in sendMessage

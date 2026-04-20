@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DbModule } from '../db/db.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { ContactsRepository } from './contacts.repository.js';
@@ -13,7 +13,7 @@ import { UserRepository } from '../auth/user.repository.js';
  * without re-implementing the friendship/ban policy.
  */
 @Module({
-  imports: [DbModule, AuthModule],
+  imports: [DbModule, forwardRef(() => AuthModule)],
   controllers: [ContactsController],
   providers: [ContactsRepository, ContactsService, UserRepository],
   exports: [ContactsService, ContactsRepository],
