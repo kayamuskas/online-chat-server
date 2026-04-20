@@ -80,6 +80,7 @@ describe('MSG-01: Message type covers room and DM targets', () => {
       edited_at: null,
       conversation_watermark: 1,
       created_at: new Date(),
+      attachments: [],
     };
     expect(view.author_username).toBe('alice');
   });

@@ -31,6 +31,7 @@ import {
 import { MessagesRepository, type MessageHistoryResult } from './messages.repository.js';
 import { RoomsRepository } from '../rooms/rooms.repository.js';
 import { ContactsRepository } from '../contacts/contacts.repository.js';
+import { AttachmentsRepository } from '../attachments/attachments.repository.js';
 import {
   validateMessageContent,
   validateReplyTarget,
@@ -49,6 +50,7 @@ export class MessagesService {
     private readonly repo: MessagesRepository,
     private readonly roomsRepo: RoomsRepository,
     private readonly contactsRepo: ContactsRepository,
+    private readonly attachmentsRepo: AttachmentsRepository,
   ) {}
 
   // ── Internal access guards ─────────────────────────────────────────────────
@@ -142,6 +144,16 @@ export class MessagesService {
     }
 
     const created = await this.repo.createMessage(input);
+
+    // D-45: Bind attachments if provided
+    if (input.attachment_ids && input.attachment_ids.length > 0) {
+      await this.attachmentsRepo.bindAttachments(
+        created.id,
+        input.attachment_ids,
+        input.author_id,
+      );
+    }
+
     const view = await this.repo.findMessageViewById(created.id);
     if (!view) throw new NotFoundException(`Message '${created.id}' disappeared after insert`);
     return view;

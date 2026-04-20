@@ -20,6 +20,7 @@ import { DbModule } from '../db/db.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { RoomsModule } from '../rooms/rooms.module.js';
 import { ContactsModule } from '../contacts/contacts.module.js';
+import { AttachmentsModule } from '../attachments/attachments.module.js';
 import { MessagesRepository } from './messages.repository.js';
 import { MessagesService } from './messages.service.js';
 import { MessagesController } from './messages.controller.js';
@@ -31,6 +32,7 @@ import { MessagesGateway } from './messages.gateway.js';
     AuthModule,
     RoomsModule,
     ContactsModule,
+    AttachmentsModule,  // Phase 7: attachment binding in sendMessage
   ],
   controllers: [MessagesController],
   providers: [
