@@ -365,6 +365,15 @@ export class RoomsService {
       );
     }
 
+    // D-17: admin cannot remove/ban another admin — only owner can
+    const targetIsAdmin = await this.roomsRepo.isAdmin(roomId, targetUserId);
+    if (targetIsAdmin) {
+      const callerIsOwner = await this.isOwner(roomId, removedByUserId);
+      if (!callerIsOwner) {
+        throw new ForbiddenException('Only the room owner can remove or ban an admin');
+      }
+    }
+
     // Target must be a current member
     const membership = await this.roomsRepo.getMembership(roomId, targetUserId);
     if (!membership) {
