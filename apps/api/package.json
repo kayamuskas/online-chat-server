@@ -20,6 +20,7 @@
     "bcrypt": "^6.0.0",
     "bullmq": "^5.58.5",
     "cookie-parser": "^1.4.7",
+    "multer": "^2.1.1",
     "pg": "^8.16.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
     "@vitest/coverage-v8": "^4.1.4",
