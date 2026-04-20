@@ -45,7 +45,7 @@ Declared values (must be multiples of 4):
 Exceptions:
 - Message action bar buttons: 4px gap (`.msg-bubble__actions` gap: 0.4rem ≈ 6px — preserve existing value, do not change)
 - Danger zone confirm inline block padding: 12px top/bottom, 16px left/right (matches `.revoke-confirm` pattern)
-- Delete button in message action bar: min touch target 32px height (`.btn--xs` pattern: 0.25rem 0.625rem padding)
+- `.btn--xs` padding: 0.25rem 0.625rem — preserve existing codebase value, do not change
 
 Source: `apps/web/src/styles.css` — existing spacing pattern, 8-point scale already in use.
 
@@ -56,15 +56,15 @@ Source: `apps/web/src/styles.css` — existing spacing pattern, 8-point scale al
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 16px (1rem) | 400 | 1.6 |
-| Label / small | 14px (0.875rem) | 500 | 1.5 |
+| Label / small | 14px (0.875rem) | 400 | 1.5 |
 | Heading | 20px (1.25rem) | 600 | 1.2 |
 | Caption / mono | 11px (0.68rem) | 400 | 1.3 |
 
 Notes:
 - Body font: `var(--font-sans)` — system stack
 - Headings inside danger zones: 14px weight 600 (`var(--color-text)`) — same as `.manage-room__section-title` convention
-- Danger zone description text: 13px weight 400 (`var(--color-muted)`) — same as `.revoke-confirm__detail`
-- Delete button label: 13px weight 600 (`var(--color-error)` or white on danger bg) — same as `.btn--danger`
+- Danger zone description text: 14px weight 400 (`var(--color-muted)`) — same size as Label/small
+- Delete button label: 14px weight 600 (`var(--color-error)` or white on danger bg) — same as `.btn--danger`
 
 Source: `apps/web/src/styles.css` — pre-existing type scale.
 
@@ -144,7 +144,7 @@ CSS contract:
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-error);
-  margin-bottom: 0.625rem;
+  margin-bottom: 0.5rem;
 }
 .danger-zone__description {
   font-size: 0.875rem;
@@ -184,7 +184,7 @@ States:
 1. **Idle**: `<button class="btn btn--danger btn--xs">Delete Room</button>` — visible only to owner
 2. **Confirming**: `.danger-zone__confirm` block expands inline
    - Text: "This will permanently delete **{room.name}**, all its messages and attachments. This cannot be undone."
-   - Buttons: `<button class="btn btn--danger">Confirm Delete</button>` + `<button class="btn btn--soft">Cancel</button>`
+   - Buttons: `<button class="btn btn--danger">Confirm Delete</button>` + `<button class="btn btn--soft">Keep Room</button>`
 3. **Deleting**: both buttons disabled, Confirm shows "Deleting…"
 4. **Done**: client navigates away on receiving `room-deleted` WS event — no success state needed
 
@@ -201,7 +201,7 @@ States:
 1. **Idle**: `<button class="btn btn--danger btn--xs">Delete Account</button>`
 2. **Confirming**: `.danger-zone__confirm` block expands inline with password field
    - Password field: `.field__input` type="password" placeholder="Enter your password to confirm"
-   - Buttons: `<button class="btn btn--danger" disabled={!password.trim()}>Confirm Delete Account</button>` + `<button class="btn btn--soft">Cancel</button>`
+   - Buttons: `<button class="btn btn--danger" disabled={!password.trim()}>Confirm Delete Account</button>` + `<button class="btn btn--soft">Keep Account</button>`
 3. **Submitting**: buttons disabled, Confirm shows "Deleting…"
 4. **Error** (wrong password): `.error-msg` shown inline — "Incorrect password. Please try again."
 5. **Success**: client redirected to auth screen (same as sign-out per D-16)
@@ -219,7 +219,8 @@ Password input: uncontrolled or controlled, cleared on cancel.
 | Primary CTA — room delete (confirm) | "Confirm Delete" |
 | Primary CTA — account delete (idle) | "Delete Account" |
 | Primary CTA — account delete (confirm) | "Confirm Delete Account" |
-| Cancel action | "Cancel" |
+| Cancel action — room delete flow | "Keep Room" |
+| Cancel action — account delete flow | "Keep Account" |
 | Danger zone section title | "Danger Zone" |
 | Room delete description | "Permanently delete this room, all its messages and attachments. This action cannot be undone." |
 | Room delete confirm text | "This will permanently delete **{room.name}**, all its messages and attachments. This cannot be undone." |
@@ -337,7 +338,7 @@ New rules to append to `apps/web/src/styles.css`:
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-error);
-  margin-bottom: 0.625rem;
+  margin-bottom: 0.5rem;
 }
 
 .danger-zone__description {
