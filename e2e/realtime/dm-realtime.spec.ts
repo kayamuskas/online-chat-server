@@ -10,17 +10,17 @@ import fixtures from '../../.e2e-fixtures.json' assert { type: 'json' };
 
 const fx = fixtures as E2EFixtures;
 
-/** Open DM with partner via contacts sidebar "Msg" button. */
+/** Open DM with partner via clickable contacts sidebar row. */
 async function openDmView(page: import('@playwright/test').Page, partnerUsername: string) {
   // Click Contacts nav button to ensure sidebar is showing friends
   const contactsBtn = page.locator('button.app-topbar__tab', { hasText: 'Contacts' });
   if (await contactsBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
     await contactsBtn.click();
   }
-  // Find the contact row in the sidebar and click its "Msg" button
+  // Find the contact row in the sidebar and click the row itself
   const row = page.locator('.contacts-sidebar__row', { hasText: partnerUsername });
   await row.waitFor({ timeout: 8_000 });
-  await row.locator('button', { hasText: 'Msg' }).click();
+  await row.click();
   await page.waitForSelector('.msg-timeline', { timeout: 8_000 });
 }
 

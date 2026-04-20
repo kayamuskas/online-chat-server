@@ -246,7 +246,6 @@ export function RoomChatView({
     socket.io.on("reconnect", onReconnect);
 
     return () => {
-      socket.emit("leaveRoom", { roomId });
       socket.off("message-created", onMessageCreated);
       socket.off("message-edited", onMessageEdited);
       socket.io.off("reconnect", onReconnect);
@@ -308,9 +307,18 @@ export function RoomChatView({
 
   async function handleLoadOlder() {
     if (!range?.hasMoreBefore) return;
+    const beforeWatermark = range.firstWatermark;
+    const previousFirstWatermark = messages[0]?.conversationWatermark ?? null;
     setLoadingOlder(true);
     try {
-      await loadHistory({ beforeWatermark: range.firstWatermark });
+      const result = await getRoomHistory(roomId, { beforeWatermark });
+      setMessages((prev) => [...result.messages, ...prev]);
+      // Guard against stale hasMoreBefore=true when no older page exists.
+      const nextFirstWatermark = result.messages[0]?.conversationWatermark ?? previousFirstWatermark;
+      const reachedStart =
+        result.messages.length === 0 ||
+        (previousFirstWatermark !== null && nextFirstWatermark !== null && nextFirstWatermark >= previousFirstWatermark);
+      setRange(reachedStart ? { ...result.range, hasMoreBefore: false } : result.range);
     } finally {
       setLoadingOlder(false);
     }

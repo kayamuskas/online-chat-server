@@ -168,7 +168,16 @@ export class ContactsService {
    * presenceStatus is enriched by PresenceService in Phase 6; defaults to undefined here.
    */
   async getFriends(userId: string): Promise<FriendWithPresence[]> {
-    return this.repo.listFriends(userId);
+    const friends = await this.repo.listFriends(userId);
+    return Promise.all(
+      friends.map(async (friend) => {
+        if (friend.conversationId) {
+          return friend;
+        }
+        const conversation = await this.repo.createDmConversation(userId, friend.userId);
+        return { ...friend, conversationId: conversation.id };
+      }),
+    );
   }
 
   /**

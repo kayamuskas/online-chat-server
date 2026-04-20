@@ -93,6 +93,7 @@ export interface DmConversation {
 export interface FriendWithPresence {
   userId: string;
   username: string;
+  conversationId?: string | null;
   presenceStatus?: 'online' | 'afk' | 'offline';
 }
 

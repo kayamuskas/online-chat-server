@@ -88,8 +88,7 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
   const hasMoreBefore = range?.hasMoreBefore ?? false;
   const scrollRef = useRef<HTMLDivElement>(null);
   const previousMessageCountRef = useRef(messages.length);
-  const pendingOlderLoadRef = useRef(false);
-  const restoreScrollRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null);
+  const jumpToTopAfterOlderRef = useRef(false);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const handleScrollRef = useRef<() => void>(null!);
 
@@ -108,10 +107,17 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
     const nextCount = messages.length;
     const previousCount = previousMessageCountRef.current;
 
-    if (restoreScrollRef.current && node && nextCount > previousCount) {
-      const { scrollHeight, scrollTop } = restoreScrollRef.current;
-      node.scrollTop = node.scrollHeight - scrollHeight + scrollTop;
-      restoreScrollRef.current = null;
+    if (jumpToTopAfterOlderRef.current && node && nextCount > previousCount) {
+      node.scrollTop = 0;
+      // A second write on the next frame avoids browser scroll anchoring
+      // snapping us back near the old viewport after prepend.
+      window.requestAnimationFrame(() => {
+        const nextNode = scrollRef.current;
+        if (nextNode) {
+          nextNode.scrollTop = 0;
+        }
+      });
+      jumpToTopAfterOlderRef.current = false;
     } else if (nextCount > previousCount) {
       if (!isScrolledUp) {
         node?.scrollTo({
@@ -127,23 +133,9 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
 
   useEffect(() => {
     if (!loadingOlder) {
-      pendingOlderLoadRef.current = false;
+      jumpToTopAfterOlderRef.current = false;
     }
   }, [loadingOlder, messages.length]);
-
-  function requestOlderMessages() {
-    const node = scrollRef.current;
-    if (!node || !hasMoreBefore || loadingOlder || pendingOlderLoadRef.current) {
-      return;
-    }
-
-    restoreScrollRef.current = {
-      scrollHeight: node.scrollHeight,
-      scrollTop: node.scrollTop,
-    };
-    pendingOlderLoadRef.current = true;
-    onLoadOlder?.();
-  }
 
   // Keep ref in sync every render so the native listener always calls the latest closure.
   handleScrollRef.current = handleScroll;
@@ -201,8 +193,7 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
               onClick={() => {
                 const node = scrollRef.current;
                 if (!node || !hasMoreBefore || loadingOlder) return;
-                restoreScrollRef.current = { scrollHeight: node.scrollHeight, scrollTop: node.scrollTop };
-                pendingOlderLoadRef.current = true; // prevent scroll listener double-trigger
+                jumpToTopAfterOlderRef.current = true;
                 onLoadOlder?.();
               }}
             >

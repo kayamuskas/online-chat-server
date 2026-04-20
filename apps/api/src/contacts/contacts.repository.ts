@@ -211,9 +211,14 @@ export class ContactsRepository {
    */
   async listFriends(userId: string): Promise<FriendWithPresence[]> {
     const result = await this.db.query<FriendWithPresence>(
-      `SELECT u.id AS "userId", u.username
+      `SELECT u.id AS "userId",
+              u.username,
+              dc.id AS "conversationId"
        FROM friendships f
        JOIN users u ON u.id = CASE WHEN f.user_a_id = $1 THEN f.user_b_id ELSE f.user_a_id END
+       LEFT JOIN dm_conversations dc
+         ON dc.user_a_id = LEAST($1, u.id)
+        AND dc.user_b_id = GREATEST($1, u.id)
        WHERE f.user_a_id = $1 OR f.user_b_id = $1
        ORDER BY u.username ASC`,
       [userId],

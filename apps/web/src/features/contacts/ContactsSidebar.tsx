@@ -3,8 +3,7 @@
  *
  * Renders the CONTACTS section below the ROOMS section (D-15, D-16, D-17, D-18).
  * Each contact row shows a PresenceDot and username.
- * The Message button is disabled with tooltip when dmEligible is false (D-13).
- * Bottom of the list has "+ Add contact" button.
+ * The whole row is keyboard-accessible when DM is allowed (D-13).
  */
 
 import { useEffect } from "react";
@@ -22,7 +21,6 @@ export interface ContactRow {
 interface ContactsSidebarProps {
   contacts: ContactRow[];
   currentUserId: string;
-  onAddContact?: () => void;
   onOpenDm?: (userId: string) => void;
   socket?: Socket | null;
   onPresenceUpdate?: (presenceMap: Record<string, string>) => void;
@@ -32,7 +30,6 @@ interface ContactsSidebarProps {
 export function ContactsSidebar({
   contacts,
   currentUserId,
-  onAddContact,
   onOpenDm,
   socket = null,
   onPresenceUpdate,
@@ -79,7 +76,13 @@ export function ContactsSidebar({
             onClick={canDm ? () => onOpenDm?.(c.userId) : undefined}
             role={canDm ? "button" : undefined}
             tabIndex={canDm ? 0 : undefined}
-            onKeyDown={canDm ? (e) => { if (e.key === "Enter" || e.key === " ") onOpenDm?.(c.userId); } : undefined}
+            aria-label={canDm ? `Open direct messages with ${c.username}` : undefined}
+            onKeyDown={canDm ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpenDm?.(c.userId);
+              }
+            } : undefined}
             title={!c.dmEligible && c.userId !== currentUserId ? "Add as friend to message" : undefined}
           >
             <PresenceDot status={c.presenceStatus ?? "offline"} />
@@ -92,14 +95,6 @@ export function ContactsSidebar({
           </div>
         );
       })}
-      <button
-        type="button"
-        className="app-account__nav-item"
-        onClick={onAddContact}
-        style={{ marginTop: "0.5rem", fontSize: "0.85rem" }}
-      >
-        + Add contact
-      </button>
     </div>
   );
 }

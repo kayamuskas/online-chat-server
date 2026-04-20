@@ -19,7 +19,7 @@
  *   - "dm"       → DmChatView (real DM conversation surface; Phase 6)
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   me,
   getMyPrivateRooms,
@@ -194,25 +194,59 @@ function AuthenticatedShell({
   const [publicOpen, setPublicOpen] = useState(true);
   const [privateOpen, setPrivateOpen] = useState(true);
   const [contactsOpen, setContactsOpen] = useState(true);
+  const [sidebarQuery, setSidebarQuery] = useState("");
   const isCompactNavigation =
     tab === "room-chat" || tab === "dm" || tab === "manage-room";
   const partner = dmPartnerId
     ? contacts.find((contact) => contact.userId === dmPartnerId) ?? null
     : null;
-  const sidebarContacts: ContactRow[] = contacts.map((contact) => ({
-    userId: contact.userId,
-    username: contact.username,
-    presenceStatus: contact.presenceStatus,
-    dmEligible: true,
-    unreadCount: dmUnread[contact.userId] || undefined,
-  }));
+  const queryNorm = sidebarQuery.trim().toLowerCase();
+  const visibleTrackedRooms = trackedRooms.filter((room) =>
+    queryNorm.length === 0 ? true : room.name.toLowerCase().includes(queryNorm),
+  );
+  const sidebarContacts: ContactRow[] = contacts
+    .filter((contact) => contact.userId !== user.id)
+    .filter((contact) =>
+      queryNorm.length === 0 ? true : contact.username.toLowerCase().includes(queryNorm),
+    )
+    .map((contact) => ({
+      userId: contact.userId,
+      username: contact.username,
+      presenceStatus: contact.presenceStatus,
+      dmEligible: true,
+      unreadCount: dmUnread[contact.userId] || undefined,
+    }));
   const rightRailMembers = contacts.slice(0, 6).map((contact) => ({
     id: contact.userId,
     username: contact.username,
     status: (contact.presenceStatus ?? "offline") as "online" | "afk" | "offline",
     lastSeenAt: contact.presenceStatus === "offline" ? new Date().toISOString() : null,
   }));
-  const knownDmEntries = Object.entries(knownDmConversationIds);
+  const knownDmEntries = useMemo(
+    () => Object.entries(knownDmConversationIds),
+    [knownDmConversationIds],
+  );
+  const tabRef = useRef(tab);
+  const activeRoomIdRef = useRef(activeRoom?.id ?? null);
+  const dmPartnerIdRef = useRef(dmPartnerId);
+  const knownDmEntriesRef = useRef(knownDmEntries);
+  const knownDmConversationIdsRef = useRef(knownDmConversationIds);
+  const onClearRoomUnreadRef = useRef(onClearRoomUnread);
+  const onIncrementRoomUnreadRef = useRef(onIncrementRoomUnread);
+  const onClearDmUnreadRef = useRef(onClearDmUnread);
+  const onIncrementDmUnreadRef = useRef(onIncrementDmUnread);
+  const onTrackDmConversationRef = useRef(onTrackDmConversation);
+
+  tabRef.current = tab;
+  activeRoomIdRef.current = activeRoom?.id ?? null;
+  dmPartnerIdRef.current = dmPartnerId;
+  knownDmEntriesRef.current = knownDmEntries;
+  knownDmConversationIdsRef.current = knownDmConversationIds;
+  onClearRoomUnreadRef.current = onClearRoomUnread;
+  onIncrementRoomUnreadRef.current = onIncrementRoomUnread;
+  onClearDmUnreadRef.current = onClearDmUnread;
+  onIncrementDmUnreadRef.current = onIncrementDmUnread;
+  onTrackDmConversationRef.current = onTrackDmConversation;
 
   useEffect(() => {
     if (!socket) {
@@ -275,11 +309,11 @@ function AuthenticatedShell({
       }
 
       if (conversationType === "room") {
-        if (tab === "room-chat" && activeRoom?.id === conversationId) {
-          onClearRoomUnread(conversationId);
+        if (tabRef.current === "room-chat" && activeRoomIdRef.current === conversationId) {
+          onClearRoomUnreadRef.current(conversationId);
           return;
         }
-        onIncrementRoomUnread(conversationId);
+        onIncrementRoomUnreadRef.current(conversationId);
         return;
       }
 
@@ -287,35 +321,32 @@ function AuthenticatedShell({
         return;
       }
 
-      const partnerId = knownDmEntries.find(([, id]) => id === conversationId)?.[0];
+      const partnerId =
+        knownDmEntriesRef.current.find(([, id]) => id === conversationId)?.[0]
+        ?? (authorId && authorId !== user.id ? authorId : undefined);
       if (!partnerId) {
         return;
       }
 
-      if (tab === "dm" && dmPartnerId === partnerId) {
-        onClearDmUnread(partnerId);
+      // If a DM event arrived before the local map knew this conversation,
+      // learn it so unread routing and future joins work deterministically.
+      if (!(partnerId in knownDmConversationIdsRef.current)) {
+        onTrackDmConversationRef.current(partnerId, conversationId);
+      }
+
+      if (tabRef.current === "dm" && dmPartnerIdRef.current === partnerId) {
+        onClearDmUnreadRef.current(partnerId);
         return;
       }
 
-      onIncrementDmUnread(partnerId);
+      onIncrementDmUnreadRef.current(partnerId);
     }
 
     socket.on("message-created", onMessageCreated);
     return () => {
       socket.off("message-created", onMessageCreated);
     };
-  }, [
-    activeRoom?.id,
-    dmPartnerId,
-    knownDmEntries,
-    onClearDmUnread,
-    onClearRoomUnread,
-    onIncrementDmUnread,
-    onIncrementRoomUnread,
-    socket,
-    tab,
-    user.id,
-  ]);
+  }, [socket, user.id]);
 
   let shellTitle = "Classic chat";
   let shellSubtitle = "Rooms, contacts, and account surfaces in one product shell.";
@@ -668,6 +699,21 @@ function AuthenticatedShell({
 
       <main className={`app-account${isCompactNavigation ? " app-account--compact" : ""}`}>
         <nav className="app-account__nav app-shell__sidebar">
+          <section className="app-shell__nav-head">
+            <div className="app-shell__nav-head-row">
+              <span>Rooms &amp; contacts</span>
+              <span className="app-shell__kbd">⌘K</span>
+            </div>
+            <input
+              type="search"
+              className="app-shell__search"
+              placeholder="Search rooms, people..."
+              value={sidebarQuery}
+              onChange={(e) => setSidebarQuery(e.target.value)}
+              aria-label="Search rooms and contacts"
+            />
+          </section>
+
           <section className="app-shell__nav-section">
             <button
               type="button"
@@ -678,8 +724,8 @@ function AuthenticatedShell({
               ROOMS
             </button>
             {roomsOpen && (() => {
-              const sidebarPublicRooms = trackedRooms.filter((r) => r.visibility === "public");
-              const sidebarPrivateRooms = trackedRooms.filter((r) => r.visibility === "private");
+              const sidebarPublicRooms = visibleTrackedRooms.filter((r) => r.visibility === "public");
+              const sidebarPrivateRooms = visibleTrackedRooms.filter((r) => r.visibility === "private");
               const renderRoom = (room: ShellRoomLink) => {
                 const unreadCount = roomUnread[room.id] ?? 0;
                 const isActive = tab === "room-chat" && activeRoom?.id === room.id;
@@ -729,7 +775,7 @@ function AuthenticatedShell({
                       {privateOpen && sidebarPrivateRooms.map(renderRoom)}
                     </>
                   )}
-                  {trackedRooms.length === 0 && (
+                  {visibleTrackedRooms.length === 0 && (
                     <p className="app-shell__thread-empty">No rooms joined yet</p>
                   )}
                 </div>
@@ -753,10 +799,26 @@ function AuthenticatedShell({
                 socket={socket}
                 activePartnerId={tab === "dm" ? dmPartnerId : null}
                 onPresenceUpdate={onPresenceUpdate}
-                onAddContact={onAddContactOpen}
                 onOpenDm={onOpenDm}
               />
             )}
+          </section>
+
+          <section className="app-shell__nav-actions">
+            <button
+              type="button"
+              className="app-account__nav-item app-shell__nav-action-btn"
+              onClick={() => onSelectTab("create-room")}
+            >
+              + Create room
+            </button>
+            <button
+              type="button"
+              className="app-account__nav-item app-shell__nav-action-btn"
+              onClick={onAddContactOpen}
+            >
+              + Add contact
+            </button>
           </section>
 
           <section className="app-shell__nav-section app-shell__nav-section--account">
@@ -910,6 +972,22 @@ function App() {
     try {
       const result = await getMyFriends();
       setContacts(result.friends);
+      setKnownDmConversationIds((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const friend of result.friends) {
+          const conversationId = friend.conversationId;
+          if (!conversationId) {
+            continue;
+          }
+          if (next[friend.userId] === conversationId) {
+            continue;
+          }
+          next[friend.userId] = conversationId;
+          changed = true;
+        }
+        return changed ? next : prev;
+      });
     } catch {
       // non-fatal: sidebar shows empty state
     }
