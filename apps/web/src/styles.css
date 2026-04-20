@@ -1181,17 +1181,120 @@ body {
   /* content area — inherits .app-account__content sizing */
 }
 
+.manage-room--modal {
+  display: flex;
+  justify-content: center;
+}
+
+.manage-room__modal {
+  width: 100%;
+  max-width: 880px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fffdfa;
+  box-shadow: 0 18px 48px rgba(83, 57, 34, 0.12);
+  overflow: hidden;
+}
+
 .manage-room__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.25rem;
+  padding: 1.25rem 1.25rem 1rem;
   flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-border);
+  background: #fcfaf4;
 }
 
 .manage-room__section {
   margin-bottom: 1.75rem;
+}
+
+.manage-room__tabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1.25rem 0;
+  border-bottom: 1px solid var(--color-border);
+  background: #fcfaf4;
+}
+
+.manage-room__tab {
+  border: 1px solid transparent;
+  border-bottom: 0;
+  background: none;
+  color: var(--color-muted);
+  padding: 0.55rem 0.75rem;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  font-size: 0.84rem;
+}
+
+.manage-room__tab--active {
+  background: #fffdfa;
+  border-color: var(--color-border);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.manage-room__flash {
+  padding: 1rem 1.25rem 0;
+}
+
+.manage-room__body {
+  padding: 1.25rem;
+}
+
+.manage-room__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.manage-room__rule-card,
+.manage-room__settings-card,
+.manage-room__danger-card {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #fcfbf7;
+  padding: 1rem;
+}
+
+.manage-room__settings-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.manage-room__setting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.manage-room__setting-label {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+}
+
+.manage-room__panel-note {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.manage-room__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--color-border);
 }
 
 .manage-room__section-title {
@@ -1201,6 +1304,14 @@ body {
   color: var(--color-muted);
   text-transform: uppercase;
   margin-bottom: 0.625rem;
+}
+
+.manage-room__fineprint {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  text-transform: uppercase;
 }
 
 /* Invite form */
@@ -1414,5 +1525,14 @@ body {
 
   .app-account__content {
     min-height: auto;
+  }
+
+  .manage-room__settings-card {
+    grid-template-columns: 1fr;
+  }
+
+  .manage-room__footer {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

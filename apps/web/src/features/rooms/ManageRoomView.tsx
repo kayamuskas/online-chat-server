@@ -38,6 +38,8 @@ interface ManageRoomViewProps {
   onBack?: () => void;
 }
 
+type ManageTab = "members" | "admins" | "banned" | "invitations" | "settings";
+
 export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewProps) {
   // For Phase 4 the member list is a stub — real member fetch is part of a
   // later messaging/member-panel phase. We load ban list and expose management
@@ -63,6 +65,7 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
 
   // Phase 5: Add friend from member row (D-05)
   const [addFriendTarget, setAddFriendTarget] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ManageTab>("members");
 
   const isOwner = room.owner_id === currentUserId;
   // For phase 4 we treat the current user as admin if they have access to this view
@@ -185,31 +188,101 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
   // comes in the messaging/member-panel phase. We show an empty table with
   // correct column structure here.
   const memberRows: MemberRow[] = [];
+  const adminRows = memberRows.filter((member) => (
+    member.membership.role === "owner" || member.membership.role === "admin"
+  ));
 
-  return (
-    <div className="manage-room">
-      <div className="manage-room__header">
-        <div>
-          <h2>Manage room: {room.name}</h2>
-          <p className="sub">
-            {room.description ?? "No description."}
-            {" · "}
-            {room.member_count} {room.member_count === 1 ? "member" : "members"}
+  function renderMembersTab() {
+    if (memberRows.length === 0) {
+      return (
+        <div className="manage-room__panel-note">
+          <p className="rooms-notice">
+            Member list hydration is still lightweight in the current backend shape.
+            The modal keeps the correct workflow, and the live member/context rail
+            will fill this tab as Phase 9 continues.
           </p>
         </div>
-        {onBack && (
-          <button type="button" className="btn btn--soft btn--xs" onClick={onBack}>
-            &#8592; Back
-          </button>
+      );
+    }
+
+    return (
+      <RoomMembersTable
+        members={memberRows}
+        currentUserId={currentUserId}
+        ownerUserId={room.owner_id}
+        currentUserIsAdmin={currentUserIsAdmin}
+        currentUserIsOwner={isOwner}
+        onMakeAdmin={(uid) => void handleMakeAdmin(uid)}
+        onRemoveAdmin={(uid) => void handleRemoveAdmin(uid)}
+        onRemoveMember={(uid) => void handleRemoveMember(uid)}
+        actionBusy={actionBusy}
+        onSendFriendRequest={(_userId, username) => setAddFriendTarget(username)}
+      />
+    );
+  }
+
+  function renderAdminsTab() {
+    return (
+      <div className="manage-room__stack">
+        <div className="manage-room__rule-card">
+          <p className="manage-room__section-title">Rules</p>
+          <p className="sub">
+            The owner is always an admin and cannot lose admin authority. Removing a
+            member from the room still acts as a ban until they are unbanned.
+          </p>
+        </div>
+
+        {adminRows.length === 0 ? (
+          <p className="rooms-notice">
+            The owner/admin workflow is available, but member-role hydration is still
+            deferred. Use the invitations and ban controls in this modal for now.
+          </p>
+        ) : (
+          <RoomMembersTable
+            members={adminRows}
+            currentUserId={currentUserId}
+            ownerUserId={room.owner_id}
+            currentUserIsAdmin={currentUserIsAdmin}
+            currentUserIsOwner={isOwner}
+            onMakeAdmin={(uid) => void handleMakeAdmin(uid)}
+            onRemoveAdmin={(uid) => void handleRemoveAdmin(uid)}
+            actionBusy={actionBusy}
+          />
         )}
       </div>
+    );
+  }
 
-      {actionError && <p className="error-msg">{actionError}</p>}
-      {actionSuccess && <p className="success-msg">{actionSuccess}</p>}
+  function renderBannedTab() {
+    return (
+      <div className="manage-room__stack">
+        {bansLoading && <p className="rooms-loading">Loading ban list…</p>}
+        {bansError && <p className="error-msg">{bansError}</p>}
+        {!bansLoading && !bansError && (
+          <RoomBanListView
+            bans={bans}
+            onUnban={(uid) => void handleUnban(uid)}
+            unbanBusy={actionBusy}
+          />
+        )}
+        <p className="manage-room__fineprint">
+          Banned users cannot rejoin until removed from this list.
+        </p>
+      </div>
+    );
+  }
 
-      {/* ── Invite by username (D-06) ─────────────────────────────────────── */}
-      <section className="manage-room__section">
-        <h3 className="manage-room__section-title">Invite by username</h3>
+  function renderInvitationsTab() {
+    return (
+      <div className="manage-room__stack">
+        <div className="manage-room__rule-card">
+          <p className="manage-room__section-title">Invitation flow</p>
+          <p className="sub">
+            Private rooms require invites. Public rooms can still use invites for a
+            controlled entry flow.
+          </p>
+        </div>
+
         <form
           className="invite-form"
           onSubmit={(e) => void handleInvite(e)}
@@ -219,7 +292,7 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
             <input
               className="field__input"
               type="text"
-              placeholder="Enter username…"
+              placeholder="Invite by username…"
               value={inviteUsername}
               onChange={(e) => setInviteUsername(e.target.value)}
               autoComplete="off"
@@ -234,62 +307,32 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
             {inviting ? "Sending…" : "Send invite"}
           </button>
         </form>
-        {inviteResult && <p className="success-msg" style={{ marginTop: "0.5rem" }}>{inviteResult}</p>}
-        {inviteError && <p className="error-msg" style={{ marginTop: "0.5rem" }}>{inviteError}</p>}
-      </section>
 
-      {/* ── Members table ─────────────────────────────────────────────────── */}
-      <section className="manage-room__section">
-        <h3 className="manage-room__section-title">Members</h3>
-        {memberRows.length === 0 ? (
-          <p className="rooms-notice">
-            Member list hydration is available once the messaging panel is active.
-            Use the invite and ban controls above and below to manage membership.
-          </p>
-        ) : (
-          <>
-            <RoomMembersTable
-              members={memberRows}
-              currentUserId={currentUserId}
-              ownerUserId={room.owner_id}
-              currentUserIsAdmin={currentUserIsAdmin}
-              currentUserIsOwner={isOwner}
-              onMakeAdmin={(uid) => void handleMakeAdmin(uid)}
-              onRemoveAdmin={(uid) => void handleRemoveAdmin(uid)}
-              onRemoveMember={(uid) => void handleRemoveMember(uid)}
-              actionBusy={actionBusy}
-              onSendFriendRequest={(_userId, username) => setAddFriendTarget(username)}
-            />
-            {addFriendTarget && (
-              <AddContactModal
-                onClose={() => setAddFriendTarget(null)}
-                onSuccess={() => setAddFriendTarget(null)}
-              />
-            )}
-          </>
-        )}
-      </section>
+        {inviteResult && <p className="success-msg">{inviteResult}</p>}
+        {inviteError && <p className="error-msg">{inviteError}</p>}
+      </div>
+    );
+  }
 
-      {/* ── Ban list ──────────────────────────────────────────────────────── */}
-      <section className="manage-room__section">
-        <h3 className="manage-room__section-title">Ban list</h3>
-        {bansLoading && <p className="rooms-loading">Loading ban list…</p>}
-        {bansError && <p className="error-msg">{bansError}</p>}
-        {!bansLoading && !bansError && (
-          <RoomBanListView
-            bans={bans}
-            onUnban={(uid) => void handleUnban(uid)}
-            unbanBusy={actionBusy}
-          />
-        )}
-      </section>
-
-      {/* ── Leave room ────────────────────────────────────────────────────── */}
-      <section className="manage-room__section">
-        <h3 className="manage-room__section-title">Leave room</h3>
+  function renderSettingsTab() {
+    return (
+      <div className="manage-room__stack">
+        <div className="manage-room__settings-card">
+          <div className="manage-room__setting">
+            <span className="manage-room__setting-label">Room name</span>
+            <strong>{room.name}</strong>
+          </div>
+          <div className="manage-room__setting">
+            <span className="manage-room__setting-label">Description</span>
+            <span>{room.description ?? "No description yet."}</span>
+          </div>
+          <div className="manage-room__setting">
+            <span className="manage-room__setting-label">Members</span>
+            <span>{room.member_count} total</span>
+          </div>
+        </div>
 
         {isOwner ? (
-          /* Owner leave refusal — explicit, not a generic failure (D-10) */
           <div className="owner-leave-warning">
             <span className="owner-leave-warning__icon" aria-hidden="true">&#9888;</span>
             <p className="owner-leave-warning__text">
@@ -298,7 +341,9 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
             </p>
           </div>
         ) : (
-          <>
+          <div className="manage-room__danger-card">
+            <p className="manage-room__section-title">Danger zone</p>
+            <p className="sub">Leaving removes your membership from this room.</p>
             <button
               type="button"
               className="btn btn--danger btn--xs"
@@ -308,9 +353,102 @@ export function ManageRoomView({ room, currentUserId, onBack }: ManageRoomViewPr
               {leaving ? "Leaving…" : "Leave room"}
             </button>
             {leaveError && <p className="error-msg" style={{ marginTop: "0.5rem" }}>{leaveError}</p>}
-          </>
+          </div>
         )}
-      </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="manage-room manage-room--modal">
+      <div className="manage-room__modal">
+        <div className="manage-room__header">
+          <div>
+            <h2>Manage room</h2>
+            <p className="sub">
+              <strong>{room.name}</strong>
+              {" · "}
+              {room.description ?? "No description."}
+            </p>
+          </div>
+          {onBack && (
+            <button type="button" className="btn btn--soft btn--xs" onClick={onBack}>
+              Close
+            </button>
+          )}
+        </div>
+
+        <div className="manage-room__tabs" role="tablist" aria-label="Manage room sections">
+          <button
+            type="button"
+            className={`manage-room__tab${activeTab === "members" ? " manage-room__tab--active" : ""}`}
+            onClick={() => setActiveTab("members")}
+          >
+            Members
+          </button>
+          <button
+            type="button"
+            className={`manage-room__tab${activeTab === "admins" ? " manage-room__tab--active" : ""}`}
+            onClick={() => setActiveTab("admins")}
+          >
+            Admins
+          </button>
+          <button
+            type="button"
+            className={`manage-room__tab${activeTab === "banned" ? " manage-room__tab--active" : ""}`}
+            onClick={() => setActiveTab("banned")}
+          >
+            Banned users
+          </button>
+          <button
+            type="button"
+            className={`manage-room__tab${activeTab === "invitations" ? " manage-room__tab--active" : ""}`}
+            onClick={() => setActiveTab("invitations")}
+          >
+            Invitations
+          </button>
+          <button
+            type="button"
+            className={`manage-room__tab${activeTab === "settings" ? " manage-room__tab--active" : ""}`}
+            onClick={() => setActiveTab("settings")}
+          >
+            Settings
+          </button>
+        </div>
+
+        {(actionError || actionSuccess) && (
+          <div className="manage-room__flash">
+            {actionError && <p className="error-msg">{actionError}</p>}
+            {actionSuccess && <p className="success-msg">{actionSuccess}</p>}
+          </div>
+        )}
+
+        <div className="manage-room__body">
+          {activeTab === "members" && renderMembersTab()}
+          {activeTab === "admins" && renderAdminsTab()}
+          {activeTab === "banned" && renderBannedTab()}
+          {activeTab === "invitations" && renderInvitationsTab()}
+          {activeTab === "settings" && renderSettingsTab()}
+        </div>
+
+        <div className="manage-room__footer">
+          <span className="manage-room__fineprint">
+            Remove from room is treated as a ban until the user is explicitly unbanned.
+          </span>
+          {onBack && (
+            <button type="button" className="btn btn--soft btn--xs" onClick={onBack}>
+              Close
+            </button>
+          )}
+        </div>
+      </div>
+
+      {addFriendTarget && (
+        <AddContactModal
+          onClose={() => setAddFriendTarget(null)}
+          onSuccess={() => setAddFriendTarget(null)}
+        />
+      )}
     </div>
   );
 }
