@@ -234,6 +234,28 @@ CREATE INDEX IF NOT EXISTS idx_messages_author_id
 CREATE INDEX IF NOT EXISTS idx_messages_reply_to_id
   ON messages (reply_to_id)
   WHERE reply_to_id IS NOT NULL;
+
+-- ── Phase 7: Attachments (migration 0006_attachments_core) ───────────────────
+
+CREATE TABLE IF NOT EXISTS attachments (
+  id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id        UUID        REFERENCES messages(id) ON DELETE CASCADE,
+  uploader_id       UUID        NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  original_filename TEXT        NOT NULL,
+  mime_type         TEXT        NOT NULL,
+  file_size         BIGINT      NOT NULL,
+  storage_path      TEXT        NOT NULL UNIQUE,
+  comment           TEXT,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_attachments_message_id
+  ON attachments (message_id)
+  WHERE message_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_attachments_orphan_cleanup
+  ON attachments (created_at)
+  WHERE message_id IS NULL;
 `;
 
 @Injectable()
