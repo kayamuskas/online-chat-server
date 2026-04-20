@@ -288,11 +288,64 @@ body {
   background-color: var(--color-surface);
 }
 
+.app-topbar__brand,
+.app-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.app-topbar__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.app-topbar__meta strong {
+  font-size: 0.9rem;
+  line-height: 1.1;
+}
+
+.app-topbar__meta span {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  line-height: 1.2;
+}
+
 .app-topbar__logo {
   font-weight: 700;
   font-size: 1rem;
   color: var(--color-text);
   letter-spacing: -0.01em;
+}
+
+.app-topbar__notif {
+  position: relative;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius);
+}
+
+.app-topbar__notif:hover {
+  border-color: var(--color-border);
+  background-color: rgba(91, 124, 246, 0.08);
+}
+
+.notif-badge {
+  position: absolute;
+  top: -0.15rem;
+  right: -0.05rem;
+  background: #e53e3e;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: 0.18rem 0.35rem;
+  min-width: 1rem;
+  text-align: center;
 }
 
 .app-topbar__user {
@@ -304,19 +357,41 @@ body {
 .app-account {
   flex: 1;
   display: grid;
-  grid-template-columns: 200px 1fr;
-  max-width: 960px;
+  grid-template-columns: 260px minmax(0, 1fr) 280px;
+  max-width: 1440px;
   margin: 2rem auto;
   width: 100%;
   padding: 0 1.5rem;
   gap: 1.75rem;
+  align-items: start;
+}
+
+.app-account--compact {
+  grid-template-columns: 220px minmax(0, 1fr) 260px;
 }
 
 /* Account side nav */
 .app-account__nav {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  padding: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.app-shell__nav-section {
+  display: flex;
+  flex-direction: column;
   gap: 0.125rem;
+}
+
+.app-shell__nav-section--account {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
 }
 
 .app-account__nav-label {
@@ -355,8 +430,9 @@ body {
 .app-account__content {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: 1rem;
   padding: 1.5rem;
+  min-height: 70dvh;
 }
 
 .app-account__content h2 {
@@ -370,6 +446,73 @@ body {
   font-size: 0.8125rem;
   color: var(--color-muted);
   margin-bottom: 1.25rem;
+}
+
+.app-shell__center {
+  min-width: 0;
+}
+
+.app-shell__content-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.app-shell__content-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 0.45rem;
+}
+
+.app-shell__content-title {
+  font-size: 1.65rem;
+  line-height: 1.05;
+  margin-bottom: 0.35rem;
+}
+
+.app-shell__content-sub {
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  max-width: 60ch;
+}
+
+.app-shell__aside {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.app-shell__rail-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.app-shell__rail-card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.app-shell__rail-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 0.55rem;
+}
+
+.app-shell__rail-copy {
+  font-size: 0.875rem;
+  color: var(--color-muted);
 }
 
 .form-actions {
@@ -1078,4 +1221,58 @@ body {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   margin-top: 0.75rem;
+}
+
+@media (max-width: 1120px) {
+  .app-account,
+  .app-account--compact {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .app-shell__aside {
+    grid-column: 1 / -1;
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .app-topbar {
+    height: auto;
+    padding: 0.9rem 1rem;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-direction: column;
+  }
+
+  .app-topbar__brand,
+  .app-topbar__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .app-account,
+  .app-account--compact {
+    grid-template-columns: 1fr;
+    padding: 0 1rem 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .app-account__nav,
+  .app-shell__aside {
+    position: static;
+  }
+
+  .app-shell__aside {
+    display: flex;
+  }
+
+  .app-shell__content-title {
+    font-size: 1.35rem;
+  }
+
+  .app-account__content {
+    min-height: auto;
+  }
 }
