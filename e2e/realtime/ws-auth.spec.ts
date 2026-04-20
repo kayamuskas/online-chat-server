@@ -20,11 +20,9 @@ test.describe('UAT #1 — Authenticated socket handshake', () => {
   test('browser sends session cookie and app shell loads after sign-in', async ({ page }) => {
     const user = await createAndSignIn();
 
-    // Track any socket-related console errors before sign-in
+    // Track socket-related console errors (only after sign-in — the initial
+    // GET /auth/me on page load returns 401 for unauthenticated visits and is expected)
     const socketErrors: string[] = [];
-    page.on('console', (msg) => {
-      if (msg.type() === 'error') socketErrors.push(msg.text());
-    });
 
     // Track Socket.IO handshake request
     let wsHandshakeStatus = 0;
@@ -35,6 +33,11 @@ test.describe('UAT #1 — Authenticated socket handshake', () => {
     });
 
     await signInViaUi(page, user);
+
+    // Start tracking errors only after sign-in (pre-sign-in 401 from /auth/me is expected)
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') socketErrors.push(msg.text());
+    });
 
     // Allow socket handshake to complete
     await page.waitForTimeout(2_000);

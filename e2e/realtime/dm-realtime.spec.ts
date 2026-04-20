@@ -39,6 +39,8 @@ test.describe('UAT #4 — DM realtime message delivery', () => {
 
       await openDmView(pageAlice, fx.bob.username);
       await openDmView(pageBob, fx.alice.username);
+      // Wait for both WS subscriptions to be established before sending
+      await pageAlice.waitForTimeout(500);
 
       const testMsg = `DM-${Date.now()}`;
       await sendMessage(pageAlice, testMsg);

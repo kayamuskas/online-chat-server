@@ -20,19 +20,21 @@ test.describe('UAT #7 — Smart autoscroll and new-message pill', () => {
       await openRoomChat(pageBob, fx.room);
 
       // Fill timeline with history messages
-      for (let i = 1; i <= 15; i++) {
+      for (let i = 1; i <= 20; i++) {
         await sendMessage(pageAlice, `Msg ${i}`);
         await pageAlice.waitForTimeout(30);
       }
-      await waitForMessage(pageBob, 'Msg 15', { timeout: 10_000 });
+      await waitForMessage(pageBob, 'Msg 20', { timeout: 10_000 });
 
-      // Bob scrolls up — dispatch scroll event so React handleScroll fires
+      // Bob scrolls up — set scrollTop to a position clearly above the bottom
+      // (scrollHeight - clientHeight - 200) so the isScrolledUp threshold (>100) is met
       const timeline = pageBob.locator('.msg-timeline');
       await timeline.evaluate((el) => {
-        el.scrollTop = 0;
+        const target = Math.max(0, el.scrollHeight - el.clientHeight - 200);
+        el.scrollTop = target;
         el.dispatchEvent(new Event('scroll'));
       });
-      await pageBob.waitForTimeout(300);
+      await pageBob.waitForTimeout(400);
 
       // Alice sends new message while Bob is scrolled up
       const newMsg = `NEW-${Date.now()}`;

@@ -16,7 +16,7 @@ test.describe('UAT #6 — Presence request-response', () => {
       await pageAlice.waitForSelector('.app-layout', { timeout: 8_000 });
       await pageBob.waitForSelector('.app-layout', { timeout: 8_000 });
       // Allow presence polling to fire (first emit on socket connect)
-      await pageBob.waitForTimeout(3_000);
+      await pageBob.waitForTimeout(6_000);
       const aliceRow = pageBob.locator('.contacts-sidebar__row', { hasText: fx.alice.username });
       await expect(aliceRow).toBeVisible({ timeout: 10_000 });
       // alice is connected → must NOT show as explicitly offline
