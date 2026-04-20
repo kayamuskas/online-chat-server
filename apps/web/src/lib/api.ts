@@ -124,6 +124,28 @@ async function get<T>(path: string): Promise<T> {
   return data as T;
 }
 
+async function postFormData<T>(path: string, formData: FormData): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  if (res.status === 204 || res.headers.get("content-length") === "0") {
+    return undefined as unknown as T;
+  }
+  const data = await res.json();
+  if (!res.ok) {
+    const msg =
+      typeof data?.message === "string"
+        ? data.message
+        : res.statusText || "Request failed";
+    const err = new Error(msg) as Error & { statusCode: number };
+    err.statusCode = res.status;
+    throw err;
+  }
+  return data as T;
+}
+
 async function del<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "DELETE",
@@ -604,6 +626,15 @@ function mapMessageView(raw: any): MessageView {
     editedAt: raw.edited_at ?? raw.editedAt ?? null,
     createdAt: raw.created_at ?? raw.createdAt,
     conversationWatermark: Number(raw.conversation_watermark ?? raw.conversationWatermark),
+    attachments: Array.isArray(raw.attachments)
+      ? raw.attachments.map((a: any) => ({
+          id: a.id,
+          originalFilename: a.original_filename ?? a.originalFilename,
+          mimeType: a.mime_type ?? a.mimeType,
+          fileSize: Number(a.file_size ?? a.fileSize),
+          comment: a.comment ?? null,
+        }))
+      : [],
   };
 }
 
@@ -623,6 +654,18 @@ export interface MessageView {
   editedAt: string | null;
   createdAt: string;
   conversationWatermark: number;
+  attachments: AttachmentView[];
+}
+
+/**
+ * Attachment metadata as returned by the upload endpoint and embedded in MessageView.
+ */
+export interface AttachmentView {
+  id: string;
+  originalFilename: string;
+  mimeType: string;
+  fileSize: number;
+  comment: string | null;
 }
 
 /**
@@ -651,11 +694,14 @@ export interface MessageHistoryResponse {
  */
 export async function getRoomHistory(
   roomId: string,
-  opts?: { beforeWatermark?: number; limit?: number },
+  opts?: { beforeWatermark?: number; afterWatermark?: number; limit?: number },
 ): Promise<MessageHistoryResponse> {
   const params = new URLSearchParams();
   if (opts?.beforeWatermark !== undefined) {
     params.set("before_watermark", String(opts.beforeWatermark));
+  }
+  if (opts?.afterWatermark !== undefined) {
+    params.set("after_watermark", String(opts.afterWatermark));
   }
   if (opts?.limit !== undefined) {
     params.set("limit", String(opts.limit));
@@ -674,11 +720,15 @@ export async function getRoomHistory(
  */
 export async function sendRoomMessage(
   roomId: string,
-  body: { content: string; replyToId?: string },
+  body: { content: string; replyToId?: string; attachmentIds?: string[] },
 ): Promise<{ message: MessageView }> {
   const raw = await post<{ message: unknown }>(
     `/messages/rooms/${encodeURIComponent(roomId)}/messages`,
-    { content: body.content, ...(body.replyToId ? { reply_to_id: body.replyToId } : {}) },
+    {
+      content: body.content,
+      ...(body.replyToId ? { reply_to_id: body.replyToId } : {}),
+      ...(body.attachmentIds?.length ? { attachment_ids: body.attachmentIds } : {}),
+    },
   );
   return { message: mapMessageView(raw.message) };
 }
@@ -719,11 +769,14 @@ export async function editRoomMessage(
  */
 export async function getDmHistory(
   conversationId: string,
-  opts?: { beforeWatermark?: number; limit?: number },
+  opts?: { beforeWatermark?: number; afterWatermark?: number; limit?: number },
 ): Promise<MessageHistoryResponse> {
   const params = new URLSearchParams();
   if (opts?.beforeWatermark !== undefined) {
     params.set("before_watermark", String(opts.beforeWatermark));
+  }
+  if (opts?.afterWatermark !== undefined) {
+    params.set("after_watermark", String(opts.afterWatermark));
   }
   if (opts?.limit !== undefined) {
     params.set("limit", String(opts.limit));
@@ -741,11 +794,15 @@ export async function getDmHistory(
  */
 export async function sendDmMessage(
   conversationId: string,
-  body: { content: string; replyToId?: string },
+  body: { content: string; replyToId?: string; attachmentIds?: string[] },
 ): Promise<{ message: MessageView }> {
   const raw = await post<{ message: unknown }>(
     `/messages/dm/${encodeURIComponent(conversationId)}/messages`,
-    { content: body.content, ...(body.replyToId ? { reply_to_id: body.replyToId } : {}) },
+    {
+      content: body.content,
+      ...(body.replyToId ? { reply_to_id: body.replyToId } : {}),
+      ...(body.attachmentIds?.length ? { attachment_ids: body.attachmentIds } : {}),
+    },
   );
   return { message: mapMessageView(raw.message) };
 }
@@ -777,6 +834,38 @@ export async function editDmMessage(
   }
   const raw = (await res.json()) as { message: unknown };
   return { message: mapMessageView(raw.message) };
+}
+
+// ── Phase 7: Attachments ───────────────────────────────────────────────────────
+
+/**
+ * POST /api/v1/attachments/upload
+ * Upload a file as multipart/form-data. Returns the created AttachmentView.
+ * D-44: Client uploads first, gets ID, then binds via sendMessage.
+ */
+export async function uploadAttachment(
+  file: File,
+  comment?: string,
+): Promise<AttachmentView> {
+  const fd = new FormData();
+  fd.append("file", file);
+  if (comment) fd.append("comment", comment);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = await postFormData<any>("/attachments/upload", fd);
+  return {
+    id: raw.id,
+    originalFilename: raw.original_filename ?? raw.originalFilename,
+    mimeType: raw.mime_type ?? raw.mimeType,
+    fileSize: Number(raw.file_size ?? raw.fileSize),
+    comment: raw.comment ?? null,
+  };
+}
+
+/**
+ * Build the download URL for an attachment. Uses the proxied download endpoint (D-49).
+ */
+export function attachmentDownloadUrl(attachmentId: string): string {
+  return `${BASE_URL}/attachments/${encodeURIComponent(attachmentId)}/download`;
 }
 
 // ── Session management API calls ──────────────────────────────────────────────

@@ -14,6 +14,7 @@
 import { useState, useRef } from "react";
 import { ReplyPreview } from "./ReplyPreview";
 import type { ReplyPreview as ReplyPreviewData } from "../../lib/api";
+import { uploadAttachment, type AttachmentView } from "../../lib/api";
 
 const MAX_BYTES = 3072;
 
@@ -34,7 +35,7 @@ interface MessageComposerProps {
    * Called when the user submits a message.
    * `replyToId` is the ID of the message being replied to, or null.
    */
-  onSend: (content: string, replyToId: string | null) => Promise<void> | void;
+  onSend: (content: string, replyToId: string | null, attachmentIds: string[]) => Promise<void> | void;
 }
 
 export function MessageComposer({
@@ -47,19 +48,51 @@ export function MessageComposer({
   const [content, setContent] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingAttachments, setPendingAttachments] = useState<AttachmentView[]>([]);
+  const [uploading, setUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const byteLen = utf8ByteLength(content);
   const overLimit = byteLen > MAX_BYTES;
-  const canSend = !readOnly && !sending && content.trim().length > 0 && !overLimit;
+  const canSend = !readOnly && !sending && !uploading
+    && (content.trim().length > 0 || pendingAttachments.length > 0)
+    && !overLimit;
+
+  async function handleFileSelect(files: File[]) {
+    if (files.length === 0) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const uploaded = await Promise.all(files.map((f) => uploadAttachment(f)));
+      setPendingAttachments((prev) => [...prev, ...uploaded]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const files = Array.from(e.clipboardData.files);
+    if (files.length > 0) {
+      e.preventDefault();
+      void handleFileSelect(files);
+    }
+  }
 
   async function handleSend() {
     if (!canSend) return;
     setError(null);
     setSending(true);
     try {
-      await onSend(content.trim(), replyTo?.id ?? null);
+      await onSend(
+        content.trim(),
+        replyTo?.id ?? null,
+        pendingAttachments.map((a) => a.id),
+      );
       setContent("");
+      setPendingAttachments([]);
       textareaRef.current?.focus();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to send message");
@@ -89,6 +122,23 @@ export function MessageComposer({
 
       {error && <p className="error-msg msg-composer__error">{error}</p>}
 
+      {pendingAttachments.length > 0 && (
+        <div className="msg-composer__attachments">
+          {pendingAttachments.map((a) => (
+            <span key={a.id} className="msg-composer__attachment-chip">
+              {a.originalFilename}
+              <button
+                type="button"
+                onClick={() => setPendingAttachments((prev) => prev.filter((p) => p.id !== a.id))}
+                aria-label={`Remove ${a.originalFilename}`}
+              >
+                x
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="msg-composer__row">
         <textarea
           ref={textareaRef}
@@ -96,6 +146,7 @@ export function MessageComposer({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           placeholder={readOnly ? "Read-only" : placeholder}
           disabled={readOnly || sending}
           rows={2}
@@ -111,6 +162,26 @@ export function MessageComposer({
         >
           {sending ? "…" : "Send"}
         </button>
+        <button
+          type="button"
+          className="btn msg-composer__attach"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={readOnly || uploading}
+          aria-label="Attach file"
+        >
+          {uploading ? "..." : "+"}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []);
+            void handleFileSelect(files);
+            e.target.value = "";
+          }}
+        />
       </div>
 
       {overLimit && (

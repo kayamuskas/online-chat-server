@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { MessageView, MessageHistoryRange } from "../../lib/api";
+import { attachmentDownloadUrl } from "../../lib/api";
 import { MessageEditor } from "./MessageEditor";
 
 interface MessageTimelineProps {
@@ -211,6 +212,24 @@ export function MessageTimeline({
                       {line}
                       {i < msg.content.split("\n").length - 1 && <br />}
                     </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Attachment download links */}
+              {msg.attachments && msg.attachments.length > 0 && (
+                <div className="msg-attachments">
+                  {msg.attachments.map((att) => (
+                    <a
+                      key={att.id}
+                      href={attachmentDownloadUrl(att.id)}
+                      className="msg-attachment-link"
+                      target="_blank"
+                      rel="noopener"
+                      download={att.originalFilename}
+                    >
+                      {att.originalFilename} ({(att.fileSize / 1024).toFixed(0)} KB)
+                    </a>
                   ))}
                 </div>
               )}
