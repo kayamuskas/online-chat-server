@@ -202,7 +202,13 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
             <button
               type="button"
               className="msg-timeline__history-status__btn"
-              onClick={requestOlderMessages}
+              onClick={() => {
+                // Bypass pendingOlderLoadRef — explicit user click always wins
+                const node = scrollRef.current;
+                if (!node || !hasMoreBefore || loadingOlder) return;
+                restoreScrollRef.current = { scrollHeight: node.scrollHeight, scrollTop: node.scrollTop };
+                onLoadOlder?.();
+              }}
             >
               Scroll up for earlier messages
             </button>
