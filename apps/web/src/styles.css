@@ -1099,7 +1099,7 @@ body {
 .rooms-view--chat {
   display: flex;
   flex-direction: column;
-  min-height: 68dvh;
+  height: 68dvh;
 }
 
 .rooms-view--chat .rooms-view__header {
@@ -1112,6 +1112,8 @@ body {
 .rooms-view__body--scroll {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--color-border);
   border-radius: 8px 8px 0 0;
   background:

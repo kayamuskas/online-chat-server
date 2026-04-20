@@ -87,6 +87,17 @@ export function MessageTimeline({
   const pendingOlderLoadRef = useRef(false);
   const restoreScrollRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
+  const handleScrollRef = useRef<() => void>(null!);
+
+  // Attach a native scroll listener once on mount so wheel events reliably
+  // update isScrolledUp regardless of React's synthetic event batching.
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const handler = () => handleScrollRef.current?.();
+    node.addEventListener("scroll", handler, { passive: true });
+    return () => node.removeEventListener("scroll", handler);
+  }, []);
 
   useEffect(() => {
     const node = scrollRef.current;
@@ -101,7 +112,7 @@ export function MessageTimeline({
       if (!isScrolledUp) {
         node?.scrollTo({
           top: node.scrollHeight,
-          behavior: "smooth",
+          behavior: "instant",
         });
         onScrollToBottom?.();
       }
@@ -129,6 +140,9 @@ export function MessageTimeline({
     pendingOlderLoadRef.current = true;
     onLoadOlder?.();
   }
+
+  // Keep ref in sync every render so the native listener always calls the latest closure.
+  handleScrollRef.current = handleScroll;
 
   function handleScroll() {
     const node = scrollRef.current;
@@ -172,7 +186,7 @@ export function MessageTimeline({
       aria-live="polite"
       aria-label="Message history"
       onScroll={handleScroll}
-      style={{ position: "relative", overflowY: "auto", height: "100%" }}
+      style={{ position: "relative", overflowY: "auto", flex: 1, minHeight: 0 }}
     >
       {(hasMoreBefore || loadingOlder) && (
         <div className="msg-timeline__history-status" aria-live="polite">
