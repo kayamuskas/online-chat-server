@@ -56,7 +56,7 @@ describe('ChangePasswordService', () => {
 
     mockUserRepo = {
       findById: vi.fn(),
-      updatePasswordHash: vi.fn().mockResolvedValue(undefined),
+      updatePasswordHash: vi.fn().mockResolvedValue(true),
     };
 
     const mod = await import('../../auth/change-password.service.js');
@@ -207,13 +207,13 @@ describe('AuthController — change-password endpoint', () => {
 
     await controller.changePassword(
       mockAuthContext,
-      { currentPassword: 'Old!', newPassword: 'New!' },
+      { currentPassword: 'OldPass123!', newPassword: 'NewPass456!' },
     );
 
     expect(mockChangePasswordService.changePassword).toHaveBeenCalledWith({
       userId: 'user-uuid-1',
-      currentPassword: 'Old!',
-      newPassword: 'New!',
+      currentPassword: 'OldPass123!',
+      newPassword: 'NewPass456!',
     });
   });
 });

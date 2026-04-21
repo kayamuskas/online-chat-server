@@ -15,6 +15,7 @@ export interface ContactRow {
   username: string;
   presenceStatus?: PresenceStatus;
   dmEligible: boolean;
+  canOpenConversation?: boolean;
   unreadCount?: number;
 }
 
@@ -68,7 +69,8 @@ export function ContactsSidebar({
         </p>
       )}
       {contacts.map((c) => {
-        const canDm = c.dmEligible && c.userId !== currentUserId;
+        const canDm =
+          (c.canOpenConversation ?? c.dmEligible) && c.userId !== currentUserId;
         return (
           <div
             key={c.userId}
@@ -83,7 +85,13 @@ export function ContactsSidebar({
                 onOpenDm?.(c.userId);
               }
             } : undefined}
-            title={!c.dmEligible && c.userId !== currentUserId ? "Add as friend to message" : undefined}
+            title={
+              !c.dmEligible && c.userId !== currentUserId
+                ? canDm
+                  ? "Open previous conversation"
+                  : "Add as friend to message"
+                : undefined
+            }
           >
             <PresenceDot status={c.presenceStatus ?? "offline"} />
             <span className="contacts-sidebar__name">{c.username}</span>

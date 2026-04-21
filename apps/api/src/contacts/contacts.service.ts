@@ -253,20 +253,20 @@ export class ContactsService {
    * Check whether two users are eligible to exchange DMs.
    *
    * Rules (D-14, FRND-06):
-   * - Returns { eligible: false, reason: 'not_friends' } if no friendship exists.
    * - Returns { eligible: false, reason: 'ban_exists' } if any ban exists in either direction.
+   * - Returns { eligible: false, reason: 'not_friends' } if no friendship exists.
    * - Returns { eligible: true } otherwise.
    *
    * Enforced server-side; frontend button state is advisory only.
    */
   async checkDmEligibility(callerId: string, targetId: string): Promise<DmEligibilityResult> {
-    const friendship = await this.repo.findFriendship(callerId, targetId);
-    if (!friendship) {
-      return { eligible: false, reason: 'not_friends' };
-    }
     const ban = await this.repo.findBanBetween(callerId, targetId);
     if (ban) {
       return { eligible: false, reason: 'ban_exists' };
+    }
+    const friendship = await this.repo.findFriendship(callerId, targetId);
+    if (!friendship) {
+      return { eligible: false, reason: 'not_friends' };
     }
     return { eligible: true };
   }

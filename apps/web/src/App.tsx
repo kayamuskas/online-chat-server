@@ -87,6 +87,10 @@ function unreadStorageKey(userId: string): string {
   return `chat-unread:${userId}`;
 }
 
+function knownDmStorageKey(userId: string): string {
+  return `chat-known-dms:${userId}`;
+}
+
 function loadUnreadSnapshot(userId: string): {
   roomUnread: Record<string, number>;
   dmUnread: Record<string, number>;
@@ -106,6 +110,28 @@ function loadUnreadSnapshot(userId: string): {
     };
   } catch {
     return { roomUnread: {}, dmUnread: {} };
+  }
+}
+
+function loadKnownDmSnapshot(userId: string): {
+  conversationIds: Record<string, string>;
+  partnerNames: Record<string, string>;
+} {
+  try {
+    const raw = window.localStorage.getItem(knownDmStorageKey(userId));
+    if (!raw) {
+      return { conversationIds: {}, partnerNames: {} };
+    }
+    const parsed = JSON.parse(raw) as {
+      conversationIds?: Record<string, string>;
+      partnerNames?: Record<string, string>;
+    };
+    return {
+      conversationIds: parsed.conversationIds ?? {},
+      partnerNames: parsed.partnerNames ?? {},
+    };
+  } catch {
+    return { conversationIds: {}, partnerNames: {} };
   }
 }
 
@@ -143,6 +169,7 @@ interface AuthenticatedShellProps {
   roomUnread: Record<string, number>;
   dmUnread: Record<string, number>;
   knownDmConversationIds: Record<string, string>;
+  knownDmPartnerNames: Record<string, string>;
   addContactOpen: boolean;
   onToggleRequestDropdown: () => void;
   onAcceptRequest: (id: string) => void;
@@ -193,6 +220,7 @@ function AuthenticatedShell({
   roomUnread,
   dmUnread,
   knownDmConversationIds,
+  knownDmPartnerNames,
   addContactOpen,
   onToggleRequestDropdown,
   onAcceptRequest,
@@ -230,34 +258,64 @@ function AuthenticatedShell({
   const isCompactNavigation =
     tab === "room-chat" || tab === "dm" || tab === "manage-room";
   const partner = dmPartnerId
-    ? contacts.find((contact) => contact.userId === dmPartnerId) ?? null
+    ? contacts.find((contact) => contact.userId === dmPartnerId)
+      ?? (knownDmPartnerNames[dmPartnerId]
+        ? {
+            userId: dmPartnerId,
+            username: knownDmPartnerNames[dmPartnerId],
+            dmEligible: false,
+          }
+        : null)
     : null;
   const queryNorm = sidebarQuery.trim().toLowerCase();
   const visibleTrackedRooms = trackedRooms.filter((room) =>
     queryNorm.length === 0 ? true : room.name.toLowerCase().includes(queryNorm),
   );
-  const sidebarContacts: ContactRow[] = contacts
-    .filter((contact) => contact.userId !== user.id)
-    .filter((contact) =>
+  const knownDmEntries = useMemo(
+    () => Object.entries(knownDmConversationIds),
+    [knownDmConversationIds],
+  );
+  const sidebarContacts: ContactRow[] = useMemo(() => {
+    const rows = new Map<string, ContactRow>();
+
+    for (const contact of contacts) {
+      if (contact.userId === user.id) {
+        continue;
+      }
+      rows.set(contact.userId, {
+        userId: contact.userId,
+        username: contact.username,
+        presenceStatus: contact.presenceStatus,
+        dmEligible: true,
+        canOpenConversation: true,
+        unreadCount: dmUnread[contact.userId] || undefined,
+      });
+    }
+
+    for (const [partnerId] of knownDmEntries) {
+      if (partnerId === user.id || rows.has(partnerId)) {
+        continue;
+      }
+      rows.set(partnerId, {
+        userId: partnerId,
+        username: knownDmPartnerNames[partnerId] ?? partnerId,
+        presenceStatus: "offline",
+        dmEligible: false,
+        canOpenConversation: true,
+        unreadCount: dmUnread[partnerId] || undefined,
+      });
+    }
+
+    return Array.from(rows.values()).filter((contact) =>
       queryNorm.length === 0 ? true : contact.username.toLowerCase().includes(queryNorm),
-    )
-    .map((contact) => ({
-      userId: contact.userId,
-      username: contact.username,
-      presenceStatus: contact.presenceStatus,
-      dmEligible: true,
-      unreadCount: dmUnread[contact.userId] || undefined,
-    }));
+    );
+  }, [contacts, dmUnread, knownDmEntries, knownDmPartnerNames, queryNorm, user.id]);
   const rightRailMembers = contacts.slice(0, 6).map((contact) => ({
     id: contact.userId,
     username: contact.username,
     status: (contact.presenceStatus ?? "offline") as "online" | "afk" | "offline",
     lastSeenAt: contact.presenceStatus === "offline" ? new Date().toISOString() : null,
   }));
-  const knownDmEntries = useMemo(
-    () => Object.entries(knownDmConversationIds),
-    [knownDmConversationIds],
-  );
   const tabRef = useRef(tab);
   const activeRoomIdRef = useRef(activeRoom?.id ?? null);
   const dmPartnerIdRef = useRef(dmPartnerId);
@@ -945,6 +1003,7 @@ function App() {
   const [roomUnread, setRoomUnread] = useState<Record<string, number>>({});
   const [dmUnread, setDmUnread] = useState<Record<string, number>>({});
   const [knownDmConversationIds, setKnownDmConversationIds] = useState<Record<string, string>>({});
+  const [knownDmPartnerNames, setKnownDmPartnerNames] = useState<Record<string, string>>({});
 
   function handleAuthenticated(nextUser: PublicUser) {
     setUser(nextUser);
@@ -966,6 +1025,7 @@ function App() {
     setRoomUnread({});
     setDmUnread({});
     setKnownDmConversationIds({});
+    setKnownDmPartnerNames({});
     window.history.replaceState(null, "", "/");
   }
 
@@ -1011,6 +1071,18 @@ function App() {
     try {
       const result = await getMyFriends();
       setContacts(result.friends);
+      setKnownDmPartnerNames((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const friend of result.friends) {
+          if (next[friend.userId] === friend.username) {
+            continue;
+          }
+          next[friend.userId] = friend.username;
+          changed = true;
+        }
+        return changed ? next : prev;
+      });
       setKnownDmConversationIds((prev) => {
         const next = { ...prev };
         let changed = false;
@@ -1253,12 +1325,16 @@ function App() {
       setRoomUnread({});
       setDmUnread({});
       setKnownDmConversationIds({});
+      setKnownDmPartnerNames({});
       return;
     }
 
     const unread = loadUnreadSnapshot(user.id);
+    const knownDm = loadKnownDmSnapshot(user.id);
     setRoomUnread(unread.roomUnread);
     setDmUnread(unread.dmUnread);
+    setKnownDmConversationIds(knownDm.conversationIds);
+    setKnownDmPartnerNames(knownDm.partnerNames);
 
     void loadPrivateRoomData();
     void loadContacts();
@@ -1276,6 +1352,21 @@ function App() {
       // Best-effort persistence only.
     }
   }, [user, roomUnread, dmUnread]);
+
+  useEffect(() => {
+    if (!user) return;
+    try {
+      window.localStorage.setItem(
+        knownDmStorageKey(user.id),
+        JSON.stringify({
+          conversationIds: knownDmConversationIds,
+          partnerNames: knownDmPartnerNames,
+        }),
+      );
+    } catch {
+      // Best-effort persistence only.
+    }
+  }, [user, knownDmConversationIds, knownDmPartnerNames]);
 
   if (checkingSession) {
     return (
@@ -1321,6 +1412,7 @@ function App() {
         roomUnread={roomUnread}
         dmUnread={dmUnread}
         knownDmConversationIds={knownDmConversationIds}
+        knownDmPartnerNames={knownDmPartnerNames}
         addContactOpen={addContactOpen}
         onToggleRequestDropdown={() => setRequestDropdownOpen((open) => !open)}
         onAcceptRequest={(id) => void handleAcceptRequest(id)}
@@ -1336,6 +1428,14 @@ function App() {
               ? prev
               : { ...prev, [partnerId]: conversationId }
           ));
+          const contact = contacts.find((entry) => entry.userId === partnerId);
+          if (contact) {
+            setKnownDmPartnerNames((prev) => (
+              prev[partnerId] === contact.username
+                ? prev
+                : { ...prev, [partnerId]: contact.username }
+            ));
+          }
         }}
         onPresenceUpdate={handlePresenceUpdate}
         onRoomJoined={handleRoomJoined}

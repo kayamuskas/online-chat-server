@@ -2,10 +2,9 @@
  * contacts-eligibility.spec.ts — DM eligibility matrix tests for FRND-06.
  *
  * Tests ContactsService.checkDmEligibility() exhaustively:
- *   - No friendship → not eligible (reason: not_friends)
+ *   - No friendship + no ban → not eligible (reason: not_friends)
  *   - Friendship + no ban → eligible
- *   - Friendship + caller bans target → not eligible (reason: ban_exists)
- *   - Friendship + target bans caller → not eligible (reason: ban_exists)
+ *   - Any ban in either direction → not eligible (reason: ban_exists), even if friendship was already removed
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ContactsRepository } from '../../contacts/contacts.repository.js';
@@ -69,9 +68,10 @@ describe('ContactsService.checkDmEligibility()', () => {
     svc = new ContactsService(mockRepo, mockUserRepo);
   });
 
-  // FRND-06: no friendship → not eligible
-  it('returns not eligible with reason not_friends when no friendship exists', async () => {
+  // FRND-06: no friendship + no ban → not eligible
+  it('returns not eligible with reason not_friends when no friendship or ban exists', async () => {
     vi.mocked(mockRepo.findFriendship).mockResolvedValue(null);
+    vi.mocked(mockRepo.findBanBetween).mockResolvedValue(null);
 
     const result = await svc.checkDmEligibility('user-a', 'user-b');
     expect(result.eligible).toBe(false);
@@ -88,9 +88,9 @@ describe('ContactsService.checkDmEligibility()', () => {
     expect(result.reason).toBeUndefined();
   });
 
-  // FRND-06: friendship + caller bans target → not eligible
+  // FRND-06: caller bans target → not eligible, even if friendship row is already gone
   it('returns not eligible with reason ban_exists when caller has banned target', async () => {
-    vi.mocked(mockRepo.findFriendship).mockResolvedValue(mockFriendship);
+    vi.mocked(mockRepo.findFriendship).mockResolvedValue(null);
     vi.mocked(mockRepo.findBanBetween).mockResolvedValue(mockBan);
 
     const result = await svc.checkDmEligibility('user-a', 'user-b');
@@ -98,12 +98,12 @@ describe('ContactsService.checkDmEligibility()', () => {
     expect(result.reason).toBe('ban_exists');
   });
 
-  // FRND-06: friendship + target bans caller → not eligible
+  // FRND-06: target bans caller → not eligible, even if friendship row is already gone
   it('returns not eligible with reason ban_exists when target has banned caller', async () => {
     const reverseBan: UserBan = {
       id: 'ban-2', banner_user_id: 'user-b', banned_user_id: 'user-a', created_at: new Date(),
     };
-    vi.mocked(mockRepo.findFriendship).mockResolvedValue(mockFriendship);
+    vi.mocked(mockRepo.findFriendship).mockResolvedValue(null);
     vi.mocked(mockRepo.findBanBetween).mockResolvedValue(reverseBan);
 
     const result = await svc.checkDmEligibility('user-a', 'user-b');

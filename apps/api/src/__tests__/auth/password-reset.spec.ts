@@ -157,6 +157,8 @@ describe('PasswordResetService', () => {
   let mockUserRepo: any;
   let mockResetTokenRepo: any;
   let mockMailService: any;
+  let mockDb: any;
+  let mockClient: any;
   let mockHashPassword: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
@@ -172,22 +174,36 @@ describe('PasswordResetService', () => {
     mockUserRepo = {
       findByEmail: vi.fn(),
       findById: vi.fn(),
-      updatePasswordHash: vi.fn().mockResolvedValue(undefined),
+      updatePasswordHash: vi.fn().mockResolvedValue(true),
     };
 
     mockResetTokenRepo = {
       create: vi.fn(),
       findByToken: vi.fn(),
-      markUsed: vi.fn().mockResolvedValue(undefined),
+      claimToken: vi.fn().mockResolvedValue(true),
     };
 
     mockMailService = {
       sendPasswordResetMail: vi.fn().mockResolvedValue({ artifactPath: '/mail-outbox/test.json' }),
     };
 
+    mockClient = {
+      query: vi.fn().mockResolvedValue(undefined),
+      release: vi.fn(),
+    };
+
+    mockDb = {
+      getClient: vi.fn().mockResolvedValue(mockClient),
+    };
+
     const mod = await import('../../auth/password-reset.service.js');
     PasswordResetService = mod.PasswordResetService;
-    service = new PasswordResetService(mockUserRepo, mockResetTokenRepo, mockMailService);
+    service = new PasswordResetService(
+      mockUserRepo,
+      mockResetTokenRepo,
+      mockMailService,
+      mockDb,
+    );
   });
 
   // ── requestReset ────────────────────────────────────────────────────────────
@@ -256,8 +272,16 @@ describe('PasswordResetService', () => {
       await service.confirmReset({ token: resetToken.token, newPassword: 'NewPass123!' });
 
       expect(mockHashPassword).toHaveBeenCalledWith('NewPass123!');
-      expect(mockUserRepo.updatePasswordHash).toHaveBeenCalledWith(user.id, '$2b$12$newhash');
-      expect(mockResetTokenRepo.markUsed).toHaveBeenCalledWith(resetToken.id);
+      expect(mockDb.getClient).toHaveBeenCalled();
+      expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
+      expect(mockResetTokenRepo.claimToken).toHaveBeenCalledWith(resetToken.id, mockClient);
+      expect(mockUserRepo.updatePasswordHash).toHaveBeenCalledWith(
+        user.id,
+        '$2b$12$newhash',
+        mockClient,
+      );
+      expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+      expect(mockClient.release).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException on unknown token', async () => {
