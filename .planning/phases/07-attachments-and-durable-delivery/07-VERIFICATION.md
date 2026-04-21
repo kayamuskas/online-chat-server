@@ -1,33 +1,21 @@
 ---
 phase: 07-attachments-and-durable-delivery
-verified: 2026-04-21T09:10:00Z
+verified: 2026-04-21T14:20:00Z
 status: human_needed
 score: 6/6
 overrides_applied: 0
 human_verification:
-  - test: "Verify cross-session attachment visibility and download after sending a room attachment"
-    expected: "Sender and another room member both see the download link with the original filename, and downloading preserves access rules"
-    why_human: "Requires running app with two authenticated sessions"
-  - test: "Paste an image from clipboard into the composer textarea"
-    expected: "Image uploads automatically and appears as a pending attachment chip"
-    why_human: "Clipboard paste events require browser interaction"
-  - test: "Upload an image > 3 MB and verify 413 rejection; upload a file > 20 MB and verify 413 rejection"
-    expected: "Error message displayed to user for both cases"
-    why_human: "Requires browser interaction with the upload flow"
-  - test: "Remove a user from a room, then try to download an attachment from that room as the removed user"
-    expected: "Download returns 403 Forbidden"
-    why_human: "Requires runtime ACL enforcement with multiple sessions"
   - test: "Go offline briefly (DevTools Network), go back online, verify missed messages are caught up via after_watermark (check network requests)"
-    expected: "Network tab shows GET /history?after_watermark=N instead of full reload"
-    why_human: "Requires browser offline/online simulation and network inspection"
+    expected: "Network tab shows GET /history?after_watermark=N instead of relying on socket recovery alone"
+    why_human: "Browser reconnect behavior restores the missed message, but the explicit after_watermark request is still not observed in Playwright"
 ---
 
 # Phase 7: Attachments and Durable Delivery Verification Report
 
 **Phase Goal:** Add attachment upload/download, ACL enforcement, offline delivery, bounded queue strategy, and persistent storage.
-**Verified:** 2026-04-21T09:10:00Z
+**Verified:** 2026-04-21T14:20:00Z
 **Status:** human_needed
-**Re-verification:** No -- initial verification
+**Re-verification:** Yes -- runtime recheck after targeted Playwright verification
 
 ## Goal Achievement
 
@@ -98,6 +86,13 @@ Step 7b: SKIPPED (no runnable entry points -- requires Docker stack with Postgre
 
 Browser recheck on 2026-04-21:
 - Verified in the shipped UI that clicking `+` uploads `phase7-attachment.txt`, shows a pending chip with remove button, and sending renders `phase7-attachment.txt (0 KB)` in the room timeline for the sender.
+- `pnpm exec playwright test e2e/realtime/gap-verification.spec.ts --reporter=line` passed, confirming:
+  - room attachment visibility + download across two live sessions
+  - DM attachment visibility + download across two live sessions
+  - clipboard paste produces a pending attachment chip and sends successfully
+  - oversize image and oversize generic file uploads are rejected in the composer UI
+  - removing a member from a room turns a previously valid attachment download into `403 Forbidden`
+  - reconnect catch-up still needs manual confirmation of the explicit `after_watermark` network request; the missed message reappears after offline/online, but Playwright did not observe the expected history fetch
 
 ### Requirements Coverage
 
@@ -121,49 +116,19 @@ Browser recheck on 2026-04-21:
 
 ### Human Verification Required
 
-### 1. Cross-session room attachment visibility and download
-
-**Test:** Send a message with a pending attachment. As another user in the same room, verify the download link appears.
-**Expected:** Attachment link with original filename and size in KB appears below message content. Clicking downloads the file with the original filename.
-**Why human:** Requires running app with two authenticated sessions.
-
-### 2. Clipboard Paste Upload
-
-**Test:** Copy an image to clipboard, paste into the composer textarea.
-**Expected:** Image uploads automatically and appears as a pending attachment chip.
-**Why human:** Clipboard paste events require browser interaction.
-
-### 3. Size Limit Enforcement
-
-**Test:** Upload an image > 3 MB and a file > 20 MB.
-**Expected:** 413 error message displayed to user for both cases.
-**Why human:** Requires browser interaction with the upload flow and error display.
-
-### 4. ACL Enforcement After Access Loss
-
-**Test:** Remove a user from a room, then try to download a previously accessible attachment as that user.
-**Expected:** Download returns 403 Forbidden.
-**Why human:** Requires runtime ACL enforcement with multiple sessions and membership changes.
-
-### 5. Reconnect Catch-Up via Watermark
+### 1. Reconnect Catch-Up via Watermark
 
 **Test:** Open browser DevTools Network tab, go offline briefly, go back online. Check network requests.
-**Expected:** GET /history?after_watermark=N request instead of full history reload.
-**Why human:** Requires browser offline/online simulation and network inspection.
-
-### 6. DM Attachments
-
-**Test:** Open a DM conversation, upload and send an attachment. Verify the download link appears for both participants.
-**Expected:** Same attachment flow as rooms works in DM conversations.
-**Why human:** Requires two authenticated users with an active DM conversation.
+**Expected:** GET /history?after_watermark=N request instead of full history reload or silent socket-only recovery.
+**Why human:** Browser offline/online simulation currently restores the missed message, but the explicit `after_watermark` request is still not visible in Playwright.
 
 ### Gaps Summary
 
-No automated gaps found. All 6 roadmap success criteria verified against the codebase. All 19 artifacts exist, are substantive, and are properly wired. All key links are connected with real data flowing through them. All 9 requirement IDs (MSG-06, MSG-09, FILE-01 through FILE-06, OPS-03) are covered by implemented code.
+No structural or attachment-ACL gaps remain. All 6 roadmap success criteria are verified against the codebase, all 19 artifacts exist and are wired, and live browser checks now cover upload button, clipboard paste, size-limit rejection, room/DM download visibility, and ACL after access loss.
 
-6 human verification items remain for cross-session, clipboard, size-limit, ACL, reconnect, and DM attachment testing.
+1 human verification item remains: proving the reconnect flow performs the explicit `after_watermark` history request in the browser network layer, rather than only restoring the missed message implicitly.
 
 ---
 
-_Verified: 2026-04-21T09:10:00Z_
+_Verified: 2026-04-21T14:20:00Z_
 _Verifier: Claude (gsd-verifier)_

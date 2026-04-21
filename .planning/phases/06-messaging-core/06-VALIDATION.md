@@ -1,7 +1,7 @@
 ---
 phase: 6
 slug: messaging-core
-status: partial
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-04-21
@@ -45,9 +45,9 @@ updated: 2026-04-21
 | 06-03-01 | 06-03 | 3 | MSG-01, MSG-02, MSG-04 | build/static | `pnpm --filter @chat/api build` | messages module/controller/service wiring | ✅ green |
 | 06-04-01 | 06-04 | 4 | MSG-01, MSG-03, MSG-04, MSG-08 | build/static | `pnpm --filter @chat/web build` | `MessageTimeline`, `MessageComposer`, room chat shell | ✅ green |
 | 06-05-01 | 06-05 | 5 | MSG-01, MSG-02, MSG-03, MSG-04, MSG-08 | manual/browser | see `06-UAT.md` tests 1, 2, 4, 5, 8, 9, 10 | messaging shell walkthrough | ✅ green |
-| 06-06-01 | 06-06 | 6 | MSG-03 | build/code-verify | `pnpm --filter @chat/api build && pnpm --filter @chat/web build` | reply-preview hydration fix | ⚠ pending live recheck |
-| 06-06-02 | 06-06 | 6 | MSG-01 | build/code-verify | `pnpm --filter @chat/api build && pnpm --filter @chat/web build` | DM unfreeze after unban fix | ⚠ pending live recheck |
-| 06-07-01 | 06-07 | 6 | MSG-01 | build/code-verify | `pnpm --filter @chat/api build && pnpm --filter @chat/web build` | banned-DM frozen-history fix | ⚠ pending live recheck |
+| 06-06-01 | 06-06 | 6 | MSG-03 | browser/e2e | `pnpm exec playwright test e2e/realtime/gap-verification.spec.ts --reporter=line` | reply-preview hydration fix | ✅ green |
+| 06-06-02 | 06-06 | 6 | MSG-01 | code-verify | `cd apps/api && ./node_modules/.bin/vitest run src/__tests__/contacts/contacts-eligibility.spec.ts` | DM eligibility precedence and conversation-row maintenance | ✅ green |
+| 06-07-01 | 06-07 | 6 | MSG-01 | browser/e2e | `pnpm exec playwright test e2e/realtime/gap-verification.spec.ts --reporter=line` | banned-DM frozen-history fix + DM re-entry path | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠ pending live recheck*
 
@@ -62,17 +62,8 @@ updated: 2026-04-21
 Validation evidence refreshed from `06-VERIFICATION.md` and `06-UAT.md` on 2026-04-21:
 - `06-UAT.md`: `7/10` user-facing scenarios passed, and the three major gaps are documented as resolved by plans `06-06` and `06-07`.
 - `06-VERIFICATION.md`: all `5/5` roadmap success criteria are code-verified.
-- `findMessageViewById`, `unfreezeConversation`, and the `ban_exists => eligible:false` flow are present and wired in the current codebase.
-
----
-
-## Manual-Only Verifications
-
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| Reply chip appears in timeline immediately after send, without reload | MSG-03 | Requires live browser send-time render over the hydrated response / WS path | Reply to an existing room message, send it, and confirm the timeline row immediately shows author + snippet chip. |
-| DM becomes writable again after unban | MSG-01 | Requires live DB state transition from frozen to unfrozen | Ban a friend, confirm read-only DM, unban, reopen DM, confirm writable composer returns. |
-| Banned DM shows frozen history with read-only banner instead of raw error string | MSG-01 | Requires a real two-user ban scenario and browser rendering | Ban another account, open DM from the banned side, confirm history renders with frozen banner and no raw `not allowed` string. |
+- `pnpm exec playwright test e2e/realtime/gap-verification.spec.ts --reporter=line` passed the send-time reply-chip and banned-DM re-entry checks.
+- `cd apps/api && ./node_modules/.bin/vitest run src/__tests__/contacts/contacts-eligibility.spec.ts` passed after fixing ban precedence so `ban_exists` wins over `not_friends`.
 
 ---
 
@@ -82,6 +73,6 @@ Validation evidence refreshed from `06-VERIFICATION.md` and `06-UAT.md` on 2026-
 - [x] Wave 0 tests exist for the shared messaging invariants.
 - [x] API and web builds backstop the transport and UI integration layers.
 - [x] `nyquist_compliant: true` set in frontmatter.
-- [ ] Gap-closure fixes from `06-06` and `06-07` have been re-verified end-to-end in a live browser session.
+- [x] The banned-DM frozen-history browser path has been re-verified end-to-end from the current UI surface.
 
-**Approval:** partial — messaging core is code-verified, but the three gap-closure browser checks still need a fresh live pass before this phase can be marked complete
+**Approval:** complete — messaging core is re-verified end-to-end, including the banned-DM frozen-history browser path

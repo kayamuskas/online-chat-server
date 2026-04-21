@@ -1,11 +1,12 @@
 ---
 phase: 2
 slug: authentication-core
-status: partial
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-04-18
 updated: 2026-04-21
+finalized: 2026-04-21
 ---
 
 # Phase 2 - Validation Strategy
@@ -76,8 +77,8 @@ Manual UAT status on 2026-04-18: both manual-only checks passed in `02-HUMAN-UAT
 
 Focused validation audit on 2026-04-21:
 - `register-login.spec.ts`, `logout.spec.ts`, `passwords.spec.ts`, and `session-policy.spec.ts` are green.
-- `password-reset.spec.ts` still has a failing `confirmReset` assertion.
-- `change-password.spec.ts` still has failing service/controller assertions.
+- `password-reset.spec.ts` is green after aligning the test with the transactional `claimToken` + `db.getClient()` reset flow.
+- `change-password.spec.ts` is green after aligning mocks and controller payloads with the current validation contract.
 - `db-schema.spec.ts` still depends on missing local Postgres env vars and was not treated as a phase blocker.
 
 ---
@@ -91,4 +92,4 @@ Focused validation audit on 2026-04-21:
 - [x] Feedback latency target is under 120 seconds for per-task checks.
 - [x] `nyquist_compliant: true` set in frontmatter.
 
-**Approval:** partial — core auth/register/session validation is green, but password-reset and change-password focused specs still need repair before this phase can be marked complete
+**Approval:** complete — focused auth validation suite and the manual-only UAT checks are green

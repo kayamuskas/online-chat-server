@@ -75,7 +75,8 @@ Shell-command verification is the accepted automated approach for this phase. Th
 Validation evidence refreshed on 2026-04-21:
 - Static verification confirms attachment schema, ACL, `after_watermark`, frontend upload wiring, and `bindAttachments` joins are present in shipped code.
 - `pnpm --filter @chat/web build` passed on 2026-04-21.
-- `07-VERIFICATION.md` already records all automated/code-level requirements as satisfied, with only browser/runtime checks still human-needed.
+- `pnpm exec playwright test e2e/realtime/gap-verification.spec.ts --reporter=line` now passes the room/DM attachment visibility checks, clipboard paste, size-limit rejection, ACL-after-removal, and frozen-DM re-entry checks.
+- `07-VERIFICATION.md` now records a single remaining browser/runtime gap: proving the explicit `after_watermark` network request during reconnect.
 
 ---
 
@@ -83,7 +84,7 @@ Validation evidence refreshed on 2026-04-21:
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Paste upload from clipboard | FILE-01 | Browser clipboard API | 1. Open chat 2. Ctrl+V image 3. Verify upload triggers |
+| Reconnect catch-up issues explicit `after_watermark` request | MSG-06 | Browser reconnect/network instrumentation is still needed | 1. Open chat 2. DevTools Network 3. Toggle offline/online 4. Confirm `GET /history?after_watermark=N` |
 | Files persist across container restart | OPS-03 | Docker volume test | 1. Upload file 2. `docker compose restart api` 3. Download same file |
 
 ---
@@ -97,4 +98,4 @@ Validation evidence refreshed on 2026-04-21:
 - [x] Feedback latency < 15s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** partial — automated validation contract is complete; browser/runtime checkpoints remain before the phase can be treated as fully human-verified
+**Approval:** partial — attachment and ACL runtime checks are now covered; reconnect `after_watermark` proof and restart-persistence still remain for full human verification
