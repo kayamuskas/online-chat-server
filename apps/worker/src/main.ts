@@ -13,12 +13,13 @@ const redisPort = parseInt(
   process.env['REDIS_PORT'] ?? String(SERVICE_PORTS.redis),
   10,
 );
+const redisPassword = process.env['REDIS_PASSWORD'] || undefined;
 
 console.log(
-  `[worker] starting system worker — Redis ${redisHost}:${redisPort}`,
+  `[worker] starting system worker — Redis ${redisHost}:${redisPort}${redisPassword ? ' (auth)' : ''}`,
 );
 
-const worker = createSystemWorker(redisHost, redisPort);
+const worker = createSystemWorker(redisHost, redisPort, redisPassword);
 
 // Graceful shutdown: let in-flight jobs finish before exiting.
 async function shutdown(signal: string): Promise<void> {

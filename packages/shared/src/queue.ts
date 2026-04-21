@@ -45,10 +45,15 @@ export type SystemJobName = (typeof SYSTEM_JOB_NAMES)[keyof typeof SYSTEM_JOB_NA
 export function redisConnectionOptions(
   host: string,
   port: number,
+  password?: string,
 ): {
   host: string;
   port: number;
+  password?: string;
   maxRetriesPerRequest: null;
 } {
-  return { host, port, maxRetriesPerRequest: null };
+  const opts: { host: string; port: number; password?: string; maxRetriesPerRequest: null } =
+    { host, port, maxRetriesPerRequest: null };
+  if (password) opts.password = password;
+  return opts;
 }

@@ -12,10 +12,10 @@
  *   - Expiry is enforced server-side in addition to token record presence.
  */
 
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, Inject } from '@nestjs/common';
 import { UserRepository } from './user.repository.js';
 import { PasswordResetTokenRepository } from './password-reset-token.repository.js';
-import { MockMailService } from '../mail/mock-mail.service.js';
+import { MAIL_SERVICE, type MailService } from '../mail/mail.service.js';
 import { hashPassword } from './passwords.js';
 import { PostgresService } from '../db/postgres.service.js';
 
@@ -36,7 +36,7 @@ export class PasswordResetService {
   constructor(
     private readonly users: UserRepository,
     private readonly resetTokens: PasswordResetTokenRepository,
-    private readonly mail: MockMailService,
+    @Inject(MAIL_SERVICE) private readonly mail: MailService,
     private readonly db: PostgresService,
   ) {}
 

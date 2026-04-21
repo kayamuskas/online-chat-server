@@ -16,6 +16,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import type { MailService } from './mail.service.js';
 
 export interface SendPasswordResetMailInput {
   to: string;
@@ -28,7 +29,7 @@ export interface MailArtifactResult {
 }
 
 @Injectable()
-export class MockMailService {
+export class MockMailService implements MailService {
   private readonly logger = new Logger(MockMailService.name);
 
   /**

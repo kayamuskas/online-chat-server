@@ -34,12 +34,16 @@ import { AttachmentsModule } from './attachments/attachments.module.js';
 @Module({
   imports: [
     BullModule.forRootAsync({
-      useFactory: () => ({
-        connection: {
+      useFactory: () => {
+        const connection: Record<string, unknown> = {
           host: process.env['REDIS_HOST'] ?? 'localhost',
           port: parseInt(process.env['REDIS_PORT'] ?? '6379', 10),
-        },
-      }),
+        };
+        if (process.env['REDIS_PASSWORD']) {
+          connection.password = process.env['REDIS_PASSWORD'];
+        }
+        return { connection };
+      },
     }),
     QueueModule,
     AuthModule,

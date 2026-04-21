@@ -1,15 +1,24 @@
 /**
- * MailModule — provides MockMailService for DI injection in feature modules.
+ * MailModule — provides the appropriate mail service based on environment.
  *
- * Import MailModule in any feature module that needs to send mail artifacts.
- * In Phase 2, only PasswordResetModule needs it.
+ * - If SMTP_HOST is set: uses SmtpMailService (real emails)
+ * - Otherwise: uses MockMailService (file-based artifacts for dev/test)
+ *
+ * Consumers inject via @Inject(MAIL_SERVICE) with the MailService interface.
  */
 
 import { Module } from '@nestjs/common';
 import { MockMailService } from './mock-mail.service.js';
+import { SmtpMailService } from './smtp-mail.service.js';
+import { MAIL_SERVICE } from './mail.service.js';
+
+const mailProvider = {
+  provide: MAIL_SERVICE,
+  useClass: process.env['SMTP_HOST'] ? SmtpMailService : MockMailService,
+};
 
 @Module({
-  providers: [MockMailService],
-  exports: [MockMailService],
+  providers: [mailProvider],
+  exports: [MAIL_SERVICE],
 })
 export class MailModule {}

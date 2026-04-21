@@ -31,11 +31,11 @@ export async function echoProcessor(
  * so blocking calls work correctly. This is enforced via `redisConnectionOptions`
  * from @chat/shared which always sets that flag.
  */
-export function createSystemWorker(redisHost: string, redisPort: number): Worker {
+export function createSystemWorker(redisHost: string, redisPort: number, redisPassword?: string): Worker {
   const worker = new Worker(
     QUEUE_NAMES.system,
     echoProcessor,
-    { connection: redisConnectionOptions(redisHost, redisPort) },
+    { connection: redisConnectionOptions(redisHost, redisPort, redisPassword) },
   );
 
   worker.on('completed', (job) => {

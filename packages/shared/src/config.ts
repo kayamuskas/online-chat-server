@@ -20,11 +20,17 @@ export interface RuntimeEnv {
   ALLOWED_ORIGIN: string;
   REDIS_HOST: string;
   REDIS_PORT: number;
+  REDIS_PASSWORD: string | undefined;
   POSTGRES_HOST: string;
   POSTGRES_PORT: number;
   POSTGRES_DB: string;
   POSTGRES_USER: string;
   POSTGRES_PASSWORD: string;
+  SMTP_HOST: string | undefined;
+  SMTP_PORT: number | undefined;
+  SMTP_USER: string | undefined;
+  SMTP_PASS: string | undefined;
+  SMTP_FROM: string | undefined;
 }
 
 /**
@@ -51,6 +57,8 @@ export function parseRuntimeEnv(raw: NodeJS.ProcessEnv = process.env): RuntimeEn
     throw new Error(`Invalid NODE_ENV value: "${nodeEnv}"`);
   }
 
+  const smtpPort = raw["SMTP_PORT"] ? parseInt(raw["SMTP_PORT"], 10) : undefined;
+
   return {
     NODE_ENV: nodeEnv,
     API_PORT: parseInt(raw["API_PORT"] ?? String(SERVICE_PORTS.apiHttp), 10),
@@ -58,6 +66,7 @@ export function parseRuntimeEnv(raw: NodeJS.ProcessEnv = process.env): RuntimeEn
     ALLOWED_ORIGIN: raw["ALLOWED_ORIGIN"] ?? "http://localhost:4173",
     REDIS_HOST: raw["REDIS_HOST"] ?? "localhost",
     REDIS_PORT: parseInt(raw["REDIS_PORT"] ?? String(SERVICE_PORTS.redis), 10),
+    REDIS_PASSWORD: raw["REDIS_PASSWORD"] || undefined,
     POSTGRES_HOST: raw["POSTGRES_HOST"] ?? "localhost",
     POSTGRES_PORT: parseInt(
       raw["POSTGRES_PORT"] ?? String(SERVICE_PORTS.postgres),
@@ -66,5 +75,10 @@ export function parseRuntimeEnv(raw: NodeJS.ProcessEnv = process.env): RuntimeEn
     POSTGRES_DB: raw["POSTGRES_DB"] as string,
     POSTGRES_USER: raw["POSTGRES_USER"] as string,
     POSTGRES_PASSWORD: raw["POSTGRES_PASSWORD"] as string,
+    SMTP_HOST: raw["SMTP_HOST"] || undefined,
+    SMTP_PORT: smtpPort,
+    SMTP_USER: raw["SMTP_USER"] || undefined,
+    SMTP_PASS: raw["SMTP_PASS"] || undefined,
+    SMTP_FROM: raw["SMTP_FROM"] || undefined,
   };
 }
