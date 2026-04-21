@@ -35,8 +35,9 @@ interface GetPresencePayload {
 }
 
 const MAX_PRESENCE_USER_IDS = 500;
+const WS_ALLOWED_ORIGIN = process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:4173';
 
-@WebSocketGateway({ cors: { origin: 'http://localhost:4173', credentials: true } })
+@WebSocketGateway({ cors: { origin: WS_ALLOWED_ORIGIN, credentials: true } })
 export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private readonly server!: Server;

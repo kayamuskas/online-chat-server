@@ -72,10 +72,12 @@ function dmChannel(conversationId: string): string {
   return `dm:${conversationId}`;
 }
 
+const WS_ALLOWED_ORIGIN = process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:4173';
+
 // ── Gateway ───────────────────────────────────────────────────────────────────
 
 @Injectable()
-@WebSocketGateway({ cors: { origin: 'http://localhost:4173', credentials: true } })
+@WebSocketGateway({ cors: { origin: WS_ALLOWED_ORIGIN, credentials: true } })
 export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private readonly server!: Server;

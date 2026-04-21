@@ -2,7 +2,7 @@
  * Phase 3 + 4 + 5 + 6 API client — auth flows, session management, room surfaces,
  * contacts / DM policy, and messaging contracts.
  *
- * All requests are made to the NestJS API running on SERVICE_PORTS.apiHttp.
+ * All requests are made to the configured NestJS API origin.
  * Credentials (session cookies) are sent with every request via credentials: "include".
  *
  * Phase 3 covers:
@@ -37,10 +37,8 @@
  *   POST   /api/v1/messages/dm/:conversationId/messages
  *   PATCH  /api/v1/messages/dm/:conversationId/messages/:messageId
  */
-
-import { SERVICE_PORTS } from "@chat/shared";
-
-const BASE_URL = `http://localhost:${SERVICE_PORTS.apiHttp}/api/v1`;
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
+const BASE_URL = `${API_ORIGIN}/api/v1`;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

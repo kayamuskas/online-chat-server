@@ -1,7 +1,7 @@
-import { SERVICE_PORTS } from "@chat/shared";
 import { io, type Socket } from "socket.io-client";
 
 let socket: Socket | null = null;
+const SOCKET_URL = (import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
 
 export function connectSocket(): Socket {
   if (socket) {
@@ -11,7 +11,7 @@ export function connectSocket(): Socket {
     return socket;
   }
 
-  socket = io(`http://localhost:${SERVICE_PORTS.apiHttp}`, {
+  socket = io(SOCKET_URL, {
     withCredentials: true,
   });
 

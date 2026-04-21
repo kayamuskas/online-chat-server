@@ -31,6 +31,11 @@ RUN pnpm install -r --frozen-lockfile
 # ── Stage 2: build ─────────────────────────────────────────────────────────────
 FROM deps AS builder
 
+ARG VITE_API_BASE_URL=http://localhost:3000
+ARG VITE_SOCKET_URL=http://localhost:3000
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
+
 COPY . .
 
 # Build shared package first (web depends on @chat/shared)
