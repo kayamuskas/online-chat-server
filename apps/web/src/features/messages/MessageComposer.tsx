@@ -11,7 +11,7 @@
  *   - Character limit feedback at 3072 bytes (MSG-02)
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ReplyPreview } from "./ReplyPreview";
 import type { ReplyPreview as ReplyPreviewData } from "../../lib/api";
 import { uploadAttachment, type AttachmentView } from "../../lib/api";
@@ -59,6 +59,12 @@ export function MessageComposer({
       textareaRef.current?.focus();
     });
   }
+
+  useEffect(() => {
+    if (replyTo) {
+      textareaRef.current?.focus();
+    }
+  }, [replyTo]);
 
   const byteLen = utf8ByteLength(content);
   const overLimit = byteLen > MAX_BYTES;
