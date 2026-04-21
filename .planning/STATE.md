@@ -180,7 +180,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 | 260420-h12 | Add Playwright as mandatory E2E test framework to requirements and project docs | 2026-04-20 | — | [260420-h12-playwright-testing-requirement](./quick/260420-h12-playwright-testing-requirement/) |
 | 260421-jld | Reply button should focus message input field | 2026-04-21 | — | [260421-jld-reply-button-should-focus-message-input-](./quick/260421-jld-reply-button-should-focus-message-input-/) |
 | 260421-jqn | Fix slow presence status change from afk/offline to online | 2026-04-21 | — | [260421-jqn-fix-slow-presence-status-change-from-afk](./quick/260421-jqn-fix-slow-presence-status-change-from-afk/) |
+| 260421-jyc | ENV-based config: Redis auth, SMTP mail, dev/prod switching | 2026-04-21 | — | [260421-jyc-env-based-config-redis-auth-smtp-mail-de](./quick/260421-jyc-env-based-config-redis-auth-smtp-mail-de/) |
 
 ---
-Last activity: 2026-04-21 - Completed quick task 260421-jqn: Fix slow presence status change from afk/offline to online
+Last activity: 2026-04-21 - Completed quick task 260421-jyc: ENV-based config for dev/prod environments
 *State initialized: 2026-04-18 | Updated: 2026-04-20 — synchronized active phase to Phase 10 and aligned completed phase summaries through Phase 9*
