@@ -343,7 +343,6 @@ export function DmChatView({
     socket.io.on("reconnect", onReconnect);
 
     return () => {
-      socket.emit("leaveDm", { conversationId });
       socket.off("message-created", onMessageCreated);
       socket.off("message-edited", onMessageEdited);
       socket.off("message-deleted", onMessageDeleted);
