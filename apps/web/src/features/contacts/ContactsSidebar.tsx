@@ -28,6 +28,11 @@ interface ContactsSidebarProps {
   activePartnerId?: string | null;
 }
 
+interface PresenceUpdatePayload {
+  userId?: string;
+  status?: string;
+}
+
 export function ContactsSidebar({
   contacts,
   currentUserId,
@@ -51,13 +56,30 @@ export function ContactsSidebar({
       onPresenceUpdate?.(presenceMap);
     }
 
+    function onPresenceUpdateEvent(payload: PresenceUpdatePayload) {
+      if (
+        typeof payload.userId !== "string" ||
+        (payload.status !== "online" && payload.status !== "afk" && payload.status !== "offline")
+      ) {
+        return;
+      }
+
+      if (!userIds.includes(payload.userId)) {
+        return;
+      }
+
+      onPresenceUpdate?.({ [payload.userId]: payload.status });
+    }
+
     requestPresence();
     const intervalId = window.setInterval(requestPresence, 30_000);
     socket.on("presence", onPresence);
+    socket.on("presence-update", onPresenceUpdateEvent);
 
     return () => {
       window.clearInterval(intervalId);
       socket.off("presence", onPresence);
+      socket.off("presence-update", onPresenceUpdateEvent);
     };
   }, [contacts, onPresenceUpdate, socket]);
 

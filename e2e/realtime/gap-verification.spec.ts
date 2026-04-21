@@ -89,6 +89,7 @@ test.describe('Gap verification', () => {
 
       await expect(pageAlice.locator('.reply-preview')).toContainText(fx.bob.username);
       await expect(pageAlice.locator('.reply-preview')).toContainText(originalMsg);
+      await expect(pageAlice.locator('[aria-label="Message input"]')).toBeFocused();
 
       const replyMsg = `reply-target-${Date.now()}`;
       await sendMessage(pageAlice, replyMsg);

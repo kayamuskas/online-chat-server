@@ -27,4 +27,29 @@ test.describe('UAT #6 — Presence request-response', () => {
       await ctxBob.close();
     }
   });
+
+  test('presence updates to online quickly when a contact reconnects', async ({ browser }) => {
+    const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
+    const pageBob = await ctxBob.newPage();
+
+    try {
+      await pageBob.goto('/');
+      await pageBob.waitForSelector('.app-layout', { timeout: 8_000 });
+
+      const aliceRow = pageBob.locator('.contacts-sidebar__row', { hasText: fx.alice.username });
+      await expect(aliceRow).toBeVisible({ timeout: 10_000 });
+      await expect(aliceRow.locator('.presence-dot--offline')).toBeVisible({ timeout: 10_000 });
+
+      const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
+      const pageAlice = await ctxAlice.newPage();
+      await pageAlice.goto('/');
+      await pageAlice.waitForSelector('.app-layout', { timeout: 8_000 });
+
+      await expect(aliceRow.locator('.presence-dot--online')).toBeVisible({ timeout: 10_000 });
+
+      await ctxAlice.close();
+    } finally {
+      await ctxBob.close();
+    }
+  });
 });

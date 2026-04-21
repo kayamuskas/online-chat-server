@@ -54,6 +54,15 @@ function makeSocket(cookie?: string): {
   };
 }
 
+function attachServer(gateway: AppGateway) {
+  const server = { emit: vi.fn() };
+  Object.defineProperty(gateway, 'server', {
+    value: server,
+    configurable: true,
+  });
+  return server;
+}
+
 // ── tests ─────────────────────────────────────────────────────────────────────
 
 describe('AppGateway presence', () => {
@@ -65,6 +74,7 @@ describe('AppGateway presence', () => {
     presenceService = makePresenceService();
     authService = makeAuthService();
     gateway = new AppGateway(presenceService, authService);
+    attachServer(gateway);
   });
 
   // ── Authentication gate ─────────────────────────────────────────────────────
@@ -91,6 +101,21 @@ describe('AppGateway presence', () => {
       expect(presenceService.tabConnected).toHaveBeenCalledWith('user-123', 'socket-xyz');
     });
 
+    it('broadcasts presence-update when a user transitions from offline to online on connect', async () => {
+      const socket = makeSocket(`${SESSION_COOKIE_NAME}=valid-token`);
+      vi.mocked(presenceService.getUserPresence)
+        .mockReturnValueOnce('offline')
+        .mockReturnValueOnce('online');
+      const server = attachServer(gateway);
+
+      await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
+
+      expect(server.emit).toHaveBeenCalledWith(
+        'presence-update',
+        expect.objectContaining({ userId: 'user-123', status: 'online' }),
+      );
+    });
+
     it('emits ready event on successful authentication', async () => {
       const socket = makeSocket(`${SESSION_COOKIE_NAME}=valid-token`);
       await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
@@ -113,6 +138,22 @@ describe('AppGateway presence', () => {
       await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
       expect(() => gateway.handleDisconnect(socket as unknown as import('socket.io').Socket)).not.toThrow();
     });
+
+    it('broadcasts presence-update when the last tab disconnects and user becomes offline', async () => {
+      const socket = makeSocket(`${SESSION_COOKIE_NAME}=valid-token`);
+      const server = attachServer(gateway);
+      await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
+      vi.mocked(presenceService.getUserPresence)
+        .mockReturnValueOnce('online')
+        .mockReturnValueOnce('offline');
+
+      gateway.handleDisconnect(socket as unknown as import('socket.io').Socket);
+
+      expect(server.emit).toHaveBeenCalledWith(
+        'presence-update',
+        expect.objectContaining({ userId: 'user-123', status: 'offline' }),
+      );
+    });
   });
 
   // ── Activity event ──────────────────────────────────────────────────────────
@@ -130,6 +171,22 @@ describe('AppGateway presence', () => {
       await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
       gateway.handleActivity(socket as unknown as import('socket.io').Socket);
       expect(presenceService.tabActivity).not.toHaveBeenCalled();
+    });
+
+    it('broadcasts presence-update when activity returns an AFK user to online', async () => {
+      const socket = makeSocket(`${SESSION_COOKIE_NAME}=valid-token`);
+      const server = attachServer(gateway);
+      await gateway.handleConnection(socket as unknown as import('socket.io').Socket);
+      vi.mocked(presenceService.getUserPresence)
+        .mockReturnValueOnce('afk')
+        .mockReturnValueOnce('online');
+
+      gateway.handleActivity(socket as unknown as import('socket.io').Socket);
+
+      expect(server.emit).toHaveBeenCalledWith(
+        'presence-update',
+        expect.objectContaining({ userId: 'user-123', status: 'online' }),
+      );
     });
   });
 

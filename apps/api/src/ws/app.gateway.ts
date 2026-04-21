@@ -17,13 +17,14 @@
 
 import {
   WebSocketGateway,
+  WebSocketServer,
   SubscribeMessage,
   MessageBody,
   ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import type { Socket } from 'socket.io';
+import type { Server, Socket } from 'socket.io';
 import { extractSessionToken } from './ws-auth.js';
 import { PresenceService } from '../presence/presence.service.js';
 import { AuthService } from '../auth/auth.service.js';
@@ -37,6 +38,9 @@ const MAX_PRESENCE_USER_IDS = 500;
 
 @WebSocketGateway({ cors: { origin: 'http://localhost:4173', credentials: true } })
 export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer()
+  private readonly server!: Server;
+
   /**
    * Socket-ID → userId map for authenticated connections.
    * Used to look up userId on disconnect and activity events without
@@ -52,6 +56,21 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly presenceService: PresenceService,
     private readonly authService: AuthService,
   ) {}
+
+  private emitPresenceUpdateIfChanged(
+    userId: string,
+    previousStatus: 'online' | 'afk' | 'offline',
+  ): void {
+    const nextStatus = this.presenceService.getUserPresence(userId);
+    if (nextStatus === previousStatus) {
+      return;
+    }
+
+    this.server.emit('presence-update', {
+      userId,
+      status: nextStatus,
+    });
+  }
 
   /**
    * Handle new socket connections.
@@ -76,8 +95,10 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const userId = result.user.id;
+    const previousStatus = this.presenceService.getUserPresence(userId);
     this.socketUserMap.set(client.id, userId);
     this.presenceService.tabConnected(userId, client.id);
+    this.emitPresenceUpdateIfChanged(userId, previousStatus);
 
     client.emit('ready', { status: 'connected', service: 'api' });
   }
@@ -92,8 +113,10 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = this.socketUserMap.get(client.id);
     if (!userId) return;
 
+    const previousStatus = this.presenceService.getUserPresence(userId);
     this.socketUserMap.delete(client.id);
     this.presenceService.tabDisconnected(userId, client.id);
+    this.emitPresenceUpdateIfChanged(userId, previousStatus);
   }
 
   /**
@@ -106,7 +129,9 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleActivity(@ConnectedSocket() client: Socket): void {
     const userId = this.socketUserMap.get(client.id);
     if (!userId) return;
+    const previousStatus = this.presenceService.getUserPresence(userId);
     this.presenceService.tabActivity(userId, client.id);
+    this.emitPresenceUpdateIfChanged(userId, previousStatus);
   }
 
   /**

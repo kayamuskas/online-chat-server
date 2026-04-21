@@ -11,7 +11,7 @@
  *   - Character limit feedback at 3072 bytes (MSG-02)
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import { ReplyPreview } from "./ReplyPreview";
 import type { ReplyPreview as ReplyPreviewData } from "../../lib/api";
 import { uploadAttachment, type AttachmentView } from "../../lib/api";
@@ -56,15 +56,29 @@ export function MessageComposer({
   function restoreComposerFocus() {
     // Defer focus until parent state updates and scroll adjustments settle.
     window.requestAnimationFrame(() => {
-      textareaRef.current?.focus();
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      const caret = textarea.value.length;
+      textarea.setSelectionRange(caret, caret);
     });
   }
 
-  useEffect(() => {
-    if (replyTo) {
-      textareaRef.current?.focus();
+  useLayoutEffect(() => {
+    if (!replyTo || readOnly) {
+      return;
     }
-  }, [replyTo]);
+
+    const frameId = window.requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      const caret = textarea.value.length;
+      textarea.setSelectionRange(caret, caret);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [readOnly, replyTo]);
 
   const byteLen = utf8ByteLength(content);
   const overLimit = byteLen > MAX_BYTES;
