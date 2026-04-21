@@ -1,10 +1,11 @@
 ---
 phase: 9
 slug: frontend-productization
-status: draft
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-04-20
+finalized: 2026-04-21
 ---
 
 # Phase 9 — Validation Strategy
@@ -51,10 +52,11 @@ created: 2026-04-20
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
 | Shell visually matches the intended warm `desing_v1` direction on desktop and mobile | UI-01 | Requires rendered browser inspection | Open the app on desktop and mobile widths and compare with `requirements/desing_v1/` |
-| Unread badges increment and clear correctly when messages arrive in inactive room/DM threads | NOTF-01, NOTF-02 | Requires live multi-user messaging | Send messages into inactive room/DM, then open thread and confirm badge clears |
-| Upward infinite history preserves scroll position in long conversations | MSG-07 | Requires a populated history and browser scrolling | Scroll near top of a long thread and confirm older messages prepend without jumping |
 | Manage-room tabs behave as a modal-style product flow | UI-03 | Requires interactive browser navigation | Open `Manage room`, switch tabs, trigger invite/unban/leave actions |
-| Account hub routes cleanly into password, sessions, and presence surfaces | UI-01 | Requires browser navigation | Open `Account`, navigate through all three sub-surfaces, sign out current browser |
+
+Browser-backed evidence already confirmed outside the manual-only subset:
+- Playwright realtime suite passed on 2026-04-21, covering unread badge behavior and upward infinite history.
+- Manual browser recheck on 2026-04-21 confirmed the Account hub sign-out path returns the user to auth cleanly.
 
 ---
 
@@ -65,4 +67,4 @@ created: 2026-04-20
 - [x] No watch-mode or flaky background verification required
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** approved for code-level verification; browser UAT still required
+**Approval:** complete for validation contract; remaining items are explicit manual-only browser checks
