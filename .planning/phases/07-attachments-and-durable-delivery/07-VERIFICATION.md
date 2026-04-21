@@ -1,15 +1,12 @@
 ---
 phase: 07-attachments-and-durable-delivery
-verified: 2026-04-20T07:15:00Z
+verified: 2026-04-21T09:10:00Z
 status: human_needed
 score: 6/6
 overrides_applied: 0
 human_verification:
-  - test: "Upload a file via the '+' button in the message composer and verify the pending chip appears"
-    expected: "File uploads, chip shows original filename with an 'x' remove button"
-    why_human: "UI rendering and interaction flow cannot be verified programmatically"
-  - test: "Send a message with an attachment and verify the download link appears in the timeline for both sender and another user"
-    expected: "Attachment link with original filename and size in KB appears below the message content"
+  - test: "Verify cross-session attachment visibility and download after sending a room attachment"
+    expected: "Sender and another room member both see the download link with the original filename, and downloading preserves access rules"
     why_human: "Requires running app with two authenticated sessions"
   - test: "Paste an image from clipboard into the composer textarea"
     expected: "Image uploads automatically and appears as a pending attachment chip"
@@ -28,7 +25,7 @@ human_verification:
 # Phase 7: Attachments and Durable Delivery Verification Report
 
 **Phase Goal:** Add attachment upload/download, ACL enforcement, offline delivery, bounded queue strategy, and persistent storage.
-**Verified:** 2026-04-20T07:15:00Z
+**Verified:** 2026-04-21T09:10:00Z
 **Status:** human_needed
 **Re-verification:** No -- initial verification
 
@@ -99,6 +96,9 @@ human_verification:
 
 Step 7b: SKIPPED (no runnable entry points -- requires Docker stack with Postgres)
 
+Browser recheck on 2026-04-21:
+- Verified in the shipped UI that clicking `+` uploads `phase7-attachment.txt`, shows a pending chip with remove button, and sending renders `phase7-attachment.txt (0 KB)` in the room timeline for the sender.
+
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
@@ -121,43 +121,37 @@ Step 7b: SKIPPED (no runnable entry points -- requires Docker stack with Postgre
 
 ### Human Verification Required
 
-### 1. File Upload via Button
-
-**Test:** Click the "+" button in the message composer to select a file (< 20 MB). Verify it appears as a pending chip with filename.
-**Expected:** Chip shows original filename with an "x" remove button.
-**Why human:** UI rendering and interaction flow cannot be verified programmatically.
-
-### 2. Send Message with Attachment
+### 1. Cross-session room attachment visibility and download
 
 **Test:** Send a message with a pending attachment. As another user in the same room, verify the download link appears.
 **Expected:** Attachment link with original filename and size in KB appears below message content. Clicking downloads the file with the original filename.
 **Why human:** Requires running app with two authenticated sessions.
 
-### 3. Clipboard Paste Upload
+### 2. Clipboard Paste Upload
 
 **Test:** Copy an image to clipboard, paste into the composer textarea.
 **Expected:** Image uploads automatically and appears as a pending attachment chip.
 **Why human:** Clipboard paste events require browser interaction.
 
-### 4. Size Limit Enforcement
+### 3. Size Limit Enforcement
 
 **Test:** Upload an image > 3 MB and a file > 20 MB.
 **Expected:** 413 error message displayed to user for both cases.
 **Why human:** Requires browser interaction with the upload flow and error display.
 
-### 5. ACL Enforcement After Access Loss
+### 4. ACL Enforcement After Access Loss
 
 **Test:** Remove a user from a room, then try to download a previously accessible attachment as that user.
 **Expected:** Download returns 403 Forbidden.
 **Why human:** Requires runtime ACL enforcement with multiple sessions and membership changes.
 
-### 6. Reconnect Catch-Up via Watermark
+### 5. Reconnect Catch-Up via Watermark
 
 **Test:** Open browser DevTools Network tab, go offline briefly, go back online. Check network requests.
 **Expected:** GET /history?after_watermark=N request instead of full history reload.
 **Why human:** Requires browser offline/online simulation and network inspection.
 
-### 7. DM Attachments
+### 6. DM Attachments
 
 **Test:** Open a DM conversation, upload and send an attachment. Verify the download link appears for both participants.
 **Expected:** Same attachment flow as rooms works in DM conversations.
@@ -167,9 +161,9 @@ Step 7b: SKIPPED (no runnable entry points -- requires Docker stack with Postgre
 
 No automated gaps found. All 6 roadmap success criteria verified against the codebase. All 19 artifacts exist, are substantive, and are properly wired. All key links are connected with real data flowing through them. All 9 requirement IDs (MSG-06, MSG-09, FILE-01 through FILE-06, OPS-03) are covered by implemented code.
 
-7 human verification items remain for visual, interactive, and runtime ACL testing.
+6 human verification items remain for cross-session, clipboard, size-limit, ACL, reconnect, and DM attachment testing.
 
 ---
 
-_Verified: 2026-04-20T07:15:00Z_
+_Verified: 2026-04-21T09:10:00Z_
 _Verifier: Claude (gsd-verifier)_

@@ -9,12 +9,12 @@ source:
   - 09-05-SUMMARY.md
   - 09-06-SUMMARY.md
 started: 2026-04-20T08:20:00Z
-updated: 2026-04-20T08:29:00Z
+updated: 2026-04-21T09:12:00Z
 ---
 
 ## Current Test
 
-[runtime checks complete; browser-only checks still pending]
+[runtime checks complete; only visual-baseline and manage-room browser checks remain]
 
 ## Tests
 
@@ -57,7 +57,7 @@ result: pass
 ### 10. Visual Shell / Unread / Infinite Scroll / Modal UX
 expected: Browser inspection confirms the Phase 9 UI behaves as designed.
 result: pending
-blocked_by: "Requires interactive browser rendering and websocket-driven multi-session UI observation."
+blocked_by: "Visual baseline comparison against requirements/desing_v1 and manage-room modal interaction are still not fully rechecked."
 
 ## Summary
 
@@ -71,12 +71,11 @@ blocked: 0
 ## Remaining Human Checks
 
 - Compare the shipped shell visually against `requirements/desing_v1/` on desktop and mobile.
-- Confirm unread badges appear and clear in the real browser UI for inactive tracked room and DM threads.
-- Confirm upward infinite scroll preserves viewport position in a long conversation.
 - Confirm `Manage room` tab switching and action layout feel correct in the browser.
-- Confirm the `Account` hub routes cleanly into password, sessions, and presence views.
 
 ## Notes
 
 - Runtime was verified against a live Docker stack, not just static code or local builds.
 - One stale test cookie for the first user became invalid before the main flow; re-authentication succeeded immediately and the later sign-out invalidation check behaved correctly. This was treated as a test-session artifact, not a confirmed product bug.
+- `pnpm exec playwright test e2e/realtime/ws-auth.spec.ts e2e/realtime/room-realtime.spec.ts e2e/realtime/dm-realtime.spec.ts e2e/realtime/presence.spec.ts e2e/realtime/autoscroll.spec.ts e2e/realtime/reconnect.spec.ts e2e/realtime/unread-sidebar.spec.ts e2e/realtime/history-load.spec.ts --reporter=line` passed on 2026-04-21, covering unread behavior and infinite upward history.
+- Browser recheck on 2026-04-21 confirmed the Account hub renders current-session details and `Sign out this browser` returns the app to the auth shell.

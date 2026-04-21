@@ -44,3 +44,4 @@ vendor/*
 .e2e-fixtures.json
 .alice-session.json
 .bob-session.json
+.playwright-mcp/
