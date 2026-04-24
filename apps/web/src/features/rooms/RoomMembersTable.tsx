@@ -12,7 +12,9 @@
  * tables per Phase 3 contract.
  */
 
+import { useState } from "react";
 import { PresenceDot, type PresenceStatus } from "../presence/PresenceDot";
+import { MemberPopover } from "../contacts/MemberPopover";
 import type { RoomMembership } from "../../lib/api";
 
 export interface MemberRow {
@@ -41,6 +43,10 @@ interface RoomMembersTableProps {
   onSendFriendRequest?: (userId: string, username: string) => void;
   /** Set of user IDs already friends with current user (to hide the button). */
   friendUserIds?: Set<string>;
+  /** Room name for popover context line. */
+  roomName?: string;
+  /** Called when user clicks Ban in popover. */
+  onBanUser?: (userId: string) => void;
 }
 
 export function RoomMembersTable({
@@ -55,12 +61,17 @@ export function RoomMembersTable({
   actionBusy,
   onSendFriendRequest,
   friendUserIds,
+  roomName,
+  onBanUser,
 }: RoomMembersTableProps) {
+  const [popoverTarget, setPopoverTarget] = useState<{ userId: string; rect: DOMRect } | null>(null);
+
   if (members.length === 0) {
     return <p className="rooms-empty">No members found.</p>;
   }
 
   return (
+    <>
     <table className="members-table" aria-label="Room members">
       <thead>
         <tr>
@@ -80,7 +91,13 @@ export function RoomMembersTable({
           return (
             <tr key={m.userId}>
               <td>
-                <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span
+                  style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: isCurrentUser ? "default" : "pointer" }}
+                  onClick={isCurrentUser ? undefined : (e) => {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setPopoverTarget({ userId: m.userId, rect });
+                  }}
+                >
                   <PresenceDot status={m.presenceStatus ?? "offline"} />
                   <span>{m.username}</span>
                   {isCurrentUser && (
@@ -136,16 +153,6 @@ export function RoomMembersTable({
                           {busy ? "…" : "Ban"}
                         </button>
                       )}
-                      {!friendUserIds?.has(m.userId) && onSendFriendRequest && (
-                        <button
-                          type="button"
-                          className="btn btn--soft btn--xs"
-                          onClick={() => onSendFriendRequest(m.userId, m.username)}
-                          style={{ marginLeft: "0.25rem" }}
-                        >
-                          Add friend
-                        </button>
-                      )}
                     </>
                   )}
                 </td>
@@ -155,5 +162,24 @@ export function RoomMembersTable({
         })}
       </tbody>
     </table>
+    {popoverTarget && (() => {
+      const member = members.find(m => m.userId === popoverTarget.userId);
+      if (!member) return null;
+      return (
+        <MemberPopover
+          username={member.username}
+          userId={member.userId}
+          presenceStatus={member.presenceStatus ?? "offline"}
+          roomName={roomName ?? ""}
+          isFriend={friendUserIds?.has(member.userId) ?? false}
+          isCurrentUser={member.userId === currentUserId}
+          anchorRect={popoverTarget.rect}
+          onClose={() => setPopoverTarget(null)}
+          onSendFriendRequest={onSendFriendRequest}
+          onBanUser={onBanUser}
+        />
+      );
+    })()}
+    </>
   );
 }
