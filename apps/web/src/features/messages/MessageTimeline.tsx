@@ -56,6 +56,27 @@ interface MessageTimelineProps {
 }
 
 /**
+ * Maps a file extension to a short type label for display in attachment cards.
+ */
+function getFileTypeIcon(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+  const map: Record<string, string> = {
+    doc: 'DOC', docx: 'DOC', pdf: 'PDF', txt: 'TXT',
+    png: 'IMG', jpg: 'IMG', jpeg: 'IMG', gif: 'IMG', webp: 'IMG', svg: 'IMG',
+    zip: 'ZIP', tar: 'ZIP', gz: 'ZIP', rar: 'ZIP',
+    mp3: 'AUD', wav: 'AUD', mp4: 'VID', mov: 'VID',
+    xls: 'XLS', xlsx: 'XLS', csv: 'CSV',
+  };
+  return map[ext] ?? 'FILE';
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
  * Formats a message timestamp for display.
  * Shows time only for today; falls back to date + time for older messages.
  */
@@ -252,7 +273,7 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
           ) : (
             <button
               type="button"
-              className="msg-timeline__history-status__btn"
+              className="chat-divider chat-divider--clickable"
               onClick={() => {
                 const node = scrollRef.current;
                 if (!node || !hasMoreBefore || loadingOlder) return;
@@ -260,7 +281,7 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
                 onLoadOlder?.();
               }}
             >
-              Scroll up for earlier messages
+              older messages &#8593;
             </button>
           )}
         </div>
@@ -281,10 +302,10 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
               {showUnreadDivider && (
                 <li
                   ref={unreadDividerRef}
-                  className="msg-timeline__divider"
+                  className="chat-divider"
                   aria-label="Start of new messages"
                 >
-                  <span>new &#8595;</span>
+                  new &#8595;
                 </li>
               )}
               <li
@@ -335,20 +356,29 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
                 </div>
               )}
 
-              {/* Attachment download links */}
+              {/* Attachment cards */}
               {msg.attachments && msg.attachments.length > 0 && (
                 <div className="msg-attachments">
                   {msg.attachments.map((att) => (
-                    <a
-                      key={att.id}
-                      href={attachmentDownloadUrl(att.id)}
-                      className="msg-attachment-link"
-                      target="_blank"
-                      rel="noopener"
-                      download={att.originalFilename}
-                    >
-                      {att.originalFilename} ({(att.fileSize / 1024).toFixed(0)} KB)
-                    </a>
+                    <div key={att.id} className="attachment">
+                      <div className="attachment__icon">{getFileTypeIcon(att.originalFilename)}</div>
+                      <div className="attachment__info">
+                        <div className="attachment__name">{att.originalFilename}</div>
+                        <div className="attachment__meta">
+                          {formatFileSize(att.fileSize)}
+                          {att.comment && ` · ${att.comment}`}
+                        </div>
+                      </div>
+                      <a
+                        href={attachmentDownloadUrl(att.id)}
+                        className="btn btn--soft btn--xs"
+                        download={att.originalFilename}
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Download
+                      </a>
+                    </div>
                   ))}
                 </div>
               )}

@@ -1288,27 +1288,32 @@ body {
   gap: 0.85rem;
 }
 
-.msg-timeline__divider {
+/* ── Chat dividers (D-9.1-17, D-9.1-18) ───────────────────────── */
+.chat-divider {
+  text-align: center;
+  color: var(--color-muted, #999);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin: 10px 0 8px;
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  margin: 0.2rem 0;
-  color: var(--color-muted);
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  letter-spacing: 0.12em;
-  text-transform: lowercase;
+  gap: 10px;
+  border: none;
+  background: none;
+  width: 100%;
+  padding: 0;
 }
-
-.msg-timeline__divider::before,
-.msg-timeline__divider::after {
+.chat-divider::before,
+.chat-divider::after {
   content: "";
   flex: 1;
-  border-top: 1px dashed var(--color-border);
+  border-top: 1px dashed var(--color-border, #e0e0e0);
 }
-
-.msg-timeline__divider span {
-  white-space: nowrap;
+.chat-divider--clickable {
+  cursor: pointer;
+}
+.chat-divider--clickable:hover {
+  color: var(--color-accent, #b05a2c);
 }
 
 .msg-bubble {
@@ -1404,6 +1409,50 @@ body {
 
 .msg-attachment-link:hover {
   background: #f4eee4;
+}
+
+/* ── Attachment card (D-9.1-16) ────────────────────────────────── */
+.attachment {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--color-border, #e0e0e0);
+  background: var(--color-surface, #fff);
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-top: 6px;
+  max-width: 320px;
+}
+.attachment__icon {
+  width: 32px;
+  height: 40px;
+  background: var(--color-bg, #fafafa);
+  border: 1px solid var(--color-border, #e0e0e0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-muted, #888);
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+.attachment__info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.attachment__name {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.attachment__meta {
+  font-size: 11.5px;
+  color: var(--color-muted, #888);
+  font-family: var(--font-mono);
 }
 
 .msg-bubble__actions {
@@ -1547,8 +1596,7 @@ body {
   padding: 0.25rem 0 0.75rem;
 }
 
-.msg-timeline__history-status span,
-.msg-timeline__history-status__btn {
+.msg-timeline__history-status span {
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: #f6f2ea;
@@ -1558,16 +1606,6 @@ body {
   letter-spacing: 0.05em;
   padding: 0.35rem 0.7rem;
   text-transform: uppercase;
-}
-
-.msg-timeline__history-status__btn {
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.msg-timeline__history-status__btn:hover {
-  background: var(--color-border);
-  color: var(--color-text);
 }
 
 .msg-timeline__new-messages {
