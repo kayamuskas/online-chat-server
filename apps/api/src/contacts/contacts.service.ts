@@ -32,12 +32,14 @@ import type {
   IncomingFriendRequestView,
   DmEligibilityResult,
 } from './contacts.types.js';
+import { RealtimeEventsService } from '../ws/realtime-events.service.js';
 
 @Injectable()
 export class ContactsService {
   constructor(
     private readonly repo: ContactsRepository,
     private readonly userRepo: UserRepository,
+    private readonly realtimeEvents: RealtimeEventsService,
     private readonly db?: PostgresService,
   ) {}
 
@@ -78,13 +80,17 @@ export class ContactsService {
       }
       // declined or cancelled — re-send by updating the existing row to pending
       await this.repo.updateRequestStatus(existing.id, 'pending');
-      return this.repo.findRequestById(existing.id) as Promise<FriendRequest>;
+      const request = await this.repo.findRequestById(existing.id) as FriendRequest;
+      this.realtimeEvents.emitFriendRequestsUpdated(target.id);
+      return request;
     }
-    return this.repo.createFriendRequest({
+    const request = await this.repo.createFriendRequest({
       requester_id: callerId,
       target_id: target.id,
       message: input.message ?? null,
     });
+    this.realtimeEvents.emitFriendRequestsUpdated(target.id);
+    return request;
   }
 
   /** Return all incoming pending friend requests for the caller. */
@@ -118,6 +124,9 @@ export class ContactsService {
     const existingFriendship = await this.repo.findFriendship(callerId, req.requester_id);
     const friendship = existingFriendship ?? await this.repo.createFriendship(callerId, req.requester_id);
     await this.repo.updateRequestStatus(requestId, 'accepted');
+    this.realtimeEvents.emitFriendRequestsUpdated(callerId);
+    this.realtimeEvents.emitContactsUpdated(callerId);
+    this.realtimeEvents.emitContactsUpdated(req.requester_id);
     return friendship;
   }
 
@@ -139,6 +148,7 @@ export class ContactsService {
       throw new BadRequestException('Request is no longer pending');
     }
     await this.repo.updateRequestStatus(requestId, 'declined');
+    this.realtimeEvents.emitFriendRequestsUpdated(callerId);
   }
 
   /**
@@ -159,6 +169,7 @@ export class ContactsService {
       throw new BadRequestException('Request is no longer pending');
     }
     await this.repo.updateRequestStatus(requestId, 'cancelled');
+    this.realtimeEvents.emitFriendRequestsUpdated(req.target_id);
   }
 
   // ── Friendships ────────────────────────────────────────────────────────────

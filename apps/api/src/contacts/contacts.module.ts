@@ -5,6 +5,7 @@ import { ContactsRepository } from './contacts.repository.js';
 import { ContactsService } from './contacts.service.js';
 import { ContactsController } from './contacts.controller.js';
 import { UserRepository } from '../auth/user.repository.js';
+import { WsModule } from '../ws/ws.module.js';
 
 /**
  * ContactsModule — friendship lifecycle, user-to-user ban mechanics, and DM eligibility.
@@ -13,7 +14,7 @@ import { UserRepository } from '../auth/user.repository.js';
  * without re-implementing the friendship/ban policy.
  */
 @Module({
-  imports: [DbModule, forwardRef(() => AuthModule)],
+  imports: [DbModule, forwardRef(() => AuthModule), WsModule],
   controllers: [ContactsController],
   providers: [ContactsRepository, ContactsService, UserRepository],
   exports: [ContactsService, ContactsRepository],

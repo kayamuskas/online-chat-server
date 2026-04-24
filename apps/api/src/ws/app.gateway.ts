@@ -28,6 +28,7 @@ import type { Server, Socket } from 'socket.io';
 import { extractSessionToken } from './ws-auth.js';
 import { PresenceService } from '../presence/presence.service.js';
 import { AuthService } from '../auth/auth.service.js';
+import { RealtimeEventsService } from './realtime-events.service.js';
 
 /** Minimal payload for the 'getPresence' event from the client. */
 interface GetPresencePayload {
@@ -59,6 +60,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly presenceService: PresenceService,
     private readonly authService: AuthService,
+    private readonly realtimeEvents: RealtimeEventsService,
   ) {}
 
   private emitPresenceUpdateIfChanged(
@@ -101,6 +103,8 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = result.user.id;
     const previousStatus = this.presenceService.getUserPresence(userId);
     this.socketUserMap.set(client.id, userId);
+    this.realtimeEvents.bindServer(this.server);
+    this.realtimeEvents.joinUserChannel(client, userId);
     this.presenceService.tabConnected(userId, client.id);
     this.emitPresenceUpdateIfChanged(userId, previousStatus);
 

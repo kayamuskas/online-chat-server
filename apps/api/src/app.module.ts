@@ -10,6 +10,7 @@ import { RoomsModule } from './rooms/rooms.module.js';
 import { ContactsModule } from './contacts/contacts.module.js';
 import { MessagesModule } from './messages/messages.module.js';
 import { AttachmentsModule } from './attachments/attachments.module.js';
+import { WsModule } from './ws/ws.module.js';
 
 /**
  * AppModule — root Nest module for the hybrid REST + WebSocket API.
@@ -47,6 +48,7 @@ import { AttachmentsModule } from './attachments/attachments.module.js';
     }),
     QueueModule,
     AuthModule,
+    WsModule,
     PresenceModule,
     RoomsModule,
     ContactsModule,   // Phase 5: friendship lifecycle, user bans, DM eligibility

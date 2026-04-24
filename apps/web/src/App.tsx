@@ -193,6 +193,8 @@ interface AuthenticatedShellProps {
   onClearDmUnread: (userId: string) => void;
   onIncrementRoomUnread: (roomId: string) => void;
   onIncrementDmUnread: (userId: string) => void;
+  onRefreshPendingRequests: () => void;
+  onRefreshContacts: () => void;
   onBackFromManageRoom: () => void;
   onBackFromRoomChat: () => void;
   onSignedOut: () => void;
@@ -245,6 +247,8 @@ function AuthenticatedShell({
   onClearDmUnread,
   onIncrementRoomUnread,
   onIncrementDmUnread,
+  onRefreshPendingRequests,
+  onRefreshContacts,
   onBackFromManageRoom,
   onBackFromRoomChat,
   onSignedOut,
@@ -455,6 +459,42 @@ function AuthenticatedShell({
       socket.off("message-created", onMessageCreated);
     };
   }, [socket, user.id]);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    function onFriendRequestsUpdated() {
+      onRefreshPendingRequests();
+    }
+
+    socket.on("friend-requests-updated", onFriendRequestsUpdated);
+    socket.on("ready", onFriendRequestsUpdated);
+
+    return () => {
+      socket.off("friend-requests-updated", onFriendRequestsUpdated);
+      socket.off("ready", onFriendRequestsUpdated);
+    };
+  }, [onRefreshPendingRequests, socket]);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    function onContactsUpdated() {
+      onRefreshContacts();
+    }
+
+    socket.on("contacts-updated", onContactsUpdated);
+    socket.on("ready", onContactsUpdated);
+
+    return () => {
+      socket.off("contacts-updated", onContactsUpdated);
+      socket.off("ready", onContactsUpdated);
+    };
+  }, [onRefreshContacts, socket]);
 
   let shellTitle = "Classic chat";
   let shellSubtitle = "Rooms, contacts, and account surfaces in one product shell.";
@@ -1524,6 +1564,12 @@ function App() {
         }}
         onIncrementDmUnread={(userId) => {
           setDmUnread((prev) => ({ ...prev, [userId]: (prev[userId] ?? 0) + 1 }));
+        }}
+        onRefreshPendingRequests={() => {
+          void loadPendingRequests();
+        }}
+        onRefreshContacts={() => {
+          void loadContacts();
         }}
         onBackFromManageRoom={() => setTab("private-rooms")}
         onBackFromRoomChat={() => setTab("public-rooms")}
