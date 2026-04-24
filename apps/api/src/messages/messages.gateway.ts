@@ -72,7 +72,10 @@ function dmChannel(conversationId: string): string {
   return `dm:${conversationId}`;
 }
 
-const WS_ALLOWED_ORIGIN = process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:4173';
+const WS_ALLOWED_ORIGIN = (process.env['ALLOWED_ORIGIN'] ?? 'http://localhost:4173,http://127.0.0.1:4173')
+  .split(',')
+  .map((value) => value.trim())
+  .filter((value) => value.length > 0);
 
 // ── Gateway ───────────────────────────────────────────────────────────────────
 

@@ -37,7 +37,38 @@
  *   POST   /api/v1/messages/dm/:conversationId/messages
  *   PATCH  /api/v1/messages/dm/:conversationId/messages/:messageId
  */
-const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
+function isLoopbackHost(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+function getDefaultApiOrigin(): string {
+  if (typeof window === "undefined") {
+    return "http://localhost:3000";
+  }
+
+  return `${window.location.protocol}//${window.location.hostname}:3000`;
+}
+
+function resolveApiOrigin(): string {
+  const configured = import.meta.env.VITE_API_BASE_URL;
+  if (!configured || typeof window === "undefined") {
+    return getDefaultApiOrigin();
+  }
+
+  try {
+    const url = new URL(configured);
+    if (isLoopbackHost(url.hostname) && isLoopbackHost(window.location.hostname)) {
+      url.hostname = window.location.hostname;
+      return url.toString().replace(/\/$/, "");
+    }
+  } catch {
+    return configured;
+  }
+
+  return configured;
+}
+
+const API_ORIGIN = resolveApiOrigin().replace(/\/+$/, "");
 const BASE_URL = `${API_ORIGIN}/api/v1`;
 
 // ── Types ─────────────────────────────────────────────────────────────────────

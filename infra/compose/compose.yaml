@@ -64,9 +64,9 @@ services:
       # Path where uploaded files are stored (Phase 7, D-48, D-55)
       UPLOADS_DIR: /app/uploads
       # Base URL embedded in reset links (override for non-localhost deployments)
-      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:4173}
+      APP_BASE_URL: http://localhost:4173
       # Only this frontend origin may make credentialed browser requests.
-      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:4173}
+      ALLOWED_ORIGIN: http://localhost:4173,http://127.0.0.1:4173
       # SMTP config (optional — when SMTP_HOST is set, real emails are sent)
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -126,8 +126,8 @@ services:
       context: ../..
       dockerfile: infra/docker/web.Dockerfile
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
-        VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://localhost:3000}
+        VITE_API_BASE_URL: http://localhost:3000
+        VITE_SOCKET_URL: http://localhost:3000
     restart: unless-stopped
     depends_on:
       api:

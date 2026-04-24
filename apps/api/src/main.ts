@@ -16,13 +16,16 @@ import cookieParser from 'cookie-parser';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const env = parseRuntimeEnv();
+  const allowedOrigins = env.ALLOWED_ORIGIN.split(',')
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
 
   // Enable cookie parsing so session cookies are available on req.cookies.
   app.use(cookieParser());
 
   // Restrict credentialed browser access to the configured web origin.
   app.enableCors({
-    origin: env.ALLOWED_ORIGIN,
+    origin: allowedOrigins,
     credentials: true,
   });
 
