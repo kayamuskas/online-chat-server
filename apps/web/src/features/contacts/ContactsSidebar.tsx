@@ -118,7 +118,9 @@ export function ContactsSidebar({
             }
           >
             <PresenceDot status={c.presenceStatus ?? "offline"} />
-            <span className="contacts-sidebar__name">{c.username}</span>
+            <span className={`contacts-sidebar__name${c.username === '[deleted]' ? ' contacts-sidebar__name--deleted' : ''}`}>
+              {c.username}
+            </span>
             {!!c.unreadCount && c.unreadCount > 0 && (
               <span className="app-shell__thread-badge" aria-label={`${c.unreadCount} unread messages`}>
                 {c.unreadCount}

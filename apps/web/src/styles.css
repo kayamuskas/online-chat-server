@@ -2222,3 +2222,9 @@ body {
   gap: 6px;
   margin-left: auto;
 }
+
+/* ── Ghost contact display (D-9.1-12) ─────────────────────────── */
+.contacts-sidebar__name--deleted {
+  font-style: italic;
+  color: var(--color-muted, #888);
+}
