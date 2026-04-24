@@ -75,6 +75,12 @@ export class AuthService {
       throw new ConflictException('username is already taken');
     }
 
+    // D-9.1-13: Block re-use of deleted usernames
+    const reserved = await this.users.isUsernameReserved(input.username);
+    if (reserved) {
+      throw new ConflictException('username is already taken');
+    }
+
     const password_hash = await hashPassword(input.password);
     const user = await this.users.create({
       email: input.email,
@@ -270,11 +276,15 @@ export class AuthService {
     // D-15: delete contacts/friendships/bans
     await this.contactsRepo.deleteAllFor(userId);
 
-    // D-13, D-15: delete DM conversations (NOT messages — messages preserved with author_id SET NULL)
-    await this.contactsRepo.deleteDmConversationsFor(userId);
+    // D-9.1-14: Freeze DM conversations (set frozen=true, reason='account_deleted')
+    // instead of deleting them — ghost contacts preserve read-only history
+    await this.contactsRepo.freezeDmConversationsFor(userId);
 
     // D-14: delete all sessions (WS sockets get 401 on next auth check)
     await this.sessions.deleteAllByUserId(userId);
+
+    // D-9.1-13: Reserve username so it cannot be re-registered
+    await this.users.reserveUsername(user.username);
 
     // Final: delete user record (FK ON DELETE SET NULL handles remaining message/attachment refs)
     await this.users.deleteById(userId);
