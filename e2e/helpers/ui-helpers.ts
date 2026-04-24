@@ -5,7 +5,7 @@
  * browser), navigation to room/DM chat, and message send/receive assertions.
  */
 
-import type { Page } from '@playwright/test';
+import type { Browser, BrowserContext, Page } from '@playwright/test';
 import type { TestUser, TestRoom } from './api-setup';
 
 /** Sign in to the app via the UI, which causes the browser to receive the HttpOnly cookie. */
@@ -18,6 +18,26 @@ export async function signInViaUi(page: Page, user: TestUser): Promise<void> {
   await page.click('button[type="submit"]:has-text("Sign in")');
   // After successful sign-in, the app layout renders (not the auth card)
   await page.waitForSelector('.app-layout', { timeout: 10_000 });
+}
+
+/** Create a browser context authenticated with an existing chat_session cookie. */
+export async function createAuthedContext(
+  browser: Browser,
+  user: TestUser,
+): Promise<BrowserContext> {
+  const ctx = await browser.newContext({ baseURL: 'http://localhost:4173' });
+  const cookieValue = user.cookieHeader.replace(/^chat_session=/, '');
+  await ctx.addCookies([
+    {
+      name: 'chat_session',
+      value: cookieValue,
+      url: 'http://localhost:4173',
+      httpOnly: true,
+      sameSite: 'Strict',
+      secure: false,
+    },
+  ]);
+  return ctx;
 }
 
 /**

@@ -1,21 +1,22 @@
 import { test, expect } from '@playwright/test';
 import { createAndSignIn } from '../helpers/api-setup';
-import { signInViaUi } from '../helpers/ui-helpers';
+import { createAuthedContext } from '../helpers/ui-helpers';
 
 test.describe('Friend acceptance sync', () => {
   test('shows the new friend for the original sender without a page refresh after acceptance', async ({ browser }) => {
     const suffix = `fa_${Date.now().toString().slice(-6)}`;
     const alice = await createAndSignIn({ suffix: `${suffix}_a` });
     const bob = await createAndSignIn({ suffix: `${suffix}_b` });
-
-    const ctxAlice = await browser.newContext({ baseURL: 'http://localhost:4173' });
-    const ctxBob = await browser.newContext({ baseURL: 'http://localhost:4173' });
+    const ctxAlice = await createAuthedContext(browser, alice);
+    const ctxBob = await createAuthedContext(browser, bob);
     const pageAlice = await ctxAlice.newPage();
     const pageBob = await ctxBob.newPage();
 
     try {
-      await signInViaUi(pageAlice, alice);
-      await signInViaUi(pageBob, bob);
+      await pageAlice.goto('/');
+      await pageBob.goto('/');
+      await pageAlice.waitForSelector('.app-layout', { timeout: 10_000 });
+      await pageBob.waitForSelector('.app-layout', { timeout: 10_000 });
 
       await pageAlice.locator('button.app-topbar__tab', { hasText: 'Contacts' }).click();
       await pageAlice.locator('button', { hasText: '+ Add contact' }).click();

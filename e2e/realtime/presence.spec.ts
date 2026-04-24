@@ -1,13 +1,12 @@
-/** UAT #6 — Presence. Uses global storageState fixtures. */
 import { test, expect } from '@playwright/test';
-import type { E2EFixtures } from '../global-setup';
-import fixtures from '../../.e2e-fixtures.json' assert { type: 'json' };
-const fx = fixtures as E2EFixtures;
+import { createRealtimeFixture } from '../helpers/api-setup';
+import { createAuthedContext } from '../helpers/ui-helpers';
 
 test.describe('UAT #6 — Presence request-response', () => {
   test('alice shows in bob contacts sidebar after both sign in', async ({ browser }) => {
-    const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
-    const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
+    const fx = await createRealtimeFixture({ suffix: `pr_${Date.now().toString().slice(-6)}` });
+    const ctxAlice = await createAuthedContext(browser, fx.alice);
+    const ctxBob = await createAuthedContext(browser, fx.bob);
     const pageAlice = await ctxAlice.newPage();
     const pageBob = await ctxBob.newPage();
     try {
@@ -29,7 +28,8 @@ test.describe('UAT #6 — Presence request-response', () => {
   });
 
   test('presence updates to online quickly when a contact reconnects', async ({ browser }) => {
-    const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
+    const fx = await createRealtimeFixture({ suffix: `po_${Date.now().toString().slice(-6)}` });
+    const ctxBob = await createAuthedContext(browser, fx.bob);
     const pageBob = await ctxBob.newPage();
 
     try {
@@ -40,7 +40,7 @@ test.describe('UAT #6 — Presence request-response', () => {
       await expect(aliceRow).toBeVisible({ timeout: 10_000 });
       await expect(aliceRow.locator('.presence-dot--offline')).toBeVisible({ timeout: 10_000 });
 
-      const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
+      const ctxAlice = await createAuthedContext(browser, fx.alice);
       const pageAlice = await ctxAlice.newPage();
       await pageAlice.goto('/');
       await pageAlice.waitForSelector('.app-layout', { timeout: 8_000 });

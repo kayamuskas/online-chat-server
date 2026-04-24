@@ -1,9 +1,6 @@
 import { test, expect } from '@playwright/test';
-import type { E2EFixtures } from '../global-setup';
-import { openRoomChat, sendMessage, waitForMessage } from '../helpers/ui-helpers';
-import fixtures from '../../.e2e-fixtures.json' assert { type: 'json' };
-
-const fx = fixtures as E2EFixtures;
+import { createRealtimeFixture } from '../helpers/api-setup';
+import { createAuthedContext, openRoomChat, sendMessage, waitForMessage } from '../helpers/ui-helpers';
 
 async function openDmView(page: import('@playwright/test').Page, partnerUsername: string) {
   const contactsBtn = page.locator('button.app-topbar__tab', { hasText: 'Contacts' });
@@ -17,9 +14,12 @@ async function openDmView(page: import('@playwright/test').Page, partnerUsername
 }
 
 test.describe('Manual sidebar regression', () => {
+  test.setTimeout(45_000);
+
   test('keeps app shell rendered and updates presence plus unread badges across contacts and rooms', async ({ browser }) => {
-    const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
-    const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
+    const fx = await createRealtimeFixture({ suffix: `ms_${Date.now().toString().slice(-6)}` });
+    const ctxAlice = await createAuthedContext(browser, fx.alice);
+    const ctxBob = await createAuthedContext(browser, fx.bob);
     const pageAlice = await ctxAlice.newPage();
     const pageBob = await ctxBob.newPage();
 

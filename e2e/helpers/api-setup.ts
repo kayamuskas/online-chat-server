@@ -29,6 +29,13 @@ export interface TestDmConversation {
   id: string;
 }
 
+export interface RealtimeFixture {
+  alice: TestUser;
+  bob: TestUser;
+  room: TestRoom;
+  dm: TestDmConversation;
+}
+
 /** Unique suffix so tests don't collide between runs. */
 let _seq = 0;
 export function uniqueSuffix(): string {
@@ -59,19 +66,25 @@ export async function createAndSignIn(opts?: { suffix?: string }): Promise<TestU
   const regBody = (await reg.json()) as { user: { id: string } };
   const userId = regBody.user.id;
 
-  // Sign in to get the session cookie
-  const login = await fetch(`${API}/auth/sign-in`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, keepSignedIn: true }),
-  });
-  if (!login.ok) {
-    const body = await login.text();
-    throw new Error(`Sign in failed (${login.status}): ${body}`);
+  // Registration auto-signs in. Reuse that cookie to avoid an extra auth hit.
+  let rawCookie = reg.headers.get('set-cookie') ?? '';
+  let cookieHeader = rawCookie.split(';')[0] ?? '';
+
+  // Fallback for environments where the register response cookie is unavailable.
+  if (!cookieHeader.startsWith('chat_session=')) {
+    const login = await fetch(`${API}/auth/sign-in`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, keepSignedIn: true }),
+    });
+    if (!login.ok) {
+      const body = await login.text();
+      throw new Error(`Sign in failed (${login.status}): ${body}`);
+    }
+    rawCookie = login.headers.get('set-cookie') ?? '';
+    cookieHeader = rawCookie.split(';')[0] ?? '';
   }
-  const rawCookie = login.headers.get('set-cookie') ?? '';
-  // Extract "chat_session=<token>" from the set-cookie header
-  const cookieHeader = rawCookie.split(';')[0] ?? '';
+
   if (!cookieHeader.startsWith('chat_session=')) {
     throw new Error(`Expected chat_session cookie, got: ${rawCookie}`);
   }
@@ -156,4 +169,18 @@ export async function openDm(alice: TestUser, bobId: string): Promise<TestDmConv
   }
   const body = (await res.json()) as { conversation: { id: string } };
   return { id: body.conversation.id };
+}
+
+/**
+ * Create a fresh two-user realtime fixture isolated from the shared global setup.
+ */
+export async function createRealtimeFixture(opts?: { suffix?: string }): Promise<RealtimeFixture> {
+  const suffix = opts?.suffix ?? uniqueSuffix();
+  const alice = await createAndSignIn({ suffix: `${suffix}_a` });
+  const bob = await createAndSignIn({ suffix: `${suffix}_b` });
+  const room = await createRoom(alice, `e2e-room-${suffix}`);
+  await joinRoom(bob, room.id);
+  await setupFriendship(alice, bob);
+  const dm = await openDm(alice, bob.id);
+  return { alice, bob, room, dm };
 }

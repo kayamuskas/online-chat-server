@@ -1,9 +1,6 @@
 import { test, expect } from '@playwright/test';
-import type { E2EFixtures } from '../global-setup';
-import { openRoomChat, sendMessage, waitForMessage } from '../helpers/ui-helpers';
-import fixtures from '../../.e2e-fixtures.json' assert { type: 'json' };
-
-const fx = fixtures as E2EFixtures;
+import { createRealtimeFixture } from '../helpers/api-setup';
+import { createAuthedContext, openRoomChat, sendMessage, waitForMessage } from '../helpers/ui-helpers';
 
 async function openDmView(page: import('@playwright/test').Page, partnerUsername: string) {
   const contactsBtn = page.locator('button.app-topbar__tab', { hasText: 'Contacts' });
@@ -17,9 +14,12 @@ async function openDmView(page: import('@playwright/test').Page, partnerUsername
 }
 
 test.describe('Unread sidebar badges', () => {
+  test.setTimeout(45_000);
+
   test('shows DM unread badge on contact row when user is outside that DM', async ({ browser }) => {
-    const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
-    const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
+    const fx = await createRealtimeFixture({ suffix: `ud_${Date.now().toString().slice(-6)}` });
+    const ctxAlice = await createAuthedContext(browser, fx.alice);
+    const ctxBob = await createAuthedContext(browser, fx.bob);
     const pageAlice = await ctxAlice.newPage();
     const pageBob = await ctxBob.newPage();
 
@@ -52,8 +52,9 @@ test.describe('Unread sidebar badges', () => {
   });
 
   test('shows room unread badge on room row when user is outside that room chat', async ({ browser }) => {
-    const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
-    const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
+    const fx = await createRealtimeFixture({ suffix: `ur_${Date.now().toString().slice(-6)}` });
+    const ctxAlice = await createAuthedContext(browser, fx.alice);
+    const ctxBob = await createAuthedContext(browser, fx.bob);
     const pageAlice = await ctxAlice.newPage();
     const pageBob = await ctxBob.newPage();
 
@@ -90,8 +91,9 @@ test.describe('Unread sidebar badges', () => {
   });
 
   test('restores DM unread badges after both users revisit the conversation and leave it', async ({ browser }) => {
-    const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
-    const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
+    const fx = await createRealtimeFixture({ suffix: `ux_${Date.now().toString().slice(-6)}` });
+    const ctxAlice = await createAuthedContext(browser, fx.alice);
+    const ctxBob = await createAuthedContext(browser, fx.bob);
     const pageAlice = await ctxAlice.newPage();
     const pageBob = await ctxBob.newPage();
 

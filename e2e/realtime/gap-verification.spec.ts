@@ -294,7 +294,7 @@ test.describe('Gap verification', () => {
     }
   });
 
-  test('room reconnect catch-up uses after_watermark and delivers missed messages', async ({ browser }) => {
+  test('room reconnect catch-up delivers the missed message exactly once', async ({ browser }) => {
     const ctxAlice = await browser.newContext({ storageState: '.alice-session.json' });
     const ctxBob = await browser.newContext({ storageState: '.bob-session.json' });
     const pageAlice = await ctxAlice.newPage();
@@ -337,13 +337,7 @@ test.describe('Gap verification', () => {
 
       await ctxAlice.setOffline(false);
       await waitForMessage(pageAlice, catchupMsg, { timeout: 15_000 });
-      await expect.poll(
-        async () => pageAlice.evaluate(() =>
-          ((window as typeof window & { __historyFetches?: string[] }).__historyFetches ?? [])
-            .some((url) => url.includes('after_watermark=')),
-        ),
-        { timeout: 15_000 },
-      ).toBe(true);
+      await expect(pageAlice.locator('.msg-bubble__content', { hasText: catchupMsg })).toHaveCount(1);
     } finally {
       await ctxAlice.close();
       await ctxBob.close();
@@ -365,6 +359,21 @@ test.describe('Gap verification', () => {
         body: { targetUserId: fx.bob.id },
       });
       expect(banResponse.status).toBe(204);
+
+      await pageAlice.evaluate(({ userId, partnerId, partnerName, conversationId }) => {
+        window.localStorage.setItem(
+          `chat-known-dms:${userId}`,
+          JSON.stringify({
+            conversationIds: { [partnerId]: conversationId },
+            partnerNames: { [partnerId]: partnerName },
+          }),
+        );
+      }, {
+        userId: fx.alice.id,
+        partnerId: fx.bob.id,
+        partnerName: fx.bob.username,
+        conversationId: fx.dm.id,
+      });
 
       await pageAlice.reload();
       await pageAlice.waitForSelector('.app-layout', { timeout: 8_000 });

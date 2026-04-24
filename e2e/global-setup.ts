@@ -19,7 +19,7 @@ import {
   setupFriendship,
   openDm,
 } from './helpers/api-setup';
-import { signInViaUi } from './helpers/ui-helpers';
+import { createAuthedContext } from './helpers/ui-helpers';
 import fs from 'fs';
 
 export interface E2EFixtures {
@@ -62,16 +62,12 @@ export default async function globalSetup() {
   // Sign each user in via browser ONCE and save their cookie session
   const browser = await chromium.launch({ headless: true });
 
-  const ctxAlice = await browser.newContext({ baseURL: 'http://localhost:4173' });
-  const pageAlice = await ctxAlice.newPage();
-  await signInViaUi(pageAlice, alice);
+  const ctxAlice = await createAuthedContext(browser, alice);
   await ctxAlice.storageState({ path: '.alice-session.json' });
   await ctxAlice.close();
   stripSecureFlag('.alice-session.json');
 
-  const ctxBob = await browser.newContext({ baseURL: 'http://localhost:4173' });
-  const pageBob = await ctxBob.newPage();
-  await signInViaUi(pageBob, bob);
+  const ctxBob = await createAuthedContext(browser, bob);
   await ctxBob.storageState({ path: '.bob-session.json' });
   await ctxBob.close();
   stripSecureFlag('.bob-session.json');
