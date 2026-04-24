@@ -24,6 +24,7 @@ Execution note as of 2026-04-20: Phases 1 through 9 are complete in planning art
 | 7 | Attachments and Durable Delivery | Add attachment flow, ACL enforcement, offline delivery, bounded queue strategy, and filesystem-backed persistence | MSG-06, MSG-09, FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-06, OPS-03 | 5 |
 | 8 | Moderation and Destructive Actions | Complete admin controls, bans, message deletion, room deletion, and account deletion side effects | ROOM-07, ROOM-08, ROOM-09, MSG-05, AUTH-08 | 4 |
 | 9 | Frontend Productization | Replace the prototype shell with the real app UI, navigation, unread indicators, infinite scroll, session screens, and modal admin UX | MSG-07, NOTF-01, NOTF-02, UI-01, UI-02, UI-03 | 5 |
+| 9.1 | Design Polish | Fix design issues and visual inconsistencies across the frontend before release hardening | — | — |
 | 10 | Performance, QA, and Release Hardening | Validate latency, history scale, startup determinism, and full QA acceptance | PERF-01, PERF-02 | 5 |
 
 ## Phase Details
@@ -231,6 +232,16 @@ Success criteria:
 3. Unread indicators work for rooms and DMs and clear on open.
 4. Admin actions are accessible through menus and modal dialogs.
 5. Session-management and account-destruction flows are exposed cleanly in the shipped UI.
+
+### Phase 9.1: Design Polish (INSERTED)
+
+Goal: Fix design issues and visual inconsistencies across the frontend before release hardening.
+
+Requirements: —
+
+Plans: not planned yet
+
+Success criteria: TBD — to be defined during discuss/plan phase based on user's design feedback.
 
 ### Phase 10: Performance, QA, and Release Hardening
 

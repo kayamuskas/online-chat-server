@@ -2,22 +2,22 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: Phase 10 - Performance, QA, and Release Hardening
-status: planning
-last_updated: "2026-04-20T17:01:43Z"
+current_phase: Phase 9.1 - Design Polish
+status: not_planned
+last_updated: "2026-04-24T21:10:00Z"
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 10
   total_plans: 56
   completed_plans: 51
-  percent: 91
+  percent: 85
 ---
 
 # State
 
-**Updated:** 2026-04-20
-**Current phase:** Phase 10 - Performance, QA, and Release Hardening
-**Status:** Planning
+**Updated:** 2026-04-24
+**Current phase:** Phase 9.1 - Design Polish
+**Status:** Not planned
 
 ## Project Reference
 
@@ -166,11 +166,12 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - Current local `gsd-sdk` exposes `state`, `init`, and other point commands, but still does not expose the newer `query` subcommand expected by some workflow wrappers. Always verify command availability before assuming either path.
 - Temporary execution override on 2026-04-20 was fully consumed: Phases 7, 8, and 9 are now complete, and the active phase is 10.
 - Phase 10 formalizes release evidence for already-implemented product capabilities rather than adding new end-user features.
+- Phase 9.1 inserted after Phase 9: Design Polish — fix design issues and visual inconsistencies across the frontend before release hardening. Phase 10 deferred until 9.1 is complete.
 
 ## Next Up
 
-- Phase 10: execute startup gate, perf-lite smoke, latency probe, and 100k-history proof
-- Phase 10: generate release artifacts in `artifacts/perf/` and release docs in `docs/release/`
+- Phase 9.1: Define and fix design issues (discuss → plan → execute)
+- Phase 10: execute startup gate, perf-lite smoke, latency probe, and 100k-history proof (deferred until 9.1 complete)
 - Project milestone close-out after Phase 10 verification
 
 ## Quick Tasks Completed
