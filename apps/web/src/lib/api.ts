@@ -577,9 +577,11 @@ export interface UserBan {
 
 export interface DmConversation {
   id: string;
-  user_a_id: string;
-  user_b_id: string;
+  user_a_id: string | null;
+  user_b_id: string | null;
   frozen: boolean;
+  frozen_reason: 'banned' | 'account_deleted' | null;
+  frozen_at: string | null;
   created_at: string;
 }
 

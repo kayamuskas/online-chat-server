@@ -404,6 +404,21 @@ export class ContactsRepository {
   }
 
   /**
+   * Freeze all active DM conversations for a user (account deletion ghost contact).
+   * Sets frozen=TRUE, frozen_reason='account_deleted', and frozen_at=NOW() for any
+   * conversation that is not already frozen.
+   * Called by AUTH-08 account deletion cascade (D-9.1-14).
+   */
+  async freezeDmConversationsFor(userId: string): Promise<void> {
+    await this.db.query(
+      `UPDATE dm_conversations
+       SET frozen = TRUE, frozen_reason = 'account_deleted', frozen_at = NOW()
+       WHERE (user_a_id = $1 OR user_b_id = $1) AND frozen = FALSE`,
+      [userId],
+    );
+  }
+
+  /**
    * Delete all DM conversation records for a user (NOT the messages — D-13).
    * Used by AUTH-08 account deletion cascade (D-15 step: delete DM conversations).
    */
