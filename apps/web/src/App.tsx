@@ -170,6 +170,7 @@ interface AuthenticatedShellProps {
   dmUnread: Record<string, number>;
   knownDmConversationIds: Record<string, string>;
   knownDmPartnerNames: Record<string, string>;
+  presenceByUserId: Record<string, "online" | "afk" | "offline">;
   addContactOpen: boolean;
   onToggleRequestDropdown: () => void;
   onAcceptRequest: (id: string) => void;
@@ -221,6 +222,7 @@ function AuthenticatedShell({
   dmUnread,
   knownDmConversationIds,
   knownDmPartnerNames,
+  presenceByUserId,
   addContactOpen,
   onToggleRequestDropdown,
   onAcceptRequest,
@@ -263,6 +265,7 @@ function AuthenticatedShell({
         ? {
             userId: dmPartnerId,
             username: knownDmPartnerNames[dmPartnerId],
+            presenceStatus: presenceByUserId[dmPartnerId],
             dmEligible: false,
           }
         : null)
@@ -285,7 +288,7 @@ function AuthenticatedShell({
       rows.set(contact.userId, {
         userId: contact.userId,
         username: contact.username,
-        presenceStatus: contact.presenceStatus,
+        presenceStatus: presenceByUserId[contact.userId] ?? contact.presenceStatus,
         dmEligible: true,
         canOpenConversation: true,
         unreadCount: dmUnread[contact.userId] || undefined,
@@ -299,7 +302,7 @@ function AuthenticatedShell({
       rows.set(partnerId, {
         userId: partnerId,
         username: knownDmPartnerNames[partnerId] ?? partnerId,
-        presenceStatus: "offline",
+        presenceStatus: presenceByUserId[partnerId] ?? "offline",
         dmEligible: false,
         canOpenConversation: true,
         unreadCount: dmUnread[partnerId] || undefined,
@@ -309,12 +312,15 @@ function AuthenticatedShell({
     return Array.from(rows.values()).filter((contact) =>
       queryNorm.length === 0 ? true : contact.username.toLowerCase().includes(queryNorm),
     );
-  }, [contacts, dmUnread, knownDmEntries, knownDmPartnerNames, queryNorm, user.id]);
+  }, [contacts, dmUnread, knownDmEntries, knownDmPartnerNames, presenceByUserId, queryNorm, user.id]);
   const rightRailMembers = contacts.slice(0, 6).map((contact) => ({
     id: contact.userId,
     username: contact.username,
-    status: (contact.presenceStatus ?? "offline") as "online" | "afk" | "offline",
-    lastSeenAt: contact.presenceStatus === "offline" ? new Date().toISOString() : null,
+    status: (presenceByUserId[contact.userId] ?? contact.presenceStatus ?? "offline") as "online" | "afk" | "offline",
+    lastSeenAt:
+      (presenceByUserId[contact.userId] ?? contact.presenceStatus ?? "offline") === "offline"
+        ? new Date().toISOString()
+        : null,
   }));
   const tabRef = useRef(tab);
   const activeRoomIdRef = useRef(activeRoom?.id ?? null);
@@ -1003,6 +1009,7 @@ function App() {
 
   // Phase 5: contacts state
   const [contacts, setContacts] = useState<FriendWithPresence[]>([]);
+  const [presenceByUserId, setPresenceByUserId] = useState<Record<string, "online" | "afk" | "offline">>({});
   const [pendingRequests, setPendingRequests] = useState<IncomingFriendRequestView[]>([]);
   const [requestDropdownOpen, setRequestDropdownOpen] = useState(false);
   const [addContactOpen, setAddContactOpen] = useState(false);
@@ -1083,6 +1090,21 @@ function App() {
     try {
       const result = await getMyFriends();
       setContacts(result.friends);
+      setPresenceByUserId((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        for (const friend of result.friends) {
+          if (!friend.presenceStatus) {
+            continue;
+          }
+          if (next[friend.userId] === friend.presenceStatus) {
+            continue;
+          }
+          next[friend.userId] = friend.presenceStatus;
+          changed = true;
+        }
+        return changed ? next : prev;
+      });
       setKnownDmPartnerNames((prev) => {
         const next = { ...prev };
         let changed = false;
@@ -1278,6 +1300,24 @@ function App() {
   }
 
   function handlePresenceUpdate(presenceMap: Record<string, string>) {
+    setPresenceByUserId((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      for (const [userId, status] of Object.entries(presenceMap)) {
+        if (status !== "online" && status !== "afk" && status !== "offline") {
+          continue;
+        }
+        if (next[userId] === status) {
+          continue;
+        }
+        next[userId] = status;
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+
     setContacts((prev) =>
       prev.map((contact) => {
         const nextStatus = presenceMap[contact.userId];
@@ -1333,6 +1373,7 @@ function App() {
       setManagedRoom(null);
       setTrackedRooms([]);
       setContacts([]);
+      setPresenceByUserId({});
       setPendingRequests([]);
       setRoomUnread({});
       setDmUnread({});
@@ -1425,6 +1466,7 @@ function App() {
         dmUnread={dmUnread}
         knownDmConversationIds={knownDmConversationIds}
         knownDmPartnerNames={knownDmPartnerNames}
+        presenceByUserId={presenceByUserId}
         addContactOpen={addContactOpen}
         onToggleRequestDropdown={() => setRequestDropdownOpen((open) => !open)}
         onAcceptRequest={(id) => void handleAcceptRequest(id)}
