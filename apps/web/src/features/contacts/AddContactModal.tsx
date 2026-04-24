@@ -51,7 +51,7 @@ export function AddContactModal({ onClose, onSuccess }: AddContactModalProps) {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h3>Add contact</h3>
+        <h3 className="modal__title--mono">ADD FRIEND BY USERNAME</h3>
 
         <form onSubmit={(e) => void handleSubmit(e)} noValidate>
           {error && <p className="error-msg">{error}</p>}
@@ -61,17 +61,20 @@ export function AddContactModal({ onClose, onSuccess }: AddContactModalProps) {
             <label className="field__label" htmlFor="contact-username">
               Username
             </label>
-            <input
-              id="contact-username"
-              className="field__input"
-              type="text"
-              placeholder="e.g. alice"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoFocus
-              autoComplete="off"
-            />
+            <div className="field__input-group">
+              <span className="field__prefix">@</span>
+              <input
+                id="contact-username"
+                className="field__input field__input--prefixed"
+                type="text"
+                placeholder="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoFocus
+                autoComplete="off"
+              />
+            </div>
           </div>
 
           <div className="field">
@@ -100,12 +103,17 @@ export function AddContactModal({ onClose, onSuccess }: AddContactModalProps) {
             </button>
             <button
               type="submit"
-              className="btn"
+              className="btn btn--accent"
               disabled={submitting || !username.trim()}
             >
               {submitting ? "Sending…" : "Send request"}
             </button>
           </div>
+          {username.trim() && (
+            <p className="modal__footer-note">
+              Requires confirmation from {username.trim()}.
+            </p>
+          )}
         </form>
       </div>
     </div>
