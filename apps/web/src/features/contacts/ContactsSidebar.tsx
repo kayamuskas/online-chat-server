@@ -73,11 +73,13 @@ export function ContactsSidebar({
 
     requestPresence();
     const intervalId = window.setInterval(requestPresence, 30_000);
+    socket.on("ready", requestPresence);
     socket.on("presence", onPresence);
     socket.on("presence-update", onPresenceUpdateEvent);
 
     return () => {
       window.clearInterval(intervalId);
+      socket.off("ready", requestPresence);
       socket.off("presence", onPresence);
       socket.off("presence-update", onPresenceUpdateEvent);
     };

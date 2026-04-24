@@ -343,11 +343,17 @@ function AuthenticatedShell({
       return;
     }
 
-    trackedRooms.forEach((room) => {
-      socket.emit("joinRoom", { roomId: room.id });
-    });
+    function joinTrackedRooms() {
+      trackedRooms.forEach((room) => {
+        socket.emit("joinRoom", { roomId: room.id });
+      });
+    }
+
+    joinTrackedRooms();
+    socket.on("ready", joinTrackedRooms);
 
     return () => {
+      socket.off("ready", joinTrackedRooms);
       trackedRooms.forEach((room) => {
         socket.emit("leaveRoom", { roomId: room.id });
       });
@@ -359,11 +365,17 @@ function AuthenticatedShell({
       return;
     }
 
-    knownDmEntries.forEach(([, conversationId]) => {
-      socket.emit("joinDm", { conversationId });
-    });
+    function joinKnownDms() {
+      knownDmEntries.forEach(([, conversationId]) => {
+        socket.emit("joinDm", { conversationId });
+      });
+    }
+
+    joinKnownDms();
+    socket.on("ready", joinKnownDms);
 
     return () => {
+      socket.off("ready", joinKnownDms);
       knownDmEntries.forEach(([, conversationId]) => {
         socket.emit("leaveDm", { conversationId });
       });
