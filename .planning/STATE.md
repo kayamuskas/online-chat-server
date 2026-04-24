@@ -168,9 +168,23 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 - Phase 10 formalizes release evidence for already-implemented product capabilities rather than adding new end-user features.
 - Phase 9.1 inserted after Phase 9: Design Polish — fix design issues and visual inconsistencies across the frontend before release hardening. Phase 10 deferred until 9.1 is complete.
 
+## Phase 9.1 Plans
+
+- [x] 09.1-01: Ghost contact backend — migration, freeze cascade, username reservation (COMPLETE)
+- [x] 09.1-02: Registration inline validation badges (COMPLETE)
+- [x] 09.1-03: Frozen DM redesign and ghost contact display (COMPLETE)
+- [x] 09.1-04: Attachment card rendering and timeline divider restyling (COMPLETE)
+- [x] 09.1-05: Friend request UI — AddContactModal Variant B and MemberPopover (COMPLETE)
+- [ ] 09.1-06: Design requirements audit — CHECKPOINT awaiting human verification
+
+## Key Decisions (Phase 9.1)
+
+- All 14 Appendix checklist rows audited: no new CSS or logic gaps found beyond Plans 01-05
+- Stray git conflict marker on styles.css line 2407 auto-fixed (Rule 1 bug)
+
 ## Next Up
 
-- Phase 9.1: Define and fix design issues (discuss → plan → execute)
+- Phase 9.1-06: Awaiting human visual verification of all 6 design polish work areas
 - Phase 10: execute startup gate, perf-lite smoke, latency probe, and 100k-history proof (deferred until 9.1 complete)
 - Project milestone close-out after Phase 10 verification
 
@@ -184,5 +198,5 @@ See: `.planning/PROJECT.md` (updated 2026-04-18)
 | 260421-jyc | ENV-based config: Redis auth, SMTP mail, dev/prod switching | 2026-04-21 | — | [260421-jyc-env-based-config-redis-auth-smtp-mail-de](./quick/260421-jyc-env-based-config-redis-auth-smtp-mail-de/) |
 
 ---
-Last activity: 2026-04-21 - Completed quick task 260421-jyc: ENV-based config for dev/prod environments
-*State initialized: 2026-04-18 | Updated: 2026-04-20 — synchronized active phase to Phase 10 and aligned completed phase summaries through Phase 9*
+Last activity: 2026-04-24 - Completed 09.1-06 Task 1 (design audit); CHECKPOINT awaiting human verification of all 6 design polish work areas
+*State initialized: 2026-04-18 | Updated: 2026-04-24 — Phase 9.1 plans 01-05 complete; plan 06 at checkpoint*
