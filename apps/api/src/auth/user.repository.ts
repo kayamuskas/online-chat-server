@@ -81,6 +81,29 @@ export class UserRepository {
   }
 
   /**
+   * Check whether a username has been reserved after account deletion (D-9.1-13).
+   * Returns true if the username exists in the deleted_usernames table.
+   */
+  async isUsernameReserved(username: string): Promise<boolean> {
+    const result = await this.db.query(
+      `SELECT 1 FROM deleted_usernames WHERE username = $1 LIMIT 1`,
+      [username],
+    );
+    return result.rows.length > 0;
+  }
+
+  /**
+   * Reserve a username on account deletion so it cannot be re-registered (D-9.1-13).
+   * Uses ON CONFLICT DO NOTHING to be idempotent.
+   */
+  async reserveUsername(username: string): Promise<void> {
+    await this.db.query(
+      `INSERT INTO deleted_usernames (username) VALUES ($1) ON CONFLICT (username) DO NOTHING`,
+      [username],
+    );
+  }
+
+  /**
    * Update the stored password hash for a user (password-change flow).
    * Does NOT expose a username-update path.
    */
