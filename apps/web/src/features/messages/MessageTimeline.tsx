@@ -273,7 +273,7 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
           ) : (
             <button
               type="button"
-              className="msg-timeline__history-status__btn"
+              className="chat-divider chat-divider--clickable"
               onClick={() => {
                 const node = scrollRef.current;
                 if (!node || !hasMoreBefore || loadingOlder) return;
@@ -281,7 +281,7 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
                 onLoadOlder?.();
               }}
             >
-              Scroll up for earlier messages
+              older messages &#8593;
             </button>
           )}
         </div>
@@ -302,10 +302,10 @@ export const MessageTimeline = forwardRef<MessageTimelineHandle, MessageTimeline
               {showUnreadDivider && (
                 <li
                   ref={unreadDividerRef}
-                  className="msg-timeline__divider"
+                  className="chat-divider"
                   aria-label="Start of new messages"
                 >
-                  <span>new &#8595;</span>
+                  new &#8595;
                 </li>
               )}
               <li
