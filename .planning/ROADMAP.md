@@ -24,7 +24,7 @@ Execution note as of 2026-04-20: Phases 1 through 9 are complete in planning art
 | 7 | Attachments and Durable Delivery | Add attachment flow, ACL enforcement, offline delivery, bounded queue strategy, and filesystem-backed persistence | MSG-06, MSG-09, FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-06, OPS-03 | 5 |
 | 8 | Moderation and Destructive Actions | Complete admin controls, bans, message deletion, room deletion, and account deletion side effects | ROOM-07, ROOM-08, ROOM-09, MSG-05, AUTH-08 | 4 |
 | 9 | Frontend Productization | Replace the prototype shell with the real app UI, navigation, unread indicators, infinite scroll, session screens, and modal admin UX | MSG-07, NOTF-01, NOTF-02, UI-01, UI-02, UI-03 | 5 |
-| 9.1 | Design Polish | Fix design issues and visual inconsistencies across the frontend before release hardening | — | — |
+| 9.1 | Design Polish | Fix design issues and visual inconsistencies across the frontend before release hardening | D-9.1-01..22 | 6 |
 | 10 | Performance, QA, and Release Hardening | Validate latency, history scale, startup determinism, and full QA acceptance | PERF-01, PERF-02 | 5 |
 
 ## Phase Details
@@ -237,11 +237,24 @@ Success criteria:
 
 Goal: Fix design issues and visual inconsistencies across the frontend before release hardening.
 
-Requirements: —
+Requirements: D-9.1-01 through D-9.1-22
 
-Plans: not planned yet
+Plans: 6 plans
 
-Success criteria: TBD — to be defined during discuss/plan phase based on user's design feedback.
+- [ ] `09.1-01-PLAN.md` — Ghost contact backend: migration, cascade changes, username reservation.
+- [ ] `09.1-02-PLAN.md` — Registration inline validation badges per design AuthVariantE.
+- [ ] `09.1-03-PLAN.md` — Frozen DM redesign and ghost contact frontend display.
+- [ ] `09.1-04-PLAN.md` — Attachment card rendering and timeline divider restyling.
+- [ ] `09.1-05-PLAN.md` — Friend request UI: AddContactModal restyle and MemberPopover.
+- [ ] `09.1-06-PLAN.md` — Design requirements audit against Appendix checklist.
+
+Success criteria:
+1. Registration form shows inline AVAILABLE/TAKEN badges and password strength after submit.
+2. Frozen DM shows full banner block (banned vs account_deleted variant) with header action buttons and disabled composer.
+3. Account deletion freezes DM conversations instead of deleting them; previously-used usernames blocked from re-registration.
+4. Attachments render as styled cards with file type icon, filename, size, comment, and Download button.
+5. MemberPopover replaces inline Add friend button in room member list with full action menu.
+6. All Appendix checklist items audited and aligned with design reference.
 
 ### Phase 10: Performance, QA, and Release Hardening
 
