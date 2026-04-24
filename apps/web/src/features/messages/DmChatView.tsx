@@ -113,6 +113,10 @@ interface DmChatViewProps {
    */
   conversationId?: string | null;
   onConversationReady?: (conversationId: string) => void;
+  /** Called when the user clicks "Unban user" in the frozen DM header or banner. */
+  onUnbanUser?: () => void;
+  /** Called when the user clicks "Ban user" in the normal DM header. */
+  onBanUser?: () => void;
 }
 
 export function DmChatView({
@@ -122,11 +126,15 @@ export function DmChatView({
   initialUnreadCount = 0,
   conversationId: initialConversationId = null,
   onConversationReady,
+  onUnbanUser,
+  onBanUser,
 }: DmChatViewProps) {
   const [conversationId, setConversationId] = useState<string | null>(
     initialConversationId,
   );
   const [frozen, setFrozen] = useState(false);
+  const [frozenReason, setFrozenReason] = useState<'banned' | 'account_deleted' | null>(null);
+  const [frozenAt, setFrozenAt] = useState<string | null>(null);
   const [ineligibleReason, setIneligibleReason] = useState<
     "not_friends" | "ban_exists" | null
   >(null);
@@ -167,6 +175,8 @@ export function DmChatView({
             // Server says not eligible but still returns the conversation row
             setConversationId(result.conversation.id);
             setFrozen(result.conversation.frozen);
+            setFrozenReason(result.conversation.frozen_reason);
+            setFrozenAt(result.conversation.frozen_at);
             // If frozen due to ban, derive reason from frozen flag
             if (result.conversation.frozen) {
               setIneligibleReason("ban_exists");
@@ -176,6 +186,8 @@ export function DmChatView({
           } else {
             setConversationId(result.conversation.id);
             setFrozen(result.conversation.frozen);
+            setFrozenReason(result.conversation.frozen_reason);
+            setFrozenAt(result.conversation.frozen_at);
           }
         }
       } catch (e) {
@@ -491,12 +503,28 @@ export function DmChatView({
 
   return (
     <div className="rooms-view rooms-view--chat">
-      <div className="rooms-view__header">
-        <h2>{partnerUsername}</h2>
-        {frozen && (
-          <span className="rooms-badge rooms-badge--private">read-only</span>
-        )}
-      </div>
+      {frozen && frozenReason === 'account_deleted' ? (
+        <div className="rooms-view__header">
+          <h2>{partnerUsername}</h2>
+          <span className="rooms-badge rooms-badge--private">deleted</span>
+        </div>
+      ) : frozen ? (
+        <div className="rooms-view__header">
+          <h2>{partnerUsername}</h2>
+          <div className="rooms-view__header-actions">
+            <button type="button" className="btn btn--soft btn--xs" disabled>View profile</button>
+            <button type="button" className="btn btn--soft btn--xs" onClick={onUnbanUser}>Unban user</button>
+          </div>
+        </div>
+      ) : (
+        <div className="rooms-view__header">
+          <h2>{partnerUsername}</h2>
+          <div className="rooms-view__header-actions">
+            <button type="button" className="btn btn--soft btn--xs" disabled>View profile</button>
+            <button type="button" className="btn btn--danger btn--xs" onClick={onBanUser}>Ban user</button>
+          </div>
+        </div>
+      )}
 
       <div className="rooms-view__body rooms-view__body--scroll">
         {historyError && <p className="error-msg">{historyError}</p>}
@@ -523,16 +551,49 @@ export function DmChatView({
           hasNewMessages={hasNewMessages}
           onScrollToBottom={() => setHasNewMessages(false)}
         />
+
+        {frozen && (
+          <div className="frozen-banner">
+            <div className="frozen-banner__label">
+              {frozenReason === 'account_deleted' ? '⊘ ACCOUNT DELETED' : '⊘ CONVERSATION FROZEN'}
+            </div>
+            {frozenAt && (
+              <div className="frozen-banner__date">
+                {new Date(frozenAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
+            )}
+            <div className="frozen-banner__text">
+              {frozenReason === 'account_deleted'
+                ? 'This user deleted their account. Message history is preserved as read-only.'
+                : 'This conversation has been frozen due to a user ban.'}
+            </div>
+            {frozenReason !== 'account_deleted' && onUnbanUser && (
+              <button type="button" className="frozen-banner__link" onClick={onUnbanUser}>
+                Unban to resume
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="rooms-view__composer">
-        <MessageComposer
-          readOnly={frozen}
-          replyTo={replyTo}
-          onCancelReply={() => setReplyTo(null)}
-          onSend={handleSend}
-        />
-      </div>
+      {frozen && frozenReason === 'account_deleted' ? (
+        <div className="rooms-view__composer rooms-view__composer--disabled">
+          <span className="composer-disabled-text">This account has been deleted</span>
+        </div>
+      ) : frozen ? (
+        <div className="rooms-view__composer rooms-view__composer--disabled">
+          <span className="composer-disabled-text">Messaging disabled — user is banned</span>
+        </div>
+      ) : (
+        <div className="rooms-view__composer">
+          <MessageComposer
+            readOnly={false}
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
+            onSend={handleSend}
+          />
+        </div>
+      )}
     </div>
   );
 }

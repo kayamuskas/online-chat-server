@@ -2158,3 +2158,73 @@ body {
   border-color: #e7d3ae;
   background: #fbf4e4;
 }
+
+/* ── Frozen DM banner (D-9.1-06) ──────────────────────────────── */
+.frozen-banner {
+  margin: 16px auto;
+  max-width: 420px;
+  padding: 16px 20px;
+  border: 1px dashed #e7d3ae;
+  background: #fbf4e4;
+  border-radius: 6px;
+  text-align: center;
+}
+.frozen-banner__label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--color-text, #333);
+  margin-bottom: 6px;
+}
+.frozen-banner__date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-muted, #888);
+  margin-bottom: 6px;
+}
+.frozen-banner__text {
+  font-size: 12.5px;
+  color: var(--color-muted, #777);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.frozen-banner__link {
+  background: none;
+  border: none;
+  color: var(--color-accent, #6366f1);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* ── Disabled composer (D-9.1-08) ──────────────────────────────── */
+.rooms-view__composer--disabled {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  border-top: 1px solid var(--color-border, #e0e0e0);
+  background: var(--color-bg, #fafafa);
+}
+.composer-disabled-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-muted, #888);
+  letter-spacing: 0.05em;
+}
+
+/* ── DM header actions (D-9.1-07, D-9.1-09) ───────────────────── */
+.rooms-view__header-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* ── Ghost contact display (D-9.1-12) ─────────────────────────── */
+.contacts-sidebar__name--deleted {
+  font-style: italic;
+  color: var(--color-muted, #888);
+}
