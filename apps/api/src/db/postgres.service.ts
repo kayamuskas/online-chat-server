@@ -269,6 +269,34 @@ ALTER TABLE attachments ALTER COLUMN uploader_id DROP NOT NULL;
 ALTER TABLE attachments DROP CONSTRAINT IF EXISTS attachments_uploader_id_fkey;
 ALTER TABLE attachments ADD CONSTRAINT attachments_uploader_id_fkey
   FOREIGN KEY (uploader_id) REFERENCES users(id) ON DELETE SET NULL;
+
+-- ── Phase 9.1: Ghost contact support (migration 0009) ────────────────────────
+
+CREATE TABLE IF NOT EXISTS deleted_usernames (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  username    TEXT        NOT NULL UNIQUE,
+  deleted_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE dm_conversations
+  ADD COLUMN IF NOT EXISTS frozen_reason TEXT DEFAULT NULL
+    CHECK (frozen_reason IN ('banned', 'account_deleted')),
+  ADD COLUMN IF NOT EXISTS frozen_at TIMESTAMPTZ DEFAULT NULL;
+
+ALTER TABLE dm_conversations ALTER COLUMN user_a_id DROP NOT NULL;
+ALTER TABLE dm_conversations ALTER COLUMN user_b_id DROP NOT NULL;
+
+ALTER TABLE dm_conversations DROP CONSTRAINT IF EXISTS dm_conversations_user_a_id_fkey;
+ALTER TABLE dm_conversations DROP CONSTRAINT IF EXISTS dm_conversations_user_b_id_fkey;
+
+ALTER TABLE dm_conversations
+  ADD CONSTRAINT dm_conversations_user_a_id_fkey
+    FOREIGN KEY (user_a_id) REFERENCES users (id) ON DELETE SET NULL;
+ALTER TABLE dm_conversations
+  ADD CONSTRAINT dm_conversations_user_b_id_fkey
+    FOREIGN KEY (user_b_id) REFERENCES users (id) ON DELETE SET NULL;
+
+UPDATE dm_conversations SET frozen_reason = 'banned' WHERE frozen = TRUE AND frozen_reason IS NULL;
 `;
 
 @Injectable()

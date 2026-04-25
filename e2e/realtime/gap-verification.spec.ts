@@ -131,10 +131,10 @@ test.describe('Gap verification', () => {
       await sendMessage(pageAlice, text);
 
       await expect(
-        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.msg-attachment-link'),
+        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.attachment a[download]'),
       ).toContainText(filename);
 
-      const bobLink = pageBob.locator('.msg-attachment-link', { hasText: filename }).last();
+      const bobLink = pageBob.locator('.attachment', { hasText: filename }).locator('a[download]').last();
       await expect(bobLink).toBeVisible({ timeout: 8_000 });
       const href = await bobLink.getAttribute('href');
       expect(href).toBeTruthy();
@@ -175,10 +175,10 @@ test.describe('Gap verification', () => {
       await sendMessage(pageAlice, text);
 
       await expect(
-        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.msg-attachment-link'),
+        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.attachment a[download]'),
       ).toContainText(filename);
 
-      const bobLink = pageBob.locator('.msg-attachment-link', { hasText: filename }).last();
+      const bobLink = pageBob.locator('.attachment', { hasText: filename }).locator('a[download]').last();
       await expect(bobLink).toBeVisible({ timeout: 8_000 });
       const href = await bobLink.getAttribute('href');
       expect(href).toBeTruthy();
@@ -212,7 +212,7 @@ test.describe('Gap verification', () => {
       await expect(pageAlice.locator('.msg-composer__attachment-chip')).toContainText(filename);
       await sendMessage(pageAlice, text);
       await expect(
-        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.msg-attachment-link'),
+        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.attachment a[download]'),
       ).toContainText(filename);
     } finally {
       await ctxAlice.close();
@@ -272,7 +272,7 @@ test.describe('Gap verification', () => {
 
       const ownLink = pageAlice
         .locator('.msg-bubble--own', { hasText: text })
-        .locator('.msg-attachment-link');
+        .locator('.attachment a[download]');
       await expect(ownLink).toContainText(filename);
       const href = await ownLink.getAttribute('href');
       expect(href).toBeTruthy();
@@ -380,9 +380,9 @@ test.describe('Gap verification', () => {
       await openDmView(pageAlice, fx.bob.username);
 
       await expect(pageAlice.locator('.rooms-view__header')).toContainText(fx.bob.username);
-      await expect(pageAlice.locator('.rooms-badge', { hasText: 'read-only' })).toBeVisible();
-      await expect(pageAlice.locator('.msg-composer__frozen')).toContainText('This conversation is read-only.');
-      await expect(pageAlice.locator('[aria-label="Message input"]')).toBeDisabled();
+      await expect(pageAlice.locator('.frozen-banner')).toBeVisible();
+      await expect(pageAlice.locator('.frozen-banner__label')).toContainText('CONVERSATION FROZEN');
+      await expect(pageAlice.locator('.composer-disabled-text')).toContainText('Messaging disabled');
       await expect(pageAlice.locator('.rooms-empty', { hasText: 'Add as friend' })).toHaveCount(0);
       await expect(pageAlice.locator('.error-msg', { hasText: /ban_exists|not_friends/i })).toHaveCount(0);
     } finally {

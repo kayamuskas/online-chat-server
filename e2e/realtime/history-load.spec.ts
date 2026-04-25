@@ -34,7 +34,7 @@ test.describe('History load button', () => {
       const beforeFirstWatermark = Number(await firstItem.getAttribute('data-watermark'));
       const beforeTop = await timeline.evaluate((el) => el.scrollTop);
 
-      const loadBtn = pageBob.locator('.msg-timeline__history-status__btn');
+      const loadBtn = pageBob.locator('.chat-divider--clickable');
       await expect(loadBtn).toBeVisible({ timeout: 8_000 });
       await loadBtn.click();
 
