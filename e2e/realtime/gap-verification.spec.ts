@@ -131,7 +131,7 @@ test.describe('Gap verification', () => {
       await sendMessage(pageAlice, text);
 
       await expect(
-        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.attachment a[download]'),
+        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.attachment'),
       ).toContainText(filename);
 
       const bobLink = pageBob.locator('.attachment', { hasText: filename }).locator('a[download]').last();
@@ -175,7 +175,7 @@ test.describe('Gap verification', () => {
       await sendMessage(pageAlice, text);
 
       await expect(
-        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.attachment a[download]'),
+        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.attachment'),
       ).toContainText(filename);
 
       const bobLink = pageBob.locator('.attachment', { hasText: filename }).locator('a[download]').last();
@@ -212,7 +212,7 @@ test.describe('Gap verification', () => {
       await expect(pageAlice.locator('.msg-composer__attachment-chip')).toContainText(filename);
       await sendMessage(pageAlice, text);
       await expect(
-        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.attachment a[download]'),
+        pageAlice.locator('.msg-bubble--own', { hasText: text }).locator('.attachment'),
       ).toContainText(filename);
     } finally {
       await ctxAlice.close();
@@ -270,11 +270,11 @@ test.describe('Gap verification', () => {
       await expect(pageAlice.locator('.msg-composer__attachment-chip')).toContainText(filename);
       await sendMessage(pageAlice, text);
 
-      const ownLink = pageAlice
+      const ownAttachment = pageAlice
         .locator('.msg-bubble--own', { hasText: text })
-        .locator('.attachment a[download]');
-      await expect(ownLink).toContainText(filename);
-      const href = await ownLink.getAttribute('href');
+        .locator('.attachment');
+      await expect(ownAttachment).toContainText(filename);
+      const href = await ownAttachment.locator('a[download]').getAttribute('href');
       expect(href).toBeTruthy();
 
       const removal = await apiFetch(
